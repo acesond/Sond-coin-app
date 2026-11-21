@@ -944,8 +944,14 @@ function buildAnalysis(){
   /* 다음 겹침 후보 */
   let nextHint = '';
   if (side === 'short'){
-    nextHint = '다음 겹침 후보: <b>58,500 ~ 59,300</b> 리테스트 존(라인) + 파동 되돌림이 겹치는 자리 = 2개. '
-      + '여기에 1H 베어리시 다이버전스까지 나오면 3개 → 그때가 가설 1 숏 진입 자리.';
+    if (state.sym.startsWith('BTC')){
+      nextHint = '다음 겹침 후보: <b>58,500 ~ 59,300</b> 리테스트 존(라인) + 파동 되돌림이 겹치는 자리 = 2개. '
+        + '여기에 1H 베어리시 다이버전스까지 나오면 3개 → 그때가 가설 1 숏 진입 자리.';
+    } else {
+      const shorts = levelsFor().filter(l => l.side === 'short').sort((a, b) => a.p - b.p).slice(0, 2);
+      nextHint = '다음 겹침 후보: 숏 라인(' + (shorts.length ? shorts.map(l => fmtPx(l.p)).join('·') : '가까운 저항') + ') + 파동 되돌림이 겹치는 자리 = 2개. '
+        + '여기에 1H 베어리시 다이버전스까지 나오면 3개 → 그때가 숏 진입 자리.';
+    }
   } else if (side === 'long'){
     const cands = levelsFor().filter(l => l.side === 'long' && l.role === 'entry').sort((a, b) => b.p - a.p);
     const longs = (cands.length ? cands : levelsFor().filter(l => l.side === 'long').sort((a, b) => b.p - a.p)).slice(0, 2);
