@@ -523,7 +523,7 @@ const MTF_LABEL = { '1Dutc':'1D', '4H':'4H', '1H':'1H' };
 const LEVELS = {
   'BTC-USDT-SWAP': [
     { p:60100, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절' },
-    { p:59500, side:'long',  role:'break', tag:'돌파 롱', label:'돌파 롱 · 1H 종가 59,500' },
+    { p:59500, side:'long',  role:'break', tag:'돌파 롱', label:'돌파 롱 · 1H 종가' },
     { p:58500, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 리테스트 존 하단' },
     { p:57600, side:'long',  role:'entry', tag:'롱 진입', label:'눌림목 롱 상단' },
     { p:57000, side:'long',  role:'entry', tag:'롱 하단', label:'눌림목 롱 하단' },
@@ -532,7 +532,7 @@ const LEVELS = {
   ],
   'ETH-USDT-SWAP': [
     { p:1765, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절' },
-    { p:1730, side:'long',  role:'break', tag:'돌파 롱', label:'돌파 롱 · 1H 종가 1,730' },
+    { p:1730, side:'long',  role:'break', tag:'돌파 롱', label:'돌파 롱 · 1H 종가' },
     { p:1710, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 리테스트 존 하단' },
     { p:1650, side:'long',  role:'entry', tag:'롱 진입', label:'눌림목 롱 상단' },
     { p:1630, side:'long',  role:'entry', tag:'롱 하단', label:'눌림목 롱 하단' },
@@ -541,7 +541,7 @@ const LEVELS = {
   ],
   'XRP-USDT-SWAP': [
     { p:0.9680, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절' },
-    { p:0.9450, side:'long',  role:'break', tag:'돌파 롱', label:'돌파 롱 · 1H 종가 0.945' },
+    { p:0.9450, side:'long',  role:'break', tag:'돌파 롱', label:'돌파 롱 · 1H 종가' },
     { p:0.9300, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 리테스트 존 하단' },
     { p:0.9000, side:'long',  role:'entry', tag:'롱 진입', label:'눌림목 롱 상단' },
     { p:0.8900, side:'long',  role:'entry', tag:'롱 하단', label:'눌림목 롱 하단' },
@@ -550,7 +550,7 @@ const LEVELS = {
   ],
   'SOL-USDT-SWAP': [
     { p:74.20, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절' },
-    { p:72.00, side:'long',  role:'break', tag:'돌파 롱', label:'돌파 롱 · 1H 종가 72.00' },
+    { p:72.00, side:'long',  role:'break', tag:'돌파 롱', label:'돌파 롱 · 1H 종가' },
     { p:70.80, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 리테스트 존 하단' },
     { p:68.80, side:'long',  role:'entry', tag:'롱 진입', label:'눌림목 롱 상단' },
     { p:67.80, side:'long',  role:'entry', tag:'롱 하단', label:'눌림목 롱 하단' },
@@ -663,6 +663,8 @@ function fmtN(n, d){
   return n.toLocaleString('ko-KR', { minimumFractionDigits: dd, maximumFractionDigits: dd });
 }
 function fmtPx(n){ return fmtN(n, dp()); }
+/* 가설·감시선 문구용 — 종목 소수점 안에서 자연스러운 자릿수만 남깁니다 (예: 1,710 / 74.2 / 0.8593) */
+function fmtLv(n){ return isNum(n) ? n.toLocaleString('ko-KR', { maximumFractionDigits: dp() }) : '—'; }
 function fmtPct(n, d){
   if (!isNum(n)) return '—';
   return (n > 0 ? '+' : '') + n.toFixed(d === undefined ? 2 : d) + '%';
@@ -928,7 +930,7 @@ function zoneState(price){
   if (!isNum(price) || price <= 0) return { code:'none', text:'데이터 대기 중', cls:'neutral' };
   const z = ZONE_DEF[state.sym];
   if (!z) return { code:'other', text:'가설 미적용 — 4H 스윙 라인 기준으로 판단', cls:'neutral' };
-  const f = n => fmtN(n, dp()).replace(/\.0+$/, '');
+  const f = n => fmtLv(n);
   if (price >= z.stop)  return { code:'void',  text:'가설 1 폐기 구간 — 숏 손절 ' + f(z.stop) + ' 상회', cls:'bad' };
   if (price >= z.brkup) return { code:'brkup', text:'돌파 롱 감시 구간 (' + f(z.brkup) + ' ~ ' + f(z.brkupTop) + ') — 1H 확정 종가 · ' + f(z.ext) + ' 확장', cls:'long' };
   if (price >= z.short) return { code:'short', text:'가설 1 숏 진입 구간 (' + f(z.short) + ' ~ ' + f(z.shortTop) + ')', cls:'short' };
@@ -991,7 +993,7 @@ function buildAnalysis(){
     vLabel = '관망'; vCls = 'neutral';
     vTitle = '관망 — 근거 0/3';
   }
-  if (zone.code === 'void') { vLabel = '폐기'; vCls = 'warn'; vTitle = '가설 1 폐기 — ' + fmtN(ZONE_DEF[state.sym] ? ZONE_DEF[state.sym].stop : 0, dp()) + ' 상회'; }
+  if (zone.code === 'void') { vLabel = '폐기'; vCls = 'warn'; vTitle = '가설 1 폐기 — ' + fmtLv(ZONE_DEF[state.sym] ? ZONE_DEF[state.sym].stop : 0) + ' 상회'; }
   if (zone.code === 'brk2' && nS >= 2) { vLabel = '이탈'; vCls = 'bad'; vTitle = '하방 이탈 진행 — 추격 금지'; }
 
   /* 요약 문장 */
@@ -1030,7 +1032,7 @@ function buildAnalysis(){
   if (side === 'short'){
     const z = ZONE_DEF[state.sym];
     if (z){
-      nextHint = '다음 겹침 후보: <b>' + fmtN(z.short, dp()) + ' ~ ' + fmtN(z.shortTop, dp()) + '</b> 리테스트 존(라인) + 파동 되돌림이 겹치는 자리 = 2개. '
+      nextHint = '다음 겹침 후보: <b>' + fmtLv(z.short) + ' ~ ' + fmtLv(z.shortTop) + '</b> 리테스트 존(라인) + 파동 되돌림이 겹치는 자리 = 2개. '
         + '여기에 1H 베어리시 다이버전스까지 나오면 3개 → 그때가 가설 1 숏 진입 자리.';
     } else {
       const shorts = levelsFor().filter(l => l.side === 'short').sort((a, b) => a.p - b.p).slice(0, 2);
@@ -1158,7 +1160,7 @@ function renderLineLegend(){
     const col = l.side === 'short' ? '#f43f5e' : '#22c55e';
     const d = isNum(price) ? (l.p - price) / price * 100 : NaN;
     return '<span class="ll"><i style="background:' + col + '"></i>' + l.tag +
-      ' <b>' + fmtN(l.p, dp()).replace(/\.0+$/, '') + '</b>' +
+      ' <b>' + fmtPx(l.p) + '</b>' +
       (isNum(d) ? '<span style="opacity:.75">' + fmtPct(d) + '</span>' : '') + '</span>';
   }).join('');
 }
@@ -1270,7 +1272,7 @@ function watchItems(){
   }
   const w = WATCH_DEF[state.sym];
   if (!w) return [{ ok:false, t:'감시 기준 없음', cur:'4H 스윙 라인·다이버전스로 판단', d:NaN }];
-  const f = n => fmtN(n, dp()).replace(/\.0+$/, '');
+  const f = n => fmtLv(n);
   return [
     { ok: !!(c1 && c1.c >= w.longClose), t:'1H 종가 ≥ ' + f(w.longClose) + ' (돌파 롱 안착)',
       cur:'1H 확정 종가 ' + (c1 ? fmtPx(c1.c) : '—'), d:(w.longClose - price) / price * 100 },
