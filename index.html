@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>매억남 코인 분석 · BTC/ETH/SOL 실시간</title>
-<meta name="description" content="매억남·박경철 실전 1장 기준으로 BTC·ETH·SOL 무기한 선물을 실시간 분석하는 모바일 웹앱. 멀티 타임프레임 RSI·거래량·다이버전스 자동 판정, 가설 타점, 손익비 계산기, 매매 전 체크리스트.">
+<title>매억남 코인 분석 · BTC/ETH/XRP/SOL 실시간</title>
+<meta name="description" content="매억남·박경철 실전 1장 기준으로 BTC·ETH·XRP·SOL 무기한 선물을 실시간 분석하는 모바일 웹앱. 멀티 타임프레임 RSI·거래량·다이버전스 자동 판정, 가설 타점, 손익비 계산기, 매매 전 체크리스트.">
 <meta name="theme-color" content="#070b12">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -470,7 +470,7 @@ section{scroll-margin-top:76px}
   </section>
 
   <div class="foot">
-    <p><b>데이터</b> OKX 무기한 선물(BTC-USDT-SWAP · ETH · SOL) 퍼블릭 API · 15초 자동 갱신. 일봉은 UTC 기준(한국 09:00 시작)입니다.</p>
+    <p><b>데이터</b> OKX 무기한 선물(BTC-USDT-SWAP · ETH · XRP · SOL) 퍼블릭 API · 15초 자동 갱신. 일봉은 UTC 기준(한국 09:00 시작)입니다.</p>
     <p><b>기준</b> 매억남 요약(Ep1~Ep8) · 박경철 기법 강의 · <b>실전 매매 1장 체크리스트</b>. 자동 판정은 계산 보조일 뿐이며, 근거 3개가 겹치지 않으면 진입이 아닙니다.</p>
     <p><b>주의</b> 이 앱은 학습·분석 참고용입니다. 주문을 실행하지 않고, 어떤 경우에도 투자 손실에 대한 책임을 지지 않습니다. 가격은 참고값이니 실제 주문 화면에서 다시 확인하세요.</p>
   </div>
@@ -506,6 +506,7 @@ const OKX = 'https://www.okx.com';
 const SYMBOLS = [
   { id:'BTC-USDT-SWAP', code:'BTC', name:'비트코인', dp:1 },
   { id:'ETH-USDT-SWAP', code:'ETH', name:'이더리움', dp:2 },
+  { id:'XRP-USDT-SWAP', code:'XRP', name:'리플',   dp:4 },
   { id:'SOL-USDT-SWAP', code:'SOL', name:'솔라나', dp:2 }
 ];
 const BARS = [
@@ -517,29 +518,31 @@ const BARS = [
 const MTF = ['1Dutc','4H','1H'];
 const MTF_LABEL = { '1Dutc':'1D', '4H':'4H', '1H':'1H' };
 
-/* BTC 가설선 — scheduled-actions/📊-btcusdt-매억남-타점-감시 의 기준선 */
+/* BTC 가설선 — scheduled-actions/📊-btcusdt-매억남-타점-감시 기준선 (2026-11-21 16:07 KST 확정분) */
 const BTC_LEVELS = [
-  { p:62250, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절' },
-  { p:60900, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 0.5 되돌림' },
-  { p:59800, side:'long',  role:'entry', tag:'롱 진입', label:'롱 진입 · 전저점 지지' },
-  { p:57600, side:'short', role:'break', tag:'이탈 4H', label:'이탈 경계 · 4H 종가' },
-  { p:57400, side:'short', role:'break', tag:'이탈 즉시', label:'즉시 이탈' }
+  { p:60100, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절' },
+  { p:59500, side:'long',  role:'break', tag:'돌파 롱', label:'돌파 롱 · 1H 종가 59,500' },
+  { p:58500, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 리테스트 존 하단' },
+  { p:57600, side:'long',  role:'entry', tag:'롱 진입', label:'눌림목 롱 상단' },
+  { p:57000, side:'long',  role:'entry', tag:'롱 하단', label:'눌림목 롱 하단' },
+  { p:56100, side:'long',  role:'stop',  tag:'롱 손절', label:'롱 손절' },
+  { p:55100, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 4H 종가' }
 ];
 
 const HYP = {
   'BTC-USDT-SWAP': {
     h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 메인 숏', tag:'메인',
-          entry:60900, stop:62250, t1:57600, t2:56000,
-          why:'4H 하락 레그(64,054 → 57,695)의 0.5 되돌림 = 60,875, 0.618 = 61,624. 60,900은 0.5 부근의 되돌림 자리이고, 손절 62,250은 0.618 위 — 근거가 깨지는 라인. 1차 목표 57,600은 이탈 경계(전저점), 2차 56,000은 그 아래 라운드.' },
-    h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 서브 롱', tag:'서브',
-          entry:59800, stop:57550, t1:60900, t2:62200,
-          why:'4H 전저점 59,360~59,444 지지 반등 가정. 손절 57,550은 4H 전저 57,695 아래. 다만 손절 폭 3.8%에 목표 1차가 1.8% — 손익비가 3:1에 크게 못 미치는 자리다.' },
-    br: { id:'br', cls:'break', kind:'short', title:'하방 이탈 경계', tag:'이탈',
-          entry:57600, stop:58700, t1:55400, t2:53900,
-          why:'57,600은 4H 종가 기준 이탈선, 57,400은 현재가 기준 즉시 트리거(자동 감시와 동일). 57,695 전저점이 무너지면 다음 지지는 55,400·53,900 부근.' }
+          entry:58500, stop:60100, t1:56700, t2:55100,
+          why:'62,621 → 55,100 하락 레그의 0.5 되돌림이 58,861 — 58,500~59,300 리테스트 존 안에 들어온다. 58,500은 그 존의 하단이자 16시 1H 확정 종가(58,020) 위 첫 저항이고, 손절 60,100은 0.618(59,748) 위 — 근거가 깨지는 라인. 1차 56,700은 12:37 이탈 기준선이자 직전 1H 저점대, 2차 55,100은 오늘 저점(24h low). 반드시 1H·4H 음봉 저항을 확인한 뒤 진입.' },
+    h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 눌림목 단타 롱', tag:'서브',
+          entry:57600, stop:56100, t1:58500, t2:59300,
+          why:'16시 1H 확정 종가 58,020(거래량 2.17배) 안착 뒤 58,400대까지 올라온 자리 — 추격 매수 대신 58,020~57,600 눌림 지지를 확인하면 정찰병 단타. 손절 56,100은 4H 저점 57,341과 56,700 이탈선 아래. 1차 58,500·2차 59,300은 숏존 하단·상단. 손절 폭 2.6%에 1차가 1.6%라 3:1에 못 미치니 비중을 줄이거나 58,500 안착 후 다시 계산.' },
+    br: { id:'br', cls:'break', kind:'short', title:'하방 재이탈', tag:'이탈',
+          entry:55100, stop:56100, t1:53900, t2:52600,
+          why:'4H 확정 종가 ≤ 55,100 또는 현재가 ≤ 55,000이면 오늘 저점 붕괴(자동 감시와 동일 기준). 55,100은 2차 숏 목표이자 24h 저점. 손절 56,100은 이탈 뒤 재안착 실패 기준선, 다음 지지는 53,900 라운드·52,600 부근. 이탈 직후엔 되돌림 반등이 잦으니 종가 확인 없이 추격 금지.' }
   }
 };
-const DEFAULT_PLAN = { side:'short', entry:60900, stop:62250, t1:57600, t2:56000, lev:7, margin:0 };
+const DEFAULT_PLAN = { side:'short', entry:58500, stop:60100, t1:56700, t2:55100, lev:7, margin:0 };
 
 const state = {
   sym: 'BTC-USDT-SWAP',
@@ -840,14 +843,16 @@ function swingLevels(price, maxEach){
 function zoneState(price){
   if (!isNum(price) || price <= 0) return { code:'none', text:'데이터 대기 중', cls:'neutral' };
   if (!state.sym.startsWith('BTC')) {
-    return { code:'other', text:'BTC 가설 구간 밖 — 스윙 라인 기준으로 판단', cls:'neutral' };
+    return { code:'other', text:'BTC 가설 미적용 — 4H 스윙 라인 기준으로 판단', cls:'neutral' };
   }
-  if (price >= 62250) return { code:'void',  text:'가설 1 폐기 구간 — 손절 62,250 상회', cls:'bad' };
-  if (price >= 60900) return { code:'short', text:'가설 1 숏 진입 구간 (60,900 ~ 62,250)', cls:'short' };
-  if (price >= 59800) return { code:'long',  text:'가설 2 롱 검토 구간 (59,800 ~ 60,900)', cls:'long' };
-  if (price > 57600)  return { code:'mid',   text:'중간 구간 — 라인·되돌림 어느 쪽도 아님', cls:'neutral' };
-  if (price > 57400)  return { code:'brk1',  text:'4H 종가 이탈 확인 대기 (57,600 ~ 57,400)', cls:'warn' };
-  return { code:'brk2', text:'하방 이탈 진행 (57,400 이하) — 반등 확인 전 추격 금지', cls:'warn' };
+  if (price >= 60100) return { code:'void',  text:'가설 1 폐기 구간 — 숏 손절 60,100 상회', cls:'bad' };
+  if (price >= 59500) return { code:'brkup', text:'돌파 롱 감시 구간 (59,500 ~ 60,100) — 1H 확정 종가 · 60,900 확장', cls:'long' };
+  if (price >= 58500) return { code:'short', text:'가설 1 숏 진입 구간 (58,500 ~ 59,300)', cls:'short' };
+  if (price > 57600)  return { code:'mid',   text:'숏 진입 대기 · 눌림목 롱 대기 (57,600 ~ 58,500)', cls:'neutral' };
+  if (price > 57000)  return { code:'long',  text:'가설 2 눌림목 롱 구간 (57,000 ~ 57,600)', cls:'long' };
+  if (price > 56100)  return { code:'warnL', text:'롱 손절 바로 위 (56,100 ~ 57,000) — 신규 진입 금지', cls:'warn' };
+  if (price > 55100)  return { code:'brk1',  text:'하방 이탈 경계 위 (55,100 ~ 56,100) — 종가 확인 대기', cls:'warn' };
+  return { code:'brk2', text:'하방 이탈 진행 (55,100 이하) — 반등 확인 전 추격 금지', cls:'warn' };
 }
 function inFib(leg, lo, hi, price){
   if (!leg) return false;
@@ -902,7 +907,7 @@ function buildAnalysis(){
     vLabel = '관망'; vCls = 'neutral';
     vTitle = '관망 — 근거 0/3';
   }
-  if (zone.code === 'void') { vLabel = '폐기'; vCls = 'warn'; vTitle = '가설 1 폐기 — 62,250 상회'; }
+  if (zone.code === 'void') { vLabel = '폐기'; vCls = 'warn'; vTitle = '가설 1 폐기 — 60,100 상회'; }
   if (zone.code === 'brk2' && nS >= 2) { vLabel = '이탈'; vCls = 'bad'; vTitle = '하방 이탈 진행 — 추격 금지'; }
 
   /* 요약 문장 */
@@ -938,12 +943,11 @@ function buildAnalysis(){
 
   /* 다음 겹침 후보 */
   let nextHint = '';
-  if (side === 'short' && f4){
-    const zl = Math.min(f4[0], f4[1]), zh = Math.max(f4[0], f4[1]);
-    nextHint = '다음 겹침 후보: <b>' + fmtPx(zl) + ' ~ ' + fmtPx(zh) + '</b> 되돌림(파동) + 60,900 라인(라인) = 2개. '
-      + '여기에 1H 베어리시 다이버전스까지 나오면 3개 → 그때가 가설 1 진입 자리.';
+  if (side === 'short'){
+    nextHint = '다음 겹침 후보: <b>58,500 ~ 59,300</b> 리테스트 존(라인) + 파동 되돌림이 겹치는 자리 = 2개. '
+      + '여기에 1H 베어리시 다이버전스까지 나오면 3개 → 그때가 가설 1 숏 진입 자리.';
   } else if (side === 'long'){
-    nextHint = '다음 겹침 후보: 롱 라인(59,800·57,600)에서 <b>1H 상승 다이버전스 + 거래량 터짐</b>이 같이 나오는 자리. '
+    nextHint = '다음 겹침 후보: 롱 라인(57,600·57,000)에서 <b>1H 상승 다이버전스 + 거래량 터짐</b>이 같이 나오는 자리. '
       + '다이버전스 없이 지지선만으로는 2개 → 보류.';
   }
 
@@ -1162,12 +1166,14 @@ function watchItems(){
     return [{ ok:false, t:'BTC 전용 감시 기준', cur:'다른 종목은 스윙 라인·다이버전스로 판단', d:NaN }];
   }
   return [
-    { ok: !!(c1 && c1.c >= 59800), t:'1H 종가 ≥ 59,800 (롱 반등 확인)',
-      cur:'1H 확정 종가 ' + (c1 ? fmtPx(c1.c) : '—'), d:(59800 - price) / price * 100 },
-    { ok: price >= 60900 || !!(cur1h && cur1h.h >= 60900), t:'현재가 또는 1H 고가 ≥ 60,900 (숏 재시험)',
-      cur:'현재가 ' + fmtPx(price) + ' · 1H 고가 ' + (cur1h ? fmtPx(cur1h.h) : '—'), d:(60900 - price) / price * 100 },
-    { ok: !!(c4 && c4.c <= 57600) || price <= 57400, t:'4H 종가 ≤ 57,600 또는 현재가 ≤ 57,400 (하방 이탈)',
-      cur:'4H 확정 종가 ' + (c4 ? fmtPx(c4.c) : '—') + ' · 현재가 ' + fmtPx(price), d:(57600 - price) / price * 100 }
+    { ok: !!(c1 && c1.c >= 59500), t:'1H 종가 ≥ 59,500 (돌파 롱 확장)',
+      cur:'1H 확정 종가 ' + (c1 ? fmtPx(c1.c) : '—'), d:(59500 - price) / price * 100 },
+    { ok: price >= 58500 || !!(cur1h && cur1h.h >= 58500), t:'현재가 또는 1H 고가 ≥ 58,500 (숏 리테스트 존)',
+      cur:'현재가 ' + fmtPx(price) + ' · 1H 고가 ' + (cur1h ? fmtPx(cur1h.h) : '—'), d:(58500 - price) / price * 100 },
+    { ok: price >= 57000 && price <= 57600, t:'눌림목 롱 지지 57,000 ~ 57,600 (가설 2)',
+      cur:'현재가 ' + fmtPx(price) + ' · 이탈 시 56,100 손절', d:(57000 - price) / price * 100 },
+    { ok: !!(c4 && c4.c <= 55100) || price <= 55000, t:'4H 종가 ≤ 55,100 또는 현재가 ≤ 55,000 (하방 이탈)',
+      cur:'4H 확정 종가 ' + (c4 ? fmtPx(c4.c) : '—') + ' · 현재가 ' + fmtPx(price), d:(55100 - price) / price * 100 }
   ];
 }
 
@@ -1237,7 +1243,7 @@ function renderScenarios(){
   if (!state.sym.startsWith('BTC')){
     const lv = levelsFor();
     host.innerHTML = '<div class="card"><div style="font-size:12px; color:var(--dim); line-height:1.55">' +
-      '<b style="color:#dbe6f5">' + symOf(state.sym).code + '</b>은(는) BTC 가설(60,900 / 59,800 / 57,600)이 적용되지 않습니다. ' +
+      '<b style="color:#dbe6f5">' + symOf(state.sym).code + '</b>은(는) BTC 가설(58,500 / 57,600 / 55,100)이 적용되지 않습니다. ' +
       '아래는 4H 스윙에서 뽑은 현재 지지·저항입니다.</div>' +
       '<div class="scn-grid" style="margin-top:9px">' + (lv.length ? lv.map(l =>
         '<div class="scn-cell"><label>' + (l.side === 'short' ? '저항' : '지지') + ' · 4H 스윙</label><b>' + fmtPx(l.p) +
