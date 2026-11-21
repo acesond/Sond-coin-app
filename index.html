@@ -947,7 +947,9 @@ function buildAnalysis(){
     nextHint = '다음 겹침 후보: <b>58,500 ~ 59,300</b> 리테스트 존(라인) + 파동 되돌림이 겹치는 자리 = 2개. '
       + '여기에 1H 베어리시 다이버전스까지 나오면 3개 → 그때가 가설 1 숏 진입 자리.';
   } else if (side === 'long'){
-    nextHint = '다음 겹침 후보: 롱 라인(57,600·57,000)에서 <b>1H 상승 다이버전스 + 거래량 터짐</b>이 같이 나오는 자리. '
+    const cands = levelsFor().filter(l => l.side === 'long' && l.role === 'entry').sort((a, b) => b.p - a.p);
+    const longs = (cands.length ? cands : levelsFor().filter(l => l.side === 'long').sort((a, b) => b.p - a.p)).slice(0, 2);
+    nextHint = '다음 겹침 후보: 롱 라인(' + (longs.length ? longs.map(l => fmtPx(l.p)).join('·') : '가까운 지지') + ')에서 <b>1H 상승 다이버전스 + 거래량 터짐</b>이 같이 나오는 자리. '
       + '다이버전스 없이 지지선만으로는 2개 → 보류.';
   }
 
@@ -1605,6 +1607,8 @@ function drawChart(){
 
   /* grid + 가격축 (가설선 라벨과 겹치면 축 숫자는 생략) */
   const drawLevels = state.showLines ? levelsFor().filter(l => isNum(l.p)) : [];
+  /* 축 숫자 생략 판단은 이름표가 붙는 라인(가설선·타점)만 본다 — 흐린 스윙선은 라벨이 없어 겹쳐도 된다 */
+  const labelLevels = drawLevels.filter(l => l.role !== 'swing');
   const gs = niceStep((max - min) / 4);
   ctx.font = '9.5px ui-monospace, SFMono-Regular, Menlo, sans-serif';
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
@@ -1613,7 +1617,7 @@ function drawChart(){
     ctx.strokeStyle = 'rgba(30,42,60,.6)';
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(padL, y + .5); ctx.lineTo(padL + areaW, y + .5); ctx.stroke();
-    const clash = drawLevels.some(l => Math.abs(Y(l.p) - y) < 10.5);
+    const clash = labelLevels.some(l => Math.abs(Y(l.p) - y) < 10.5);
     if (!clash){ ctx.fillStyle = '#55647a'; ctx.fillText(fmtN(p, d), padL + areaW + 6, y); }
   }
 
