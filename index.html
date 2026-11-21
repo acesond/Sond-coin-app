@@ -400,7 +400,7 @@ section{scroll-margin-top:76px}
 
   <!-- ===== 가설 ===== -->
   <section id="scnSec">
-    <div class="sec-title"><h2><i></i>가설 시나리오</h2><span class="hint" id="scnHint">BTC 기준</span></div>
+    <div class="sec-title"><h2><i></i>가설 시나리오</h2><span class="hint" id="scnHint">종목별 기준</span></div>
     <div id="scnList"></div>
   </section>
 
@@ -518,16 +518,46 @@ const BARS = [
 const MTF = ['1Dutc','4H','1H'];
 const MTF_LABEL = { '1Dutc':'1D', '4H':'4H', '1H':'1H' };
 
-/* BTC 가설선 — scheduled-actions/📊-btcusdt-매억남-타점-감시 기준선 (2026-11-21 16:07 KST 확정분) */
-const BTC_LEVELS = [
-  { p:60100, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절' },
-  { p:59500, side:'long',  role:'break', tag:'돌파 롱', label:'돌파 롱 · 1H 종가 59,500' },
-  { p:58500, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 리테스트 존 하단' },
-  { p:57600, side:'long',  role:'entry', tag:'롱 진입', label:'눌림목 롱 상단' },
-  { p:57000, side:'long',  role:'entry', tag:'롱 하단', label:'눌림목 롱 하단' },
-  { p:56100, side:'long',  role:'stop',  tag:'롱 손절', label:'롱 손절' },
-  { p:55100, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 4H 종가' }
-];
+/* 가설선 — scheduled-actions/📊-btcusdt-매억남-타점-감시 기준선
+   BTC 2026-11-21 16:07 KST 확정분 · ETH·XRP·SOL 2026-11-21 22:47 KST 확정분 */
+const LEVELS = {
+  'BTC-USDT-SWAP': [
+    { p:60100, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절' },
+    { p:59500, side:'long',  role:'break', tag:'돌파 롱', label:'돌파 롱 · 1H 종가 59,500' },
+    { p:58500, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 리테스트 존 하단' },
+    { p:57600, side:'long',  role:'entry', tag:'롱 진입', label:'눌림목 롱 상단' },
+    { p:57000, side:'long',  role:'entry', tag:'롱 하단', label:'눌림목 롱 하단' },
+    { p:56100, side:'long',  role:'stop',  tag:'롱 손절', label:'롱 손절' },
+    { p:55100, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 4H 종가' }
+  ],
+  'ETH-USDT-SWAP': [
+    { p:1765, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절' },
+    { p:1730, side:'long',  role:'break', tag:'돌파 롱', label:'돌파 롱 · 1H 종가 1,730' },
+    { p:1710, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 리테스트 존 하단' },
+    { p:1650, side:'long',  role:'entry', tag:'롱 진입', label:'눌림목 롱 상단' },
+    { p:1630, side:'long',  role:'entry', tag:'롱 하단', label:'눌림목 롱 하단' },
+    { p:1605, side:'long',  role:'stop',  tag:'롱 손절', label:'롱 손절' },
+    { p:1536, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 4H 종가' }
+  ],
+  'XRP-USDT-SWAP': [
+    { p:0.9680, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절' },
+    { p:0.9450, side:'long',  role:'break', tag:'돌파 롱', label:'돌파 롱 · 1H 종가 0.945' },
+    { p:0.9300, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 리테스트 존 하단' },
+    { p:0.9000, side:'long',  role:'entry', tag:'롱 진입', label:'눌림목 롱 상단' },
+    { p:0.8900, side:'long',  role:'entry', tag:'롱 하단', label:'눌림목 롱 하단' },
+    { p:0.8750, side:'long',  role:'stop',  tag:'롱 손절', label:'롱 손절' },
+    { p:0.8593, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 4H 종가' }
+  ],
+  'SOL-USDT-SWAP': [
+    { p:74.20, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절' },
+    { p:72.00, side:'long',  role:'break', tag:'돌파 롱', label:'돌파 롱 · 1H 종가 72.00' },
+    { p:70.80, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 리테스트 존 하단' },
+    { p:68.80, side:'long',  role:'entry', tag:'롱 진입', label:'눌림목 롱 상단' },
+    { p:67.80, side:'long',  role:'entry', tag:'롱 하단', label:'눌림목 롱 하단' },
+    { p:66.50, side:'long',  role:'stop',  tag:'롱 손절', label:'롱 손절' },
+    { p:64.79, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 4H 종가' }
+  ]
+};
 
 const HYP = {
   'BTC-USDT-SWAP': {
@@ -540,9 +570,64 @@ const HYP = {
     br: { id:'br', cls:'break', kind:'short', title:'하방 재이탈', tag:'이탈',
           entry:55100, stop:56100, t1:53900, t2:52600,
           why:'4H 확정 종가 ≤ 55,100 또는 현재가 ≤ 55,000이면 오늘 저점 붕괴(자동 감시와 동일 기준). 55,100은 2차 숏 목표이자 24h 저점. 손절 56,100은 이탈 뒤 재안착 실패 기준선, 다음 지지는 53,900 라운드·52,600 부근. 이탈 직후엔 되돌림 반등이 잦으니 종가 확인 없이 추격 금지.' }
+  },
+  'ETH-USDT-SWAP': {
+    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 메인 숏', tag:'메인',
+          entry:1710, stop:1765, t1:1640, t2:1580,
+          why:'1,536 저점(거래량 2.1배)에서 반등해 1H 저항대 1,710~1,740 초입까지 올라온 자리. 1,710은 숏 진입 라인이자 1H 고점(1,716) 바로 아래 첫 저항이고, 손절 1,765는 오늘 고점(1,758.9) 위 — 근거가 깨지는 라인. 1차 1,640은 4H 저점대, 2차 1,580은 저점 1,536 위 지지. 일봉이 아직 하락 배열(RSI 20대)이라 반등은 되돌림으로 보고, 1H 음봉(윗꼬리) 마감을 확인한 뒤 진입.' },
+    h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 돌파·눌림목 롱', tag:'서브',
+          entry:1650, stop:1605, t1:1710, t2:1790,
+          why:'두 갈래 — ① 1,730 위 1H 종가 안착 돌파, ② 1,630~1,650 눌림목 지지 확인. 손절 1,605는 반등 출발점 아래라 깨지면 가설 폐기. 1차 1,710은 숏 진입 라인, 2차 1,790은 직전 매물대 하단. 추격 매수 금지 — 돌파는 1,730 1H 확정 종가, 눌림목은 1H 양봉 지지가 확인돼야 한다.' },
+    br: { id:'br', cls:'break', kind:'short', title:'하방 재이탈', tag:'이탈',
+          entry:1536, stop:1580, t1:1480, t2:1420,
+          why:'4H 확정 종가 ≤ 1,536 또는 현재가 ≤ 1,530이면 오늘 저점(1,536.3) 붕괴 — 일봉 아래꼬리 지지가 무너지는 자리. 손절 1,580은 2차 숏 목표이자 이탈 뒤 재안착 실패 기준선. 다음 지지는 1,480·1,420. 이탈 직후엔 되돌림 반등이 잦으니 종가 확인 없이 추격 금지.' }
+  },
+  'XRP-USDT-SWAP': {
+    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 메인 숏', tag:'메인',
+          entry:0.930, stop:0.968, t1:0.895, t2:0.865,
+          why:'0.8593 저점(거래량 1.6배)에서 반등해 0.930~0.950 매물대 초입. 0.9300은 숏 진입 라인, 0.9680은 오늘 고점(0.9528) 위 — 근거가 깨지는 라인. 1차 0.895는 4H 저점대, 2차 0.865는 오늘 저점 0.8593 바로 위. 3종목 중 저항 숏 손익비가 가장 깔끔하지만 0.9307에서 윗꼬리를 달고 있어 1H 음봉 마감 확인이 필요하다.' },
+    h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 돌파·눌림목 롱', tag:'서브',
+          entry:0.900, stop:0.875, t1:0.930, t2:0.970,
+          why:'① 0.9450 위 1H 종가 안착 돌파, ② 0.890~0.900 눌림목 지지 확인. 손절 0.8750은 반등 출발점 아래. 1차 0.930은 숏 진입 라인, 2차 0.970은 0.945~0.970 매물대 상단. 4H 거래량이 0.6배대로 약해 돌파 추격은 금지 — 0.945 1H 종가 확인 후에만.' },
+    br: { id:'br', cls:'break', kind:'short', title:'하방 재이탈', tag:'이탈',
+          entry:0.8593, stop:0.875, t1:0.830, t2:0.800,
+          why:'4H 확정 종가 ≤ 0.8593 또는 현재가 ≤ 0.8550이면 오늘 저점 붕괴. 손절 0.8750은 이탈 뒤 재안착 실패 기준선. 다음 지지는 0.830(라운드)·0.800. 일봉 아래꼬리 지지가 무너지면 낙폭이 커지는 자리라 종가 확인 후 대응.' }
+  },
+  'SOL-USDT-SWAP': {
+    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 메인 숏', tag:'메인',
+          entry:70.80, stop:74.20, t1:68.00, t2:65.50,
+          why:'64.79 저점(거래량 1.7배)에서 반등해 70.8~72.0 저항대(라운드 70~72 매물대) 초입. 70.80은 숏 진입 라인, 74.20은 오늘 고점(71.69) 위 — 근거가 깨지는 라인. 1차 68.00은 전일 종가(68.31) 아래, 2차 65.50은 저점 64.79 위. 비트코인 저항에서 같이 꺾이는지 보면서 1H 음봉 저항 확인 후 진입.' },
+    h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 돌파·눌림목 롱', tag:'서브',
+          entry:68.80, stop:66.50, t1:70.80, t2:74.00,
+          why:'① 72.00 위 1H 종가 안착 돌파, ② 67.8~68.8 눌림목 지지 확인. 손절 66.50은 반등 출발점 아래. 1차 70.80은 숏 진입 라인, 2차 74.00은 숏 손절 라인. 4H 거래량이 0.68배로 약해 돌파는 종가 확인이 필수.' },
+    br: { id:'br', cls:'break', kind:'short', title:'하방 재이탈', tag:'이탈',
+          entry:64.79, stop:66.50, t1:62.00, t2:59.50,
+          why:'4H 확정 종가 ≤ 64.79 또는 현재가 ≤ 64.50이면 오늘 저점 붕괴. 손절 66.50은 이탈 뒤 재안착 실패 기준선. 다음 지지는 62.00·59.50. 저점이 일봉 아래꼬리로 찍힌 자리라 붕괴 확인 전 추격 금지.' }
   }
 };
-const DEFAULT_PLAN = { side:'short', entry:58500, stop:60100, t1:56700, t2:55100, lev:7, margin:0 };
+
+/* 구간 판정 기준 (숏 손절 / 돌파 롱 / 숏 진입 / 눌림목 / 롱 손절 / 이탈 경계) */
+const ZONE_DEF = {
+  'BTC-USDT-SWAP': { stop:60100, brkup:59500, brkupTop:60100, ext:60900, short:58500, shortTop:59300, mid:57600, long:57000, warnL:56100, brk1:55100 },
+  'ETH-USDT-SWAP': { stop:1765,  brkup:1730,  brkupTop:1765,  ext:1790,  short:1710,  shortTop:1730,  mid:1650,  long:1630,  warnL:1605,  brk1:1536 },
+  'XRP-USDT-SWAP': { stop:0.9680,brkup:0.9450,brkupTop:0.9680,ext:0.9700,short:0.9300,shortTop:0.9450,mid:0.9000,long:0.8900,warnL:0.8750,brk1:0.8593 },
+  'SOL-USDT-SWAP': { stop:74.20, brkup:72.00, brkupTop:74.20, ext:74.00, short:70.80, shortTop:72.00, mid:68.80, long:67.80, warnL:66.50, brk1:64.79 }
+};
+
+/* 감시선 — scheduled-actions/📊-btcusdt-매억남-타점-감시 check.sh 신호와 같은 수치 */
+const WATCH_DEF = {
+  'BTC-USDT-SWAP': { longClose:59500, shortZone:58500, pullLo:57000, pullHi:57600, sup:55100, supNote:'이탈 시 56,100 손절' },
+  'ETH-USDT-SWAP': { longClose:1730,  shortZone:1720,  pullLo:1630,  pullHi:1650,  sup:1630,  supNote:'이탈 시 1,605 손절' },
+  'XRP-USDT-SWAP': { longClose:0.9450,shortZone:0.9350,pullLo:0.8900,pullHi:0.9000,sup:0.8900,supNote:'이탈 시 0.8750 손절' },
+  'SOL-USDT-SWAP': { longClose:72.00, shortZone:71.20, pullLo:67.80, pullHi:68.80, sup:67.80, supNote:'이탈 시 66.50 손절' }
+};
+
+const DEFAULT_PLANS = {
+  'BTC-USDT-SWAP': { side:'short', entry:58500,  stop:60100, t1:56700, t2:55100, lev:7, margin:0 },
+  'ETH-USDT-SWAP': { side:'short', entry:1710,   stop:1765,  t1:1640,  t2:1580,  lev:7, margin:0 },
+  'XRP-USDT-SWAP': { side:'short', entry:0.9300, stop:0.9680,t1:0.8950,t2:0.8650,lev:7, margin:0 },
+  'SOL-USDT-SWAP': { side:'short', entry:70.80,  stop:74.20, t1:68.00, t2:65.50, lev:7, margin:0 }
+};
 
 const state = {
   sym: 'BTC-USDT-SWAP',
@@ -821,11 +906,10 @@ function trendText(o){
 
 function levelsFor(){
   const price = currentPrice();
-  if (state.sym === 'BTC-USDT-SWAP') {
-    const sw = swingLevels(price, 4);
-    return BTC_LEVELS.map(l => Object.assign({}, l)).concat(sw);
-  }
-  return swingLevels(price, 4);
+  const fixed = LEVELS[state.sym];
+  const sw = swingLevels(price, 4);
+  if (fixed) return fixed.map(l => Object.assign({}, l)).concat(sw);
+  return sw;
 }
 function swingLevels(price, maxEach){
   const cs = (state.mtf['4H'] || []).slice(-160);
@@ -842,17 +926,17 @@ function swingLevels(price, maxEach){
 }
 function zoneState(price){
   if (!isNum(price) || price <= 0) return { code:'none', text:'데이터 대기 중', cls:'neutral' };
-  if (!state.sym.startsWith('BTC')) {
-    return { code:'other', text:'BTC 가설 미적용 — 4H 스윙 라인 기준으로 판단', cls:'neutral' };
-  }
-  if (price >= 60100) return { code:'void',  text:'가설 1 폐기 구간 — 숏 손절 60,100 상회', cls:'bad' };
-  if (price >= 59500) return { code:'brkup', text:'돌파 롱 감시 구간 (59,500 ~ 60,100) — 1H 확정 종가 · 60,900 확장', cls:'long' };
-  if (price >= 58500) return { code:'short', text:'가설 1 숏 진입 구간 (58,500 ~ 59,300)', cls:'short' };
-  if (price > 57600)  return { code:'mid',   text:'숏 진입 대기 · 눌림목 롱 대기 (57,600 ~ 58,500)', cls:'neutral' };
-  if (price > 57000)  return { code:'long',  text:'가설 2 눌림목 롱 구간 (57,000 ~ 57,600)', cls:'long' };
-  if (price > 56100)  return { code:'warnL', text:'롱 손절 바로 위 (56,100 ~ 57,000) — 신규 진입 금지', cls:'warn' };
-  if (price > 55100)  return { code:'brk1',  text:'하방 이탈 경계 위 (55,100 ~ 56,100) — 종가 확인 대기', cls:'warn' };
-  return { code:'brk2', text:'하방 이탈 진행 (55,100 이하) — 반등 확인 전 추격 금지', cls:'warn' };
+  const z = ZONE_DEF[state.sym];
+  if (!z) return { code:'other', text:'가설 미적용 — 4H 스윙 라인 기준으로 판단', cls:'neutral' };
+  const f = n => fmtN(n, dp()).replace(/\.0+$/, '');
+  if (price >= z.stop)  return { code:'void',  text:'가설 1 폐기 구간 — 숏 손절 ' + f(z.stop) + ' 상회', cls:'bad' };
+  if (price >= z.brkup) return { code:'brkup', text:'돌파 롱 감시 구간 (' + f(z.brkup) + ' ~ ' + f(z.brkupTop) + ') — 1H 확정 종가 · ' + f(z.ext) + ' 확장', cls:'long' };
+  if (price >= z.short) return { code:'short', text:'가설 1 숏 진입 구간 (' + f(z.short) + ' ~ ' + f(z.shortTop) + ')', cls:'short' };
+  if (price > z.mid)    return { code:'mid',   text:'숏 진입 대기 · 눌림목 롱 대기 (' + f(z.mid) + ' ~ ' + f(z.short) + ')', cls:'neutral' };
+  if (price > z.long)   return { code:'long',  text:'가설 2 눌림목 롱 구간 (' + f(z.long) + ' ~ ' + f(z.mid) + ')', cls:'long' };
+  if (price > z.warnL)  return { code:'warnL', text:'롱 손절 바로 위 (' + f(z.warnL) + ' ~ ' + f(z.long) + ') — 신규 진입 금지', cls:'warn' };
+  if (price > z.brk1)   return { code:'brk1',  text:'하방 이탈 경계 위 (' + f(z.brk1) + ' ~ ' + f(z.warnL) + ') — 종가 확인 대기', cls:'warn' };
+  return { code:'brk2', text:'하방 이탈 진행 (' + f(z.brk1) + ' 이하) — 반등 확인 전 추격 금지', cls:'warn' };
 }
 function inFib(leg, lo, hi, price){
   if (!leg) return false;
@@ -907,7 +991,7 @@ function buildAnalysis(){
     vLabel = '관망'; vCls = 'neutral';
     vTitle = '관망 — 근거 0/3';
   }
-  if (zone.code === 'void') { vLabel = '폐기'; vCls = 'warn'; vTitle = '가설 1 폐기 — 60,100 상회'; }
+  if (zone.code === 'void') { vLabel = '폐기'; vCls = 'warn'; vTitle = '가설 1 폐기 — ' + fmtN(ZONE_DEF[state.sym] ? ZONE_DEF[state.sym].stop : 0, dp()) + ' 상회'; }
   if (zone.code === 'brk2' && nS >= 2) { vLabel = '이탈'; vCls = 'bad'; vTitle = '하방 이탈 진행 — 추격 금지'; }
 
   /* 요약 문장 */
@@ -944,8 +1028,9 @@ function buildAnalysis(){
   /* 다음 겹침 후보 */
   let nextHint = '';
   if (side === 'short'){
-    if (state.sym.startsWith('BTC')){
-      nextHint = '다음 겹침 후보: <b>58,500 ~ 59,300</b> 리테스트 존(라인) + 파동 되돌림이 겹치는 자리 = 2개. '
+    const z = ZONE_DEF[state.sym];
+    if (z){
+      nextHint = '다음 겹침 후보: <b>' + fmtN(z.short, dp()) + ' ~ ' + fmtN(z.shortTop, dp()) + '</b> 리테스트 존(라인) + 파동 되돌림이 겹치는 자리 = 2개. '
         + '여기에 1H 베어리시 다이버전스까지 나오면 3개 → 그때가 가설 1 숏 진입 자리.';
     } else {
       const shorts = levelsFor().filter(l => l.side === 'short').sort((a, b) => a.p - b.p).slice(0, 2);
@@ -1001,7 +1086,7 @@ function renderChips(){
     b.addEventListener('click', () => {
       if (b.dataset.sym === state.sym) return;
       state.sym = b.dataset.sym;
-      state.activeSlot = state.sym.startsWith('BTC') ? 'h1' : 'custom';
+      state.activeSlot = 'h1';
       state.zoom = 90;
       state.mtf = { '1Dutc':[], '4H':[], '1H':[] };
       state.candles = [];
@@ -1066,13 +1151,14 @@ function updateAutoBar(){
 function renderLineLegend(){
   const el = $('#lineLegend');
   if (!el) return;
-  if (!state.showLines || !state.sym.startsWith('BTC')){ el.innerHTML = ''; return; }
+  const lv = LEVELS[state.sym];
+  if (!state.showLines || !lv){ el.innerHTML = ''; return; }
   const price = currentPrice();
-  el.innerHTML = BTC_LEVELS.map(l => {
+  el.innerHTML = lv.map(l => {
     const col = l.side === 'short' ? '#f43f5e' : '#22c55e';
     const d = isNum(price) ? (l.p - price) / price * 100 : NaN;
     return '<span class="ll"><i style="background:' + col + '"></i>' + l.tag +
-      ' <b>' + fmtPx(l.p) + '</b>' +
+      ' <b>' + fmtN(l.p, dp()).replace(/\.0+$/, '') + '</b>' +
       (isNum(d) ? '<span style="opacity:.75">' + fmtPct(d) + '</span>' : '') + '</span>';
   }).join('');
 }
@@ -1170,24 +1256,36 @@ function watchItems(){
   const c1 = t1.filter(c => c.conf).pop() || null;
   const c4 = t4.filter(c => c.conf).pop() || null;
   const cur1h = t1.length ? t1[t1.length-1] : null;
-  if (!state.sym.startsWith('BTC')){
-    return [{ ok:false, t:'BTC 전용 감시 기준', cur:'다른 종목은 스윙 라인·다이버전스로 판단', d:NaN }];
+  if (state.sym === 'BTC-USDT-SWAP'){
+    return [
+      { ok: !!(c1 && c1.c >= 59500), t:'1H 종가 ≥ 59,500 (돌파 롱 확장)',
+        cur:'1H 확정 종가 ' + (c1 ? fmtPx(c1.c) : '—'), d:(59500 - price) / price * 100 },
+      { ok: price >= 58500 || !!(cur1h && cur1h.h >= 58500), t:'현재가 또는 1H 고가 ≥ 58,500 (숏 리테스트 존)',
+        cur:'현재가 ' + fmtPx(price) + ' · 1H 고가 ' + (cur1h ? fmtPx(cur1h.h) : '—'), d:(58500 - price) / price * 100 },
+      { ok: price >= 57000 && price <= 57600, t:'눌림목 롱 지지 57,000 ~ 57,600 (가설 2)',
+        cur:'현재가 ' + fmtPx(price) + ' · 이탈 시 56,100 손절', d:(57000 - price) / price * 100 },
+      { ok: !!(c4 && c4.c <= 55100) || price <= 55000, t:'4H 종가 ≤ 55,100 또는 현재가 ≤ 55,000 (하방 이탈)',
+        cur:'4H 확정 종가 ' + (c4 ? fmtPx(c4.c) : '—') + ' · 현재가 ' + fmtPx(price), d:(55100 - price) / price * 100 }
+    ];
   }
+  const w = WATCH_DEF[state.sym];
+  if (!w) return [{ ok:false, t:'감시 기준 없음', cur:'4H 스윙 라인·다이버전스로 판단', d:NaN }];
+  const f = n => fmtN(n, dp()).replace(/\.0+$/, '');
   return [
-    { ok: !!(c1 && c1.c >= 59500), t:'1H 종가 ≥ 59,500 (돌파 롱 확장)',
-      cur:'1H 확정 종가 ' + (c1 ? fmtPx(c1.c) : '—'), d:(59500 - price) / price * 100 },
-    { ok: price >= 58500 || !!(cur1h && cur1h.h >= 58500), t:'현재가 또는 1H 고가 ≥ 58,500 (숏 리테스트 존)',
-      cur:'현재가 ' + fmtPx(price) + ' · 1H 고가 ' + (cur1h ? fmtPx(cur1h.h) : '—'), d:(58500 - price) / price * 100 },
-    { ok: price >= 57000 && price <= 57600, t:'눌림목 롱 지지 57,000 ~ 57,600 (가설 2)',
-      cur:'현재가 ' + fmtPx(price) + ' · 이탈 시 56,100 손절', d:(57000 - price) / price * 100 },
-    { ok: !!(c4 && c4.c <= 55100) || price <= 55000, t:'4H 종가 ≤ 55,100 또는 현재가 ≤ 55,000 (하방 이탈)',
-      cur:'4H 확정 종가 ' + (c4 ? fmtPx(c4.c) : '—') + ' · 현재가 ' + fmtPx(price), d:(55100 - price) / price * 100 }
+    { ok: !!(c1 && c1.c >= w.longClose), t:'1H 종가 ≥ ' + f(w.longClose) + ' (돌파 롱 안착)',
+      cur:'1H 확정 종가 ' + (c1 ? fmtPx(c1.c) : '—'), d:(w.longClose - price) / price * 100 },
+    { ok: price >= w.shortZone || !!(cur1h && cur1h.h >= w.shortZone), t:'현재가 또는 1H 고가 ≥ ' + f(w.shortZone) + ' (숏 리테스트 존)',
+      cur:'현재가 ' + fmtPx(price) + ' · 1H 고가 ' + (cur1h ? fmtPx(cur1h.h) : '—'), d:(w.shortZone - price) / price * 100 },
+    { ok: price >= w.pullLo && price <= w.pullHi, t:'눌림목 롱 지지 ' + f(w.pullLo) + ' ~ ' + f(w.pullHi) + ' (가설 2)',
+      cur:'현재가 ' + fmtPx(price) + ' · ' + w.supNote, d:(w.pullHi - price) / price * 100 },
+    { ok: price <= w.sup || !!(c4 && c4.c <= w.sup), t:'현재가 ≤ ' + f(w.sup) + ' 또는 4H 종가 ≤ ' + f(w.sup) + ' (지지·이탈)',
+      cur:'현재가 ' + fmtPx(price) + ' · 4H 확정 종가 ' + (c4 ? fmtPx(c4.c) : '—'), d:(w.sup - price) / price * 100 }
   ];
 }
 
 /* ------------------------- render: scenarios ------------------------- */
 function hypOf(slot){
-  const h = HYP['BTC-USDT-SWAP'];
+  const h = HYP[state.sym];
   return h ? h[slot] : null;
 }
 function savedPlan(slot){
@@ -1248,10 +1346,10 @@ function calcPlan(p){
 }
 function renderScenarios(){
   const host = $('#scnList');
-  if (!state.sym.startsWith('BTC')){
+  if (!HYP[state.sym]){
     const lv = levelsFor();
     host.innerHTML = '<div class="card"><div style="font-size:12px; color:var(--dim); line-height:1.55">' +
-      '<b style="color:#dbe6f5">' + symOf(state.sym).code + '</b>은(는) BTC 가설(58,500 / 57,600 / 55,100)이 적용되지 않습니다. ' +
+      '<b style="color:#dbe6f5">' + symOf(state.sym).code + '</b>은(는) 아직 가설 세트가 없습니다. ' +
       '아래는 4H 스윙에서 뽑은 현재 지지·저항입니다.</div>' +
       '<div class="scn-grid" style="margin-top:9px">' + (lv.length ? lv.map(l =>
         '<div class="scn-cell"><label>' + (l.side === 'short' ? '저항' : '지지') + ' · 4H 스윙</label><b>' + fmtPx(l.p) +
@@ -1286,7 +1384,7 @@ function renderScenarios(){
     '</div>';
   }).join('');
   $$('#scnList [data-load]').forEach(b => b.addEventListener('click', () => loadPlanToForm(b.dataset.load)));
-  $('#scnHint').textContent = 'BTC 기준 · 가설값에서 수정 가능';
+  $('#scnHint').textContent = symOf(state.sym).code + ' 기준 · 가설값에서 수정 가능';
 }
 
 /* ------------------------- planner ------------------------- */
@@ -1386,7 +1484,7 @@ function bindPlanner(){
     $('#planSaved').textContent = '저장됨 · ' + kst(Date.now()) + ' (이 기기에 보관)';
   });
   $('#resetPlanBtn').addEventListener('click', () => {
-    fillPlanForm(state.sym.startsWith('BTC') ? Object.assign({}, DEFAULT_PLAN) : defaultCustomPlan());
+    fillPlanForm(DEFAULT_PLANS[state.sym] ? Object.assign({}, DEFAULT_PLANS[state.sym]) : defaultCustomPlan());
     renderPlanner(); savePlanDebounced();
     $('#planSaved').textContent = '기본값(가설 1)으로 초기화';
   });
