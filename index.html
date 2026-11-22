@@ -275,6 +275,35 @@ table.tbl th{color:var(--dim); font-weight:700; border-top:0; font-size:10.5px}
 table.tbl td:first-child{color:#cddbec; white-space:nowrap}
 table.tbl td:last-child{color:var(--dim)}
 
+/* ---------- events ---------- */
+.evt-filter{display:flex; gap:6px; overflow-x:auto; padding:0 1px 3px; margin-bottom:9px; scrollbar-width:none}
+.evt-filter::-webkit-scrollbar{display:none}
+.fbtn{flex:none; border:1px solid var(--line); background:var(--card); color:var(--dim); font-size:11.5px; font-weight:700; padding:5px 11px; border-radius:999px; cursor:pointer; font-family:inherit; transition:.13s}
+.fbtn.on{background:linear-gradient(160deg,#1b2a44,#152137); border-color:#33507e; color:#fff}
+.evt-month{display:flex; align-items:center; gap:7px; font-size:10.5px; color:var(--dim2); font-weight:700; letter-spacing:.05em; margin:12px 3px 6px}
+.evt-month::after{content:""; flex:1; height:1px; background:linear-gradient(90deg,rgba(30,42,60,.9),transparent)}
+.evt{position:relative; border:1px solid var(--line); border-radius:14px; background:var(--card); padding:10px 12px 10px 14px; margin-bottom:8px; overflow:hidden}
+.evt::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:#3a4a63}
+.evt.high::before{background:var(--down)}
+.evt.mid::before{background:var(--accent)}
+.evt.today{background:linear-gradient(180deg,#1a2130,#111a28); border-color:#3d4f6b}
+.evt-top{display:flex; align-items:center; gap:7px}
+.evt-date{font-size:11.5px; font-weight:800; color:#cddbec; font-variant-numeric:tabular-nums; letter-spacing:-.1px}
+.evt-time{font-size:10.5px; color:var(--dim2); font-variant-numeric:tabular-nums}
+.evt-top .sp{flex:1}
+.evt-dday{font-size:10px; font-weight:800; padding:2px 7px; border-radius:7px; background:rgba(147,162,182,.12); border:1px solid rgba(147,162,182,.22); color:#b3c2d6; white-space:nowrap}
+.evt.high .evt-dday{background:rgba(244,63,94,.12); border-color:rgba(244,63,94,.28); color:#ffb3c0}
+.evt.today .evt-dday,.evt.soon .evt-dday{background:rgba(245,158,11,.14); border-color:rgba(245,158,11,.32); color:#ffd79a}
+.evt-ttl{font-size:13px; font-weight:700; letter-spacing:-.2px; margin-top:5px; line-height:1.35}
+.evt-meta{display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:6px}
+.evt-tag{font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:5px; color:#c9d6e8; background:rgba(91,140,255,.10); border:1px solid rgba(91,140,255,.22)}
+.evt-tag.imp{color:#ffb3c0; background:rgba(244,63,94,.10); border-color:rgba(244,63,94,.25)}
+.evt-tag.imp.mid{color:#bcd2ff; background:rgba(91,140,255,.10); border-color:rgba(91,140,255,.22)}
+.evt-pt{font-size:11px; color:var(--dim); line-height:1.5; margin:7px 0 0; padding-top:7px; border-top:1px dashed rgba(30,42,60,.85)}
+.evt-src{font-size:9.5px; color:var(--dim2); margin-top:5px}
+.evt-note{font-size:10px; color:var(--dim2); line-height:1.55; margin:9px 3px 0}
+.evt-empty{font-size:11.5px; color:var(--dim2); text-align:center; padding:16px 8px; border:1px dashed var(--line2); border-radius:12px}
+
 /* ---------- footer / nav ---------- */
 .foot{margin:22px 2px 0; font-size:10.5px; color:var(--dim2); line-height:1.6}
 .foot b{color:var(--dim)}
@@ -452,6 +481,14 @@ section{scroll-margin-top:76px}
     </div>
   </section>
 
+  <!-- ===== 주요 일정 ===== -->
+  <section id="eventSec">
+    <div class="sec-title"><h2><i></i>📅 코인·거시 주요 일정</h2><span class="hint" id="evtHint">KST 기준</span></div>
+    <div class="evt-filter" id="evtFilter"></div>
+    <div id="evtList"></div>
+    <div class="evt-note">공식 발표 기관(BLS·BEA·연준·의회)·거래소 공시로 확인한 일정만 표시합니다. 시각은 한국시간(KST)이며 기관 사정으로 변경될 수 있습니다.</div>
+  </section>
+
   <!-- ===== 체크리스트 ===== -->
   <section id="checkSec">
     <div class="sec-title"><h2><i></i>실전 매매 1장 체크리스트</h2><span class="hint">매수 전 자가점검</span></div>
@@ -493,6 +530,9 @@ section{scroll-margin-top:76px}
   </button>
   <button class="nav-item" data-go="planSec">
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M8 8h8M8 12h5M8 16h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>타점
+  </button>
+  <button class="nav-item" data-go="eventSec">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="16" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M8 3v4M16 3v4M3.5 10h17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="8.2" cy="14" r="1.1" fill="currentColor"/><circle cx="12" cy="14" r="1.1" fill="currentColor"/><circle cx="15.8" cy="14" r="1.1" fill="currentColor"/></svg>일정
   </button>
   <button class="nav-item" data-go="checkSec">
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>체크
@@ -1101,6 +1141,7 @@ function renderChips(){
       state.hover = null;
       renderChips();
       loadAll(true);
+      renderEvents();
     });
   });
 }
@@ -1450,6 +1491,101 @@ function renderScenarios(){
   }).join('');
   $$('#scnList [data-load]').forEach(b => b.addEventListener('click', () => loadPlanToForm(b.dataset.load)));
   $('#scnHint').textContent = symOf(state.sym).code + ' 기준 · 가설값에서 수정 가능';
+}
+
+/* ------------------------- events: 코인·거시 주요 일정 ------------------------- */
+/* 일정 데이터는 crypto-events.json이 원본. 배포된 JSON을 먼저 읽고, 실패하면 아래 내장 사본을 씁니다. */
+let EVENTS = [];
+let EVT_UPDATED = '2026-11-22';
+const EVT_FILTERS = ['ALL', 'CUR', 'BTC', 'ETH', 'XRP', 'SOL'];
+let evtFilter = 'ALL';
+const EVENTS_FALLBACK = [{"id":"2026-11-25-pce-oct","date":"2026-11-25","time_kst":"22:30","datetime_kst":"2026-11-25T22:30:00+09:00","title":"미국 PCE 물가(10월분) · 3분기 GDP 잠정치","category":"macro","importance":"high","importance_kr":"상","symbols":["ALL"],"point":"연준이 선호하는 물가지표. 12월 FOMC(12/10 새벽) 전 마지막 PCE라 금리 경로 기대를 직접 흔듭니다.","source_name":"BEA","source_url":"https://www.bea.gov/news/schedule"},{"id":"2026-11-26-thanksgiving","date":"2026-11-26","time_kst":null,"datetime_kst":"2026-11-26T00:00:00+09:00","title":"미국 추수감사절 휴장 · 11/27 조기 마감(ET 13:00)","category":"holiday","importance":"mid","importance_kr":"중","symbols":["ALL"],"point":"미국 현물·선물 휴장으로 호가가 얇아집니다. 밤사이 스탑 사냥·급등락에 취약한 구간.","source_name":"NYSE·Nasdaq","source_url":"https://www.nyse.com/trade/hours-calendars/"},{"id":"2026-11-26-eth-acd","date":"2026-11-26","time_kst":null,"datetime_kst":"2026-11-26T12:00:00+09:00","title":"이더리움 ACD 회의 — 글램스터담(Hoodi 테스트) 일정 결정","category":"upgrade","importance":"mid","importance_kr":"중","symbols":["ETH"],"point":"11/19 회의에서 후디 테스트넷을 12/14 주간으로 잠정 조율, 이 회의에서 진행 여부를 확정합니다. 메인넷은 2027년 1월 이후로 밀린 상태.","source_name":"CoinDesk·Ethereum ACD","source_url":"https://www.coindesk.com/tech/2026/11/20/ethereum-s-next-big-upgrade-is-pushed-into-2027-by-apps-it-would-break"},{"id":"2026-11-27-deribit-monthly","date":"2026-11-27","time_kst":"17:00","datetime_kst":"2026-11-27T17:00:00+09:00","title":"데리빗 BTC·ETH 11월 월물 옵션 만기","category":"expiry","importance":"high","importance_kr":"상","symbols":["BTC","ETH"],"point":"BTC 11.2만 개·명목 약 $6.8B, 맥스페인 $73,000(11/21 현재가 대비 +21%). 만기 전후 헤지 조정·다음 만기 롤로 변동성 확대.","source_name":"Deribit","source_url":"https://support.deribit.com/hc/en-us/articles/25944688876957-Contract-Introduction-Policy"},{"id":"2026-11-28-cme-nov","date":"2026-11-28","time_kst":"01:00","datetime_kst":"2026-11-28T01:00:00+09:00","title":"CME 비트코인 선물 11월물 최종거래","category":"expiry","importance":"mid","importance_kr":"중","symbols":["BTC"],"point":"런던 16:00(11/27) 종료. 데리빗 만기 직후 주말 전 포지션 정리 수요가 겹칩니다.","source_name":"CME Group","source_url":"https://www.cmegroup.com/markets/cryptocurrencies/bitcoin/bitcoin.calendar.html"},{"id":"2026-12-01-xrp-escrow","date":"2026-12-01","time_kst":"09:00","datetime_kst":"2026-12-01T09:00:00+09:00","title":"리플 에스크로 10억 XRP 해제 (2026년 마지막 정기분)","category":"unlock","importance":"mid","importance_kr":"중","symbols":["XRP"],"point":"00:00 UTC 해제. 최근 12회 평균 70%를 재잠금해 순증은 약 3억 XRP. 해제 자체는 매도가 아닙니다.","source_name":"XRP Ledger · XRP Insights","source_url":"https://xrp-insights.com/xrp-radar/escrow"},{"id":"2026-12-04-nfp","date":"2026-12-04","time_kst":"22:30","datetime_kst":"2026-12-04T22:30:00+09:00","title":"미국 고용보고서(11월 비농업·실업률)","category":"macro","importance":"high","importance_kr":"상","symbols":["ALL"],"point":"12월 FOMC 전 마지막 고용지표. 예상 상회 시 인하 기대가 후퇴해 위험자산에 부담.","source_name":"BLS","source_url":"https://www.bls.gov/schedule/2026/12_sched.htm"},{"id":"2026-12-10-fomc","date":"2026-12-10","time_kst":"04:00","datetime_kst":"2026-12-10T04:00:00+09:00","title":"FOMC 금리 결정 · 점도표(SEP) — 12/8~9 회의","category":"macro","importance":"high","importance_kr":"상","symbols":["ALL"],"point":"점도표로 2027년 금리 경로를 제시하는 회차. 발표 04:00, 기자회견 04:30 — 연말 포지션의 기준점.","source_name":"Federal Reserve","source_url":"https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm?2026="},{"id":"2026-12-10-cpi","date":"2026-12-10","time_kst":"22:30","datetime_kst":"2026-12-10T22:30:00+09:00","title":"미국 CPI(11월분) · 실질임금","category":"macro","importance":"high","importance_kr":"상","symbols":["ALL"],"point":"FOMC 결정 하루 만에 나오는 물가라 시장이 금리 경로를 다시 계산합니다. 이번 회의 전에는 11월 CPI가 없었습니다.","source_name":"BLS","source_url":"https://www.bls.gov/schedule/news_release/cpi.htm"},{"id":"2026-12-11-cr-deadline","date":"2026-12-11","time_kst":null,"datetime_kst":"2026-12-11T00:00:00+09:00","title":"미국 연방정부 임시예산(CR) 만료 — 셧다운 리스크","category":"macro","importance":"high","importance_kr":"상","symbols":["ALL"],"point":"12/12부터 펀딩 갭. 새 CR 통과 전까지 협상 뉴스에 위험자산이 흔들립니다(표결 시각은 미정).","source_name":"CRS · CNBC","source_url":"https://www.cnbc.com/2026/11/09/congress-government-funding-debt-limit-elections.html"},{"id":"2026-12-11-sol-unlock","date":"2026-12-11","time_kst":null,"datetime_kst":"2026-12-11T00:00:00+09:00","title":"SOL 언락 63.7만 개(알라메다·FTX 물량)","category":"unlock","importance":"mid","importance_kr":"중","symbols":["SOL"],"point":"전체 공급의 0.10%(약 $4,500만)로 규모는 작습니다. 실제 매도 압력보다 심리 영향 위주.","source_name":"CoinGlass","source_url":"https://www.coinglass.com/currencies/SOL/vesting"},{"id":"2026-12-14-cftc-comments","date":"2026-12-14","time_kst":null,"datetime_kst":"2026-12-14T00:00:00+09:00","title":"CFTC 암호화폐 규제(CTX·CAM) 의견 수렴 마감","category":"regulatory","importance":"mid","importance_kr":"중","symbols":["ALL"],"point":"현물 거래 규제 틀의 방향을 가늠할 공식 절차. 마감일 자체의 가격 충격은 제한적입니다.","source_name":"CFTC · Federal Register","source_url":"https://www.federalregister.gov/d/2026-20888"},{"id":"2026-12-15-ppi","date":"2026-12-15","time_kst":"22:30","datetime_kst":"2026-12-15T22:30:00+09:00","title":"미국 PPI(11월분)","category":"macro","importance":"mid","importance_kr":"중","symbols":["ALL"],"point":"CPI 다음 주에 나오는 물가 보조지표. 서비스 물가 흐름으로 1월 FOMC 기대가 조정됩니다.","source_name":"BLS","source_url":"https://www.bls.gov/schedule/2026/12_sched.htm"},{"id":"2026-12-23-pce-nov","date":"2026-12-23","time_kst":"22:30","datetime_kst":"2026-12-23T22:30:00+09:00","title":"미국 PCE(11월분) · 3분기 GDP 확정치","category":"macro","importance":"high","importance_kr":"상","symbols":["ALL"],"point":"FOMC 이후 첫 물가 지표. 1월 26~27일 회의 기대를 좌우하고, 연말 얇은 유동성이라 반응이 커질 수 있습니다.","source_name":"BEA","source_url":"https://www.bea.gov/news/schedule"},{"id":"2026-12-25-deribit-quarterly","date":"2026-12-25","time_kst":"17:00","datetime_kst":"2026-12-25T17:00:00+09:00","title":"데리빗 BTC·ETH 분기·연말 옵션 만기 (성탄절 휴장)","category":"expiry","importance":"high","importance_kr":"상","symbols":["BTC","ETH"],"point":"명목 약 $9.45B·맥스페인 $72,000으로 연중 최대 만기. 미·한 증시 휴장이 겹쳐 호가가 가장 얇은 날입니다.","source_name":"Deribit","source_url":"https://support.deribit.com/hc/en-us/articles/25944688876957-Contract-Introduction-Policy"},{"id":"2026-12-31-fomc-minutes","date":"2026-12-31","time_kst":"04:00","datetime_kst":"2026-12-31T04:00:00+09:00","title":"FOMC 12월 의사록 공개","category":"macro","importance":"mid","importance_kr":"중","symbols":["ALL"],"point":"점도표·인하 논쟁의 속내가 드러납니다. 연말 휴장일이라 반응이 1월로 이연될 수 있습니다.","source_name":"Federal Reserve","source_url":"https://www.federalreserve.gov/newsevents/2026-december.htm"}];
+
+function kstDateKey(d){
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Seoul', year:'numeric', month:'2-digit', day:'2-digit' })
+    .formatToParts(d || new Date());
+  const g = t => (parts.find(p => p.type === t) || {}).value || '';
+  return g('year') + '-' + g('month') + '-' + g('day');
+}
+function evtDayDiff(fromKey, toKey){
+  return Math.round((Date.parse(toKey + 'T00:00:00Z') - Date.parse(fromKey + 'T00:00:00Z')) / 86400000);
+}
+function evtDday(n){
+  if (n <= 0) return 'D-DAY';
+  if (n === 1) return '내일';
+  return 'D-' + n;
+}
+function evtWd(key){
+  return ['일','월','화','수','목','금','토'][new Date(key + 'T00:00:00Z').getUTCDay()];
+}
+function evtFilterLabel(){
+  return evtFilter === 'ALL' ? '전체' : evtFilter === 'CUR' ? symOf(state.sym).code : evtFilter;
+}
+function evtMatches(e){
+  const codes = e.symbols || [];
+  if (evtFilter === 'ALL') return true;
+  const want = evtFilter === 'CUR' ? symOf(state.sym).code : evtFilter;
+  return codes.indexOf(want) >= 0 || codes.indexOf('ALL') >= 0;
+}
+function renderEvtFilter(){
+  const el = $('#evtFilter');
+  if (!el) return;
+  el.innerHTML = EVT_FILTERS.map(f =>
+    '<button class="fbtn' + (f === evtFilter ? ' on' : '') + '" data-f="' + f + '">' +
+      (f === 'ALL' ? '전체' : f === 'CUR' ? '현재 종목' : f) + '</button>').join('');
+  $$('.fbtn', el).forEach(b => b.addEventListener('click', () => {
+    evtFilter = b.dataset.f;
+    renderEvtFilter();
+    renderEvents();
+  }));
+}
+function renderEvents(){
+  const host = $('#evtList');
+  if (!host) return;
+  const today = kstDateKey();
+  const list = EVENTS
+    .filter(e => e && e.date && evtDayDiff(today, e.date) >= 0)
+    .filter(evtMatches)
+    .sort((a, b) => String(a.datetime_kst || a.date).localeCompare(String(b.datetime_kst || b.date)));
+  const hint = $('#evtHint');
+  if (hint) hint.textContent = evtFilterLabel() + ' · ' + list.length + '건 · KST';
+  if (!list.length){
+    host.innerHTML = '<div class="evt-empty">표시할 예정 일정이 없습니다.<br>데이터 기준일 ' + EVT_UPDATED + '</div>';
+    return;
+  }
+  let out = '', lastMonth = '';
+  list.forEach(e => {
+    const dd = evtDayDiff(today, e.date);
+    const mon = String(+e.date.slice(5, 7));
+    if (mon !== lastMonth){ lastMonth = mon; out += '<div class="evt-month">' + mon + '월</div>'; }
+    const high = e.importance === 'high';
+    out += '<div class="evt ' + (high ? 'high' : 'mid') + (dd <= 0 ? ' today' : dd <= 2 ? ' soon' : '') + '">' +
+      '<div class="evt-top"><span class="evt-date">' + e.date.slice(5, 7) + '.' + e.date.slice(8, 10) +
+        ' (' + evtWd(e.date) + ')</span><span class="evt-time">' + (e.time_kst ? e.time_kst + ' KST' : '시각 미정') + '</span>' +
+        '<span class="sp"></span><span class="evt-dday">' + evtDday(dd) + '</span></div>' +
+      '<div class="evt-ttl">' + e.title + '</div>' +
+      '<div class="evt-meta"><span class="evt-tag imp' + (high ? '' : ' mid') + '">중요도 ' +
+        (e.importance_kr || (high ? '상' : '중')) + '</span>' +
+        (e.symbols || []).map(s => '<span class="evt-tag">' + s + '</span>').join('') + '</div>' +
+      '<p class="evt-pt">' + e.point + '</p>' +
+      '<div class="evt-src">' + (e.source_name || '') + '</div>' +
+    '</div>';
+  });
+  host.innerHTML = out;
+}
+async function loadEvents(){
+  EVENTS = Array.isArray(EVENTS_FALLBACK) ? EVENTS_FALLBACK.slice() : [];
+  renderEvents();
+  try{
+    const r = await fetch('crypto-events.json', { cache:'no-store' });
+    if (!r.ok) return;
+    const j = await r.json();
+    if (j && Array.isArray(j.events) && j.events.length){
+      EVENTS = j.events;
+      if (j.updated_at) EVT_UPDATED = String(j.updated_at).slice(0, 10);
+      renderEvents();
+    }
+  }catch(e){ /* 파일 직접 열기·오프라인에서는 내장 사본을 씁니다 */ }
 }
 
 /* ------------------------- planner ------------------------- */
@@ -2143,7 +2279,7 @@ function bindMisc(){
         $$('.nav-item').forEach(n => n.classList.toggle('on', n.dataset.go === id));
       });
     }, { rootMargin:'-45% 0px -50% 0px' });
-    ['chartSec', 'analysisSec', 'scnSec', 'planSec', 'checkSec'].forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
+    ['chartSec', 'analysisSec', 'scnSec', 'planSec', 'eventSec', 'checkSec'].forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
   }
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden){ state.countdown = 15; refreshTick(true); }
@@ -2171,6 +2307,8 @@ function init(){
   renderPlanner();
   updateAutoBar();
   renderScenarios();
+  renderEvtFilter();
+  loadEvents();
   loadAll();
   updatePlanLabel();
 }
