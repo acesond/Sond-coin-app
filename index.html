@@ -2819,30 +2819,25 @@ function drawChart(){
       ctx.lineWidth = l.role === 'entry' ? 1.3 : 1;
       ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + areaW, y); ctx.stroke();
       ctx.setLineDash([]);
-      /* 오른쪽 축 가격표 — 현재가 표와 붙으면 점만, 선끼리 붙으면 비켜 그립니다 */
+      /* 오른쪽 축 가격표 — 현재가·Ω은 선과 붙으면 멀어지는 쪽으로 비키고, 자리가 없으면 점만 */
       const t = fmtN(l.p, d);
       ctx.font = '9px ui-monospace, sans-serif';
       const tw = ctx.measureText(t).width;
-      if (Math.abs(y - priceY) < 14){
-        ctx.fillStyle = rc.hex;
-        ctx.fillRect(padL + areaW + 1.5, y - 2, 4, 4);
-        return;
-      }
-      const busy = v => levelTagYs.some(u => Math.abs(u - v) < 12);
+      const busy = v => Math.abs(v - priceY) < 9.5 || levelTagYs.some(u => Math.abs(u - v) < 12);
+      const inb = v => v > yP + 6 && v < yP + hPrice - 6 && !busy(v);
       let ty = y;
-      if (busy(ty)){
-        const cand = [ty - 12.5, ty + 12.5];
-        const pick = cand.find(v => v > yP + 6 && v < yP + hPrice - 6 && !busy(v));
-        if (pick == null){
+      if (busy(y)){
+        const away = y >= priceY ? 1 : -1;      /* 현재가에서 멀어지는 쪽을 먼저 */
+        ty = [y + 12.5 * away, y - 12.5 * away].find(inb);
+        if (ty == null){
           ctx.fillStyle = rc.hex;
           ctx.fillRect(padL + areaW + 1.5, y - 2, 4, 4);
           return;
         }
-        ty = pick;
       }
       levelTagYs.push(ty);
       ctx.fillStyle = 'rgba(9,14,22,.97)';
-      roundRect(ctx, padL + areaW + 2, ty - 6.5, tw + 7, 13, 3); ctx.fill();
+      roundRect(ctx, padL + areaW + 2, ty - 5.5, tw + 7, 11, 3); ctx.fill();
       ctx.fillStyle = rc.hex;
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
       ctx.fillText(t, padL + areaW + 5.5, ty);
@@ -2934,7 +2929,7 @@ function drawChart(){
   ctx.font = 'bold 9.5px ui-monospace, sans-serif';
   const ltw = ctx.measureText(ltag).width;
   ctx.fillStyle = lcol;
-  roundRect(ctx, padL + areaW + 2, ly - 8, Math.min(padR - 3, ltw + 8), 16, 3); ctx.fill();
+  roundRect(ctx, padL + areaW + 2, ly - 7, Math.min(padR - 3, ltw + 8), 14, 3); ctx.fill();
   ctx.fillStyle = '#04120a'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.fillText(ltag, padL + areaW + 5, ly);
 
