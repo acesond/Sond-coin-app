@@ -311,8 +311,8 @@ table.tbl td:last-child{color:var(--dim)}
 .evt.open .evt-more{background:rgba(91,140,255,.10); border-color:rgba(91,140,255,.32); color:#cfdff7}
 .evt-car{font-style:normal; font-size:9px; opacity:.85; display:inline-block; transition:transform .25s ease}
 .evt.open .evt-car{transform:rotate(180deg)}
-.evt-detail{display:grid; grid-template-rows:0fr; opacity:0; transition:grid-template-rows .30s cubic-bezier(.22,.61,.36,1), opacity .24s ease}
-.evt.open .evt-detail{grid-template-rows:1fr; opacity:1}
+.evt-detail{display:grid; grid-template-rows:0fr; opacity:0; visibility:hidden; transition:grid-template-rows .30s cubic-bezier(.22,.61,.36,1), opacity .24s ease, visibility 0s linear .30s}
+.evt.open .evt-detail{grid-template-rows:1fr; opacity:1; visibility:visible; transition:grid-template-rows .30s cubic-bezier(.22,.61,.36,1), opacity .24s ease, visibility 0s}
 .evt-detail-in{overflow:hidden}
 .evt-dsc{padding-top:9px}
 .evt-dh{font-size:10.5px; font-weight:800; color:#9dc0ff; letter-spacing:-.2px; margin-bottom:3px}

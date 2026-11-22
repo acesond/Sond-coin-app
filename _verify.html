@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>검증용 390px 모바일 하네스 (일시적)</title>
+<style>
+  html,body{margin:0;padding:0;background:#0a0f16}
+  #frame{width:390px;height:844px;border:0;display:block;position:absolute;left:0;top:0;background:#070b12}
+  #log{position:fixed;left:402px;top:0;width:500px;height:100vh;overflow:auto;margin:0;padding:8px 10px;box-sizing:border-box;
+       background:#0d131c;color:#8ef0b0;font:11px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<iframe id="frame"></iframe>
+<pre id="log">loading…</pre>
+<script>
+(function(){
+  var out = [];
+  function log(t){ out.push(t); document.getElementById('log').textContent = out.join('\n'); }
+  var COLLECT = '<' + 'script>' +
+    'window.__V={errors:[],net:[],console:[]};' +
+    'window.addEventListener("error",function(e){var t=e.target||{};var s=(e.message||("resource: "+(t.src||t.href||"?")))+" @ "+((e.filename||(t.src||t.href))||"")+":"+(e.lineno||0);window.__V.errors.push(s);},true);' +
+    'window.addEventListener("unhandledrejection",function(e){window.__V.errors.push("rejection: "+((e.reason&&e.reason.message)||e.reason));});' +
+    'var _ce=console.error.bind(console);console.error=function(){window.__V.console.push("error: "+Array.prototype.map.call(arguments,String).join(" "));_ce.apply(null,arguments);};' +
+    'var _cw=console.warn.bind(console);console.warn=function(){window.__V.console.push("warn: "+Array.prototype.map.call(arguments,String).join(" "));_cw.apply(null,arguments);};' +
+    'var _f=window.fetch;window.fetch=function(){var u=String((arguments[0]&&arguments[0].url)||arguments[0]);' +
+      'return _f.apply(this,arguments).then(function(r){if(!r.ok)window.__V.net.push("HTTP "+r.status+" "+u);return r;},' +
+      'function(e){window.__V.net.push("FAIL "+u+" "+((e&&e.message)||e));throw e;});};' +
+    '<' + '/script>';
+  fetch('./index.html', { cache:'no-store' })
+    .then(function(r){ if (!r.ok) throw new Error('index.html HTTP ' + r.status); return r.text(); })
+    .then(function(html){
+      var doc = html.replace('<head>', '<head>' + COLLECT);
+      var f = document.getElementById('frame');
+      f.addEventListener('load', function(){
+        log('iframe load 이벤트 (srcdoc)');
+        setTimeout(report, 2500);
+      });
+      f.srcdoc = doc;
+      log('srcdoc 주입 완료 · 길이 ' + doc.length);
+    })
+    .catch(function(e){ log('하네스 실패: ' + e.message); });
+
+  function report(){
+    var f = document.getElementById('frame');
+    var w = f.contentWindow, d = f.contentDocument, V = w.__V || {errors:[],net:[],console:[]};
+    var cards = d.querySelectorAll('#evtList .evt').length;
+    var btns = d.querySelectorAll('.evt-more').length;
+    var panels = d.querySelectorAll('.evt-detail').length;
+    var stim = d.querySelectorAll('.evt-stim').length;
+    var canvas = d.querySelectorAll('#chart').length;
+    var price = (d.querySelector('.price') && d.querySelector('.price').textContent) || '(가격 없음)';
+    var widths = d.documentElement.clientWidth;
+    log('viewport iframe: ' + widths + 'x' + f.clientHeight);
+    log('일정 카드: ' + cards + ' · 자세히보기 버튼: ' + btns + ' · 상세 패널: ' + panels + ' · 시장자극 줄: ' + stim);
+    log('차트 캔버스: ' + canvas + ' · 현재가 표시: ' + price);
+    log('콘솔 오류: ' + V.console.length + '건');
+    V.console.forEach(function(s){ log('  · ' + s); });
+    log('JS 오류: ' + V.errors.length + '건');
+    V.errors.forEach(function(s){ log('  · ' + s); });
+    log('네트워크 실패: ' + V.net.length + '건');
+    V.net.forEach(function(s){ log('  · ' + s); });
+    log('--- 준비됨 · 이제 iframe 안에서 직접 클릭 ---');
+    window.__READY = true;
+  }
+  window.__report = report;
+})();
+</script>
+</body>
+</html>
