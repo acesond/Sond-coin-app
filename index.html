@@ -587,16 +587,17 @@ const MTF = ['1Dutc','4H','1H'];
 const MTF_LABEL = { '1Dutc':'1D', '4H':'4H', '1H':'1H' };
 
 /* 가설선 — scheduled-actions/📊-btcusdt-매억남-타점-감시 기준선
-   BTC 2026-11-21 23:00 KST 확정분 · ETH·XRP·SOL 2026-11-21 22:47 KST 확정분 */
+   BTC 2026-11-22 11:00 KST 1H 확정분(12:11 갱신) · ETH·XRP·SOL 2026-11-21 22:47 KST 확정분 */
 const LEVELS = {
   'BTC-USDT-SWAP': [
-    { p:62300, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절' },
-    { p:61600, side:'long',  role:'break', tag:'돌파 롱', label:'돌파 롱 · 1H 종가' },
-    { p:60900, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 매물대 하단' },
-    { p:60000, side:'long',  role:'entry', tag:'롱 진입', label:'눌림목 롱 상단' },
-    { p:59500, side:'long',  role:'entry', tag:'롱 하단', label:'눌림목 롱 하단' },
-    { p:58800, side:'long',  role:'stop',  tag:'롱 손절', label:'롱 손절' },
-    { p:58000, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 4H 종가' }
+    { p:61600, side:'long',  role:'break', tag:'탈환 롱 2차', label:'베어트랩 롱 2차' },
+    { p:60900, side:'long',  role:'break', tag:'탈환 롱 1차', label:'탈환 롱 1차 · 상위 저항' },
+    { p:60600, side:'short', role:'stop',  tag:'숏 손절', label:'리테스트 숏 손절' },
+    { p:59800, side:'long',  role:'entry', tag:'탈환 롱', label:'베어트랩 탈환 · 1H 종가' },
+    { p:59600, side:'short', role:'entry', tag:'숏 진입', label:'리테스트 숏 진입' },
+    { p:58800, side:'short', role:'break', tag:'추가 이탈', label:'추가 이탈 숏 · 1H 종가' },
+    { p:58000, side:'short', role:'break', tag:'숏 1차 목표', label:'숏 1차 목표' },
+    { p:56800, side:'short', role:'break', tag:'숏 2차 목표', label:'숏 2차 목표' }
   ],
   'ETH-USDT-SWAP': [
     { p:1765, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절' },
@@ -629,15 +630,15 @@ const LEVELS = {
 
 const HYP = {
   'BTC-USDT-SWAP': {
-    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 메인 숏', tag:'메인',
-          entry:60900, stop:62300, t1:59300, t2:58000,
-          why:'22시 1H 확정 종가 60,520.2(거래량 2.09배)가 58,500~59,300 숏 존을 통째로 넘어서며 그 숏 가설은 폐기됐다. 지금은 새벽 투매 때 무너졌던 상위 매물대 60,900~61,500의 첫 리테스트 구간이고, 22시 봉 고점 60,921.9가 이 존 하단에 걸려 있다. 큰 추세는 아직 하락(1D RSI 19.27)이고 4H 45.62 · 1H 60.94는 반등이 소진돼 가는 숫자 — 60,900~61,500에서 1H 음봉(윗꼬리) 저항을 확인한 뒤 진입한다. 손절 62,300은 24h 고점 62,155 위라 근거가 깨지는 라인, 1차 59,300은 22시 급등봉(58,833~60,520) 아래 첫 지지, 2차 58,000은 55,100→60,921.9 레그의 0.5 되돌림(58,011). 지정가 선주문 금지.' },
-    h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · S/R 플립 눌림목 롱', tag:'서브',
-          entry:59500, stop:58800, t1:60900, t2:61500,
-          why:'22시 거래량 2.09배 돌파로 낮 동안 저항이던 59,300~59,800이 지지로 뒤집힌 S/R 플립 자리. 60,000 아래로 눌림이 오되 59,500~60,000에서 1H 양봉 지지가 확인되면 정찰병 단타 롱. 손절 58,800은 플립 존 아래이자 롱 손절선 — 깨지면 플립 실패로 보고 가설 폐기. 1차 60,900(숏 진입 라인) · 2차 61,500(매물대 상단)으로 손절 폭 1.2% 대비 2:1 · 2.9:1이라 3:1엔 못 미치니 비중을 줄이고, 1H 종가 61,600 안착 시 62,600 확장 롱으로 넘어간다. 추격 매수 금지.' },
-    br: { id:'br', cls:'break', kind:'short', title:'하방 재이탈', tag:'이탈',
-          entry:58000, stop:58800, t1:56700, t2:55100,
-          why:'58,000은 55,100→60,921.9 급등 레그의 0.5 되돌림(58,011)이자 22시 돌파 전 기준선. 4H 확정 종가 또는 현재가가 58,000을 이탈하면 S/R 플립이 실패하고 오늘 저점 재테스트로 이어진다 — 1차 56,700은 오후 이탈 기준선이었던 자리, 2차 55,100은 오늘 저점(24h low). 손절 58,800은 롱 손절선이라 이탈 뒤 재안착 실패 기준. 이탈 직후엔 되돌림 반등이 잦으니 종가 확인 없이 추격 금지.' }
+    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 메인 리테스트 숏', tag:'메인',
+          entry:59600, stop:60600, t1:58000, t2:56800,
+          why:'11시 1H 확정 종가 59,471.4(거래량 1.06배)가 새벽부터 지켜지던 59,500~59,900 지지를 아래로 깨고 마감했다 — 22시 급등 뒤 첫 이탈이라 눌림목 롱(이전 가설)은 폐기하고 리테스트 숏 우위로 바꾼다. 이탈 봉은 고점 60,157.9에서 저점 59,369.6으로 밀려 윗꼬리가 길고, 이어진 12시 봉도 59,2xx까지 눌려 반등이 붙지 않는다. 큰 추세는 여전히 하락(1D RSI 15.94 · 4H 38.95 · 1H 45.92 — 12:11 기준). 59,500~59,800까지 되돌림이 오면 그 구간은 방금 깨진 지지가 저항으로 뒤집힌 자리이므로, 1H 음봉(윗꼬리) 저항을 확인한 뒤 59,600에서 정찰병 진입한다. 손절 60,600은 새벽 횡보 상단(60,542) 위라 숏 근거가 깨지는 라인, 1차 58,000은 21일 21시 반등 출발대(58,115~58,177) 아래이자 오후 이탈 기준선, 2차 56,800은 21일 12~13시 종가·저점대(56,700). 손익비 1.60:1 · 2.80:1로 3:1 미달 — 지정가 선주문 금지.' },
+    h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 베어트랩 탈환 롱', tag:'서브',
+          entry:59800, stop:59000, t1:60900, t2:61600,
+          why:'가설 1이 이탈로 본 59,500 아래가 사실은 스탑 사냥이었을 경우를 대비한 반대 시나리오. 58,115→60,970 상승 레그의 0.618 되돌림이 59,206이라 지금 59,2xx에서 지지가 나오면 이탈이 실패한 것일 수 있지만 그건 추측이고, 확인은 1H 확정 종가가 59,800 위로 다시 안착하는 순간이다. 그때는 11시 이탈 봉(59,369.6)과 12시 봉을 통째로 되돌린 것이라 가짜 이탈로 보고 롱. 손절 59,000은 0.618 되돌림 아래이자 탈환이 실패하는 라인, 1차 60,900은 22시 스파이크 고점(60,921.9)·23시 고점(60,970) 바로 아래, 2차 61,600은 11/20 고점대(61,782~62,155) 하단. 손익비 1.38:1 · 2.25:1로 3:1에 크게 못 미치니 정찰병 최소 비중만, 1H 종가가 60,600 위까지 올라오면 가설 1은 폐기하고 추세 전환으로 다시 본다. 추격 매수 금지.' },
+    br: { id:'br', cls:'break', kind:'short', title:'가설 3 · 추가 이탈 숏', tag:'이탈',
+          entry:58800, stop:59600, t1:56800, t2:55100,
+          why:'리테스트가 오지 않고 바로 더 밀리는 경우. 58,800은 58,115→60,970 레그의 0.76 되돌림이자 21일 21시 반등 출발대(58,177) 아래라, 여기가 1H 거래량을 동반해 깨지면 남은 지지가 57,828(21일 20시 저점)뿐이라 하락이 가속된다. 11시 이탈 봉이 거래량 1.06배였던 것처럼, 이탈 봉에 평균 1.5배 이상 거래량이 실리는지가 핵심 — 무볼륨 이탈이면 되돌림이 잦으니 종가 확인 없이 추격 금지. 손절 59,600은 가설 1 진입 라인(이탈 뒤 재안착 실패 기준), 1차 56,800은 21일 12~13시 종가·저점대, 2차 55,100은 24h 저점. 손익비 2.50:1 · 4.63:1.' }
   },
   'ETH-USDT-SWAP': {
     h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 메인 숏', tag:'메인',
@@ -676,7 +677,7 @@ const HYP = {
 
 /* 구간 판정 기준 (숏 손절 / 돌파 롱 / 숏 진입 / 눌림목 / 롱 손절 / 이탈 경계) */
 const ZONE_DEF = {
-  'BTC-USDT-SWAP': { stop:62300, brkup:61600, brkupTop:62300, ext:62600, short:60900, shortTop:61500, mid:60000, long:59500, warnL:58800, brk1:58000 },
+  'BTC-USDT-SWAP': { stop:60600, brkup:59800, brkupTop:60600, ext:61600, short:59500, shortTop:59800, mid:58800, long:58800, warnL:58800, brk1:58800, midLabel:'리테스트 숏 대기 · 58,800 이탈 감시' },
   'ETH-USDT-SWAP': { stop:1765,  brkup:1730,  brkupTop:1765,  ext:1790,  short:1710,  shortTop:1730,  mid:1650,  long:1630,  warnL:1605,  brk1:1536 },
   'XRP-USDT-SWAP': { stop:0.9680,brkup:0.9450,brkupTop:0.9680,ext:0.9700,short:0.9300,shortTop:0.9450,mid:0.9000,long:0.8900,warnL:0.8750,brk1:0.8593 },
   'SOL-USDT-SWAP': { stop:74.20, brkup:72.00, brkupTop:74.20, ext:74.00, short:70.80, shortTop:72.00, mid:68.80, long:67.80, warnL:66.50, brk1:64.79 }
@@ -684,14 +685,14 @@ const ZONE_DEF = {
 
 /* 감시선 — scheduled-actions/📊-btcusdt-매억남-타점-감시 check.sh 신호와 같은 수치 */
 const WATCH_DEF = {
-  'BTC-USDT-SWAP': { longClose:61600, shortZone:60900, pullLo:59500, pullHi:60000, sup:59500, supNote:'58,800 손절 · 58,000 이탈 시 56,700·55,100 재하락' },
+  'BTC-USDT-SWAP': { upper:{ p:60900, note:'상위 저항 숏' }, stopClose:60600, stopNote:'리테스트 숏 폐기 · 손절 상회', longClose:59800, longNote:'베어트랩 탈환 롱 안착', shortZone:59600, sup:58800, supNote:'추가 이탈 숏 · 1H 거래량 동반 시 56,800·55,100' },
   'ETH-USDT-SWAP': { longClose:1730,  shortZone:1720,  pullLo:1630,  pullHi:1650,  sup:1630,  supNote:'이탈 시 1,605 손절' },
   'XRP-USDT-SWAP': { longClose:0.9450,shortZone:0.9350,pullLo:0.8900,pullHi:0.9000,sup:0.8900,supNote:'이탈 시 0.8750 손절' },
   'SOL-USDT-SWAP': { longClose:72.00, shortZone:71.20, pullLo:67.80, pullHi:68.80, sup:67.80, supNote:'이탈 시 66.50 손절' }
 };
 
 const DEFAULT_PLANS = {
-  'BTC-USDT-SWAP': { side:'short', entry:60900,  stop:62300, t1:59300, t2:58000, lev:7, margin:0 },
+  'BTC-USDT-SWAP': { side:'short', entry:59600,  stop:60600, t1:58000, t2:56800, lev:7, margin:0 },
   'ETH-USDT-SWAP': { side:'short', entry:1710,   stop:1765,  t1:1640,  t2:1580,  lev:7, margin:0 },
   'XRP-USDT-SWAP': { side:'short', entry:0.9300, stop:0.9680,t1:0.8950,t2:0.8650,lev:7, margin:0 },
   'SOL-USDT-SWAP': { side:'short', entry:70.80,  stop:74.20, t1:68.00, t2:65.50, lev:7, margin:0 }
@@ -1002,7 +1003,7 @@ function zoneState(price){
   if (price >= z.stop)  return { code:'void',  text:'가설 1 폐기 구간 — 숏 손절 ' + f(z.stop) + ' 상회', cls:'bad' };
   if (price >= z.brkup) return { code:'brkup', text:'돌파 롱 감시 구간 (' + f(z.brkup) + ' ~ ' + f(z.brkupTop) + ') — 1H 확정 종가 · ' + f(z.ext) + ' 확장', cls:'long' };
   if (price >= z.short) return { code:'short', text:'가설 1 숏 진입 구간 (' + f(z.short) + ' ~ ' + f(z.shortTop) + ')', cls:'short' };
-  if (price > z.mid)    return { code:'mid',   text:'숏 진입 대기 · 눌림목 롱 대기 (' + f(z.mid) + ' ~ ' + f(z.short) + ')', cls:'neutral' };
+  if (price > z.mid)    return { code:'mid',   text:(z.midLabel || '숏 진입 대기 · 눌림목 롱 대기') + ' (' + f(z.mid) + ' ~ ' + f(z.short) + ')', cls:'neutral' };
   if (price > z.long)   return { code:'long',  text:'가설 2 눌림목 롱 구간 (' + f(z.long) + ' ~ ' + f(z.mid) + ')', cls:'long' };
   if (price > z.warnL)  return { code:'warnL', text:'롱 손절 바로 위 (' + f(z.warnL) + ' ~ ' + f(z.long) + ') — 신규 진입 금지', cls:'warn' };
   if (price > z.brk1)   return { code:'brk1',  text:'하방 이탈 경계 위 (' + f(z.brk1) + ' ~ ' + f(z.warnL) + ') — 종가 확인 대기', cls:'warn' };
@@ -1330,16 +1331,22 @@ function watchItems(){
   const w = WATCH_DEF[state.sym];
   if (!w) return [{ ok:false, t:'감시 기준 없음', cur:'4H 스윙 라인·다이버전스로 판단', d:NaN }];
   const f = n => fmtLv(n);
-  return [
-    { ok: !!(c1 && c1.c >= w.longClose), t:'1H 종가 ≥ ' + f(w.longClose) + ' (돌파 롱 안착)',
+  const items = [];
+  if (w.upper) items.push({ ok: price >= w.upper.p, t:'현재가 ≥ ' + f(w.upper.p) + ' (' + w.upper.note + ')',
+    cur:'현재가 ' + fmtPx(price), d:(w.upper.p - price) / price * 100 });
+  if (w.stopClose) items.push({ ok: !!(c1 && c1.c >= w.stopClose), t:'1H 종가 ≥ ' + f(w.stopClose) + ' (' + (w.stopNote || '가설 폐기선') + ')',
+    cur:'1H 확정 종가 ' + (c1 ? fmtPx(c1.c) : '—'), d:(w.stopClose - price) / price * 100 });
+  items.push(
+    { ok: !!(c1 && c1.c >= w.longClose), t:'1H 종가 ≥ ' + f(w.longClose) + ' (' + (w.longNote || '돌파 롱 안착') + ')',
       cur:'1H 확정 종가 ' + (c1 ? fmtPx(c1.c) : '—'), d:(w.longClose - price) / price * 100 },
     { ok: price >= w.shortZone || !!(cur1h && cur1h.h >= w.shortZone), t:'현재가 또는 1H 고가 ≥ ' + f(w.shortZone) + ' (숏 리테스트 존)',
-      cur:'현재가 ' + fmtPx(price) + ' · 1H 고가 ' + (cur1h ? fmtPx(cur1h.h) : '—'), d:(w.shortZone - price) / price * 100 },
-    { ok: price >= w.pullLo && price <= w.pullHi, t:'눌림목 롱 지지 ' + f(w.pullLo) + ' ~ ' + f(w.pullHi) + ' (가설 2)',
-      cur:'현재가 ' + fmtPx(price) + ' · 눌림목 지지 확인', d:(w.pullHi - price) / price * 100 },
-    { ok: price <= w.sup, t:'현재가 ≤ ' + f(w.sup) + ' (' + w.supNote + ')',
-      cur:'현재가 ' + fmtPx(price) + ' · 4H 확정 종가 ' + (c4 ? fmtPx(c4.c) : '—'), d:(w.sup - price) / price * 100 }
-  ];
+      cur:'현재가 ' + fmtPx(price) + ' · 1H 고가 ' + (cur1h ? fmtPx(cur1h.h) : '—'), d:(w.shortZone - price) / price * 100 }
+  );
+  if (w.pullLo) items.push({ ok: price >= w.pullLo && price <= w.pullHi, t:'눌림목 롱 지지 ' + f(w.pullLo) + ' ~ ' + f(w.pullHi) + ' (가설 2)',
+    cur:'현재가 ' + fmtPx(price) + ' · 눌림목 지지 확인', d:(w.pullHi - price) / price * 100 });
+  items.push({ ok: price <= w.sup, t:'현재가 ≤ ' + f(w.sup) + ' (' + w.supNote + ')',
+    cur:'현재가 ' + fmtPx(price) + ' · 4H 확정 종가 ' + (c4 ? fmtPx(c4.c) : '—'), d:(w.sup - price) / price * 100 });
+  return items;
 }
 
 /* ------------------------- render: scenarios ------------------------- */
