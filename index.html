@@ -1139,7 +1139,9 @@ function buildAnalysis(){
       short: [
         { ok:waveShort, name:'파동', text: waveShort
             ? '4H 하락 레그의 ' + (leg4.retr(price) * 100).toFixed(0) + '% 되돌림 — 0.5~0.618 숏 자리'
-            : '4H 하락 레그 되돌림 ' + (leg4 ? (leg4.retr(price) * 100).toFixed(0) + '%' : '—') + ' (필요 45~68%)' + (f4 ? ' · 자리는 ' + fmtPx(f4[0]) + '~' + fmtPx(f4[1]) : '') },
+            : (leg4 && !leg4.up
+                ? '4H 하락 레그 되돌림 ' + (leg4.retr(price) * 100).toFixed(0) + '% (필요 45~68%)' + (f4 ? ' · 자리는 ' + fmtPx(f4[0]) + '~' + fmtPx(f4[1]) : '')
+                : '4H 레그가 ' + (leg4 ? (leg4.up ? '상승' : '하락') : '—') + ' — 숏 되돌림 자리 아님 (필요 45~68%)') },
         { ok:lineShort, name:'라인', text: lineShort
             ? nearShort.label + ' ' + fmtPx(nearShort.p) + ' 도달 (' + fmtPct(nearShort.d) + ')'
             : (nearShort ? '가장 가까운 숏 라인 ' + fmtPx(nearShort.p) + '까지 ' + fmtPct(nearShort.d) + ' — 0.6% 밖' : '숏 라인 없음') },
@@ -1318,15 +1320,20 @@ function vizBar(c, x, bw, Y, o){
     (o.dash ? ' stroke="' + (up ? 'rgba(34,197,94,.85)' : 'rgba(244,63,94,.85)') + '" stroke-width="0.9"' + dash : '') + '/>';
   return s;
 }
-function vizZoneOf(a, side){  if (a.f4 && isNum(a.f4[0]) && isNum(a.f4[1])){
-    const lo = Math.min(a.f4[0], a.f4[1]), hi = Math.max(a.f4[0], a.f4[1]);
-    if (hi > lo) return { lo, hi, fib:true };
-  }
+function vizZoneOf(a, side){
+  const leg = a.leg4;
+  const f4 = (a.f4 && isNum(a.f4[0]) && isNum(a.f4[1]))
+    ? { lo:Math.min(a.f4[0], a.f4[1]), hi:Math.max(a.f4[0], a.f4[1]) } : null;
+  const aligned = !!(leg && f4 && (leg.up ? side === 'long' : side === 'short') && f4.hi > f4.lo);
+  if (aligned) return { lo:f4.lo, hi:f4.hi, fib:true, aligned:true };
   const z = ZONE_DEF[state.sym];
-  if (!z) return null;
-  const lo = side === 'short' ? Math.min(z.short, z.shortTop) : Math.min(z.long, z.mid);
-  const hi = side === 'short' ? Math.max(z.short, z.shortTop) : Math.max(z.long, z.mid);
-  return hi > lo ? { lo, hi, fib:false } : null;
+  if (z){
+    const lo = side === 'short' ? Math.min(z.short, z.shortTop) : Math.min(z.long, z.mid);
+    const hi = side === 'short' ? Math.max(z.short, z.shortTop) : Math.max(z.long, z.mid);
+    if (hi > lo) return { lo, hi, fib:false, aligned:false };
+  }
+  if (f4 && f4.hi > f4.lo) return { lo:f4.lo, hi:f4.hi, fib:true, aligned:false };
+  return null;
 }
 function vizLineOf(a, side){
   const list = (a.levels || []).filter(l => l.side === side && isNum(l.p) && isNum(l.d));
@@ -1374,7 +1381,7 @@ function vizZonePanel(a, side){
   o.push('<line x1="' + padL + '" y1="' + yp.toFixed(1) + '" x2="' + (VIZ_W - padR) + '" y2="' + yp.toFixed(1) + '" stroke="rgba(233,239,248,.45)" stroke-width="0.8" stroke-dasharray="2.4 2.6"/>');
   o.push('<circle cx="' + (VIZ_W - padR) + '" cy="' + yp.toFixed(1) + '" r="2.1" fill="' + (ok ? col : '#eef4fd') + '"/>');
   o.push(vizText(VIZ_W - padR + 4, yp + 3, fmtLv(price), { color:'#eef4fd', size:8.6, weight:700, mono:true }));
-  const zTxt = (z.fib ? '0.5~0.618 ' : '핵심 존 ') + vizLv(z.lo) + '~' + vizLv(z.hi);
+  const zTxt = (z.fib ? '0.5~0.618 ' : '가설 존 ') + vizLv(z.lo) + '~' + vizLv(z.hi);
   let zy = yzT + yzH + 9;
   if (zy > yBot - 1) zy = yzT - 3.5;
   o.push(vizText(padL + 2, zy, zTxt, { color:soft, size:8 }));
@@ -1528,8 +1535,10 @@ function vizCapZone(a, side){
   if (price < z.lo) dTxt = '존까지 ' + fmtPct((z.lo - price) / price * 100);
   else if (price > z.hi) dTxt = '존까지 ' + fmtPct((z.hi - price) / price * 100);
   else dTxt = '지금 존 안';
-  const retr = a.leg4 ? '4H 레그 되돌림 ' + (a.leg4.retr(price) * 100).toFixed(0) + '% · ' : '';
-  return retr + '존 ' + vizLv(z.lo) + '~' + vizLv(z.hi) + ' · ' + dTxt;
+  if (z.fib && z.aligned) return '4H 레그 되돌림 ' + (a.leg4.retr(price) * 100).toFixed(0) + '% · 존 ' + vizLv(z.lo) + '~' + vizLv(z.hi) + ' · ' + dTxt;
+  if (z.fib) return '4H 레그 ' + (a.leg4 && a.leg4.up ? '상승' : '하락') + ' · 되돌림 존 ' + vizLv(z.lo) + '~' + vizLv(z.hi) + ' · ' + dTxt;
+  const legTxt = a.leg4 ? '4H 레그 ' + (a.leg4.up ? '상승' : '하락') + ' — ' + (side === 'short' ? '숏' : '롱') + ' 되돌림 자리 아님 · ' : '';
+  return legTxt + '가설 존 ' + vizLv(z.lo) + '~' + vizLv(z.hi) + ' · ' + dTxt;
 }
 function vizCapLine(a, side){
   const ln = vizLineOf(a, side);
