@@ -179,6 +179,30 @@ body{
 .badge.warn{color:#ffd79a; background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.25)}
 .badge.vol{color:#c9d6e8; background:rgba(91,140,255,.10); border:1px solid rgba(91,140,255,.22)}
 .verdict-verdict{font-size:11px; font-weight:700; padding:3px 8px; border-radius:7px; white-space:nowrap; flex:none}
+/* 기반 가설 — 판정이 어느 HYP 가설 기준인지 */
+.vhyp{border:1px solid var(--line); border-radius:12px; background:#0b1320; padding:8px 10px; margin:0 0 10px}
+.vhyp[data-hop]{cursor:pointer}
+.vhyp.short{border-color:rgba(244,63,94,.3); background:linear-gradient(180deg,rgba(244,63,94,.09),rgba(11,19,32,.92))}
+.vhyp.long{border-color:rgba(34,197,94,.3); background:linear-gradient(180deg,rgba(34,197,94,.09),rgba(11,19,32,.92))}
+.vhyp.neutral{border-color:rgba(147,162,182,.26)}
+.vhyp.warn{border-color:rgba(245,158,11,.32); background:linear-gradient(180deg,rgba(245,158,11,.08),rgba(11,19,32,.92))}
+.vhyp-top{display:flex; align-items:flex-start; gap:6px; flex-wrap:nowrap}
+.vhyp-tl{display:flex; align-items:center; gap:5px; flex-wrap:wrap; flex:1; min-width:0}
+.vhyp-k{font-size:9px; font-weight:800; color:var(--dim2); letter-spacing:.04em; padding:1px 5px; border-radius:5px; background:rgba(147,162,182,.12); border:1px solid rgba(147,162,182,.2); flex:none}
+.vhyp-title{font-size:12px; font-weight:800; color:#e6eefb; letter-spacing:-.25px; line-height:1.25; min-width:0}
+.vhyp-go{margin-left:auto; margin-top:1px; flex:none; font-size:9px; font-weight:700; color:#9fb6d8; background:transparent; border:1px solid rgba(91,140,255,.3); border-radius:6px; padding:1px 6px; font-family:inherit; cursor:pointer; white-space:nowrap}
+.vhyp-note{font-size:10px; color:var(--dim); line-height:1.45; margin-top:4px}
+.vhyp-nums{font-size:10.5px; color:var(--dim); line-height:1.5; margin-top:3px; font-variant-numeric:tabular-nums}
+.vhyp-nums b{color:#dbe6f5; font-weight:800}
+.vhyp-alt{font-size:9.5px; color:var(--dim2); line-height:1.5; margin-top:3px; font-variant-numeric:tabular-nums}
+.vhyp-alt b{color:#b9c9df; font-weight:700}
+.vhyp-row{display:flex; align-items:baseline; gap:5px; font-size:10px; color:var(--dim2); line-height:1.5; margin-top:3px; flex-wrap:wrap}
+.vhyp-row b{color:#c8d6e8; font-weight:700}
+.badge.link{color:#cfe0ff; background:rgba(91,140,255,.16); border:1px solid rgba(91,140,255,.38)}
+.evhyp{display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:10px; color:var(--dim2); background:#0b1320; border:1px solid rgba(30,42,60,.85); border-radius:9px; padding:6px 8px; margin:0 0 9px; line-height:1.4}
+.evhyp b{color:#dbe6f5; font-weight:800; font-size:10.5px}
+.evhyp .dim{color:var(--dim2); font-variant-numeric:tabular-nums}
+.scn.flash{box-shadow:0 0 0 2px rgba(91,140,255,.55), 0 10px 26px -20px #000}
 
 /* ---------- evidence ---------- */
 .ev{display:flex; flex-direction:column; gap:7px}
@@ -458,11 +482,13 @@ section{scroll-margin-top:76px}
           <p id="vSub">OKX에서 1D·4H·1H 캔들을 받아 RSI와 다이버전스를 계산합니다.</p>
         </div>
       </div>
+      <div id="vHyp"></div>
       <div id="vSummary" class="ev-sum" style="border-top:0;padding-top:0;margin-top:0"></div>
     </div>
     <div class="card tight" id="tfList"></div>
     <div class="card">
       <div class="sec-title" style="margin:0 0 9px"><h2><i></i>진입 근거 3중 점검</h2><span class="hint" id="evHint">자리·캔들·RSI를 그림으로</span></div>
+      <div class="evhyp" id="evHyp"></div>
       <div class="evviz" id="evViz"></div>
       <div class="ev" id="evList"></div>
       <div class="ev-sum" id="evSum"></div>
@@ -1121,19 +1147,23 @@ function buildAnalysis(){
   let nextHint = '';
   if (side === 'short'){
     const z = ZONE_DEF[state.sym];
+    const sh = hypByKind('short')[0] || null;
+    const who = sh ? '<b>' + sh.title + '</b>(' + fmtLv(sh.entry) + ')' : '숏';
     if (z){
       nextHint = '다음 겹침 후보: <b>' + fmtLv(z.short) + ' ~ ' + fmtLv(z.shortTop) + '</b> 리테스트 존(라인) + 파동 되돌림이 겹치는 자리 = 2개. '
-        + '여기에 1H 베어리시 다이버전스까지 나오면 3개 → 그때가 가설 1 숏 진입 자리.';
+        + '여기에 1H 베어리시 다이버전스까지 나오면 3개 → 그때가 ' + who + ' 진입 자리.';
     } else {
       const shorts = levelsFor().filter(l => l.side === 'short').sort((a, b) => a.p - b.p).slice(0, 2);
       nextHint = '다음 겹침 후보: 숏 라인(' + (shorts.length ? shorts.map(l => fmtPx(l.p)).join('·') : '가까운 저항') + ') + 파동 되돌림이 겹치는 자리 = 2개. '
-        + '여기에 1H 베어리시 다이버전스까지 나오면 3개 → 그때가 숏 진입 자리.';
+        + '여기에 1H 베어리시 다이버전스까지 나오면 3개 → 그때가 ' + who + ' 진입 자리.';
     }
   } else if (side === 'long'){
     const cands = levelsFor().filter(l => l.side === 'long' && l.role === 'entry').sort((a, b) => b.p - a.p);
     const longs = (cands.length ? cands : levelsFor().filter(l => l.side === 'long').sort((a, b) => b.p - a.p)).slice(0, 2);
+    const lh = hypByKind('long').find(h => h.tag === '메인') || hypByKind('long')[0] || null;
     nextHint = '다음 겹침 후보: 롱 라인(' + (longs.length ? longs.map(l => fmtPx(l.p)).join('·') : '가까운 지지') + ')에서 <b>1H 상승 다이버전스 + 거래량 터짐</b>이 같이 나오는 자리. '
-      + '다이버전스 없이 지지선만으로는 2개 → 보류.';
+      + '다이버전스 없이 지지선만으로는 2개 → 보류.'
+      + (lh ? ' 3개가 겹치면 <b>' + lh.title + '</b>(' + fmtLv(lh.entry) + ') 기준으로 타점.' : '');
   }
 
   return {
@@ -1592,15 +1622,126 @@ function renderEvViz(a){
   }).join('');
 }
 
+/* ------------------------- 가설 ↔ 판정 연결 ------------------------- */
+/* 가설 슬롯 순서 — HYP의 h1(메인)·h2(서브)·br(돌파/이탈) */
+const HYP_ORDER = ['h1', 'h2', 'br'];
+const HOP = { slot:'', at:0 };   /* 가설 카드로 이동한 순간 강조 */
+function hypAll(){
+  const h = HYP[state.sym];
+  if (!h) return [];
+  return HYP_ORDER.filter(k => h[k]).map(k => Object.assign({ slot:k }, h[k]));
+}
+function hypByKind(kind){ return hypAll().filter(h => h.kind === kind); }
+function hypKindCls(h){ return h && h.kind === 'short' ? 'short' : 'long'; }
+function hypKindKr(h){ return h && h.kind === 'short' ? '숏' : '롱'; }
+/* 지금 판정이 기반하는 가설 — 이탈 국면에서는 ‘하방 재이탈’ 가설, 평소에는 그 방향 메인 가설 */
+function hypPrimaryFor(a){
+  if (!a) return null;
+  const same = hypByKind(a.side);
+  if (!same.length) return null;
+  if (a.zone && a.zone.code === 'brk2'){
+    const b = same.find(h => h.slot === 'br');
+    if (b) return b;
+  }
+  return same.find(h => h.tag === '메인') || same[0];
+}
+function hypNums(h){
+  if (!h) return '';
+  const c = calcPlan({ side:h.kind, entry:h.entry, stop:h.stop, t1:h.t1, t2:h.t2, lev:7, margin:0 });
+  return '진입 <b>' + fmtLv(h.entry) + '</b> · 손절 <b>' + fmtLv(h.stop) + '</b>' +
+    ' · 1차 <b>' + fmtLv(h.t1) + '</b> · 2차 <b>' + fmtLv(h.t2) + '</b>' +
+    (isNum(c.r1) ? ' · 손익비 <b>' + c.r1.toFixed(2) + ':1</b>' : '');
+}
+function hypShort(h){
+  const w = h.slot === 'br' ? (h.kind === 'short' ? '이탈 ' : '돌파 ') : '진입 ';
+  return '<b>' + h.title + '</b> — ' + w + '<span class="num">' + fmtLv(h.entry) + '</span>';
+}
+/* 판정 카드 안의 ‘기반 가설’ 띨 — 판정 방향·근거 개수와 가설을 한 줄에서 읽히게 */
+function hypBindHtml(a){
+  const all = hypAll();
+  if (!all.length || !a) return '';
+  const best = Math.max(a.nS, a.nL);
+  const same = hypByKind(a.side);
+  const opp  = hypByKind(a.side === 'short' ? 'long' : 'short');
+  const p = hypPrimaryFor(a) || all[0];
+  const voided = !!(a.zone && a.zone.code === 'void');
+  const active = best >= 2 && !voided;
+  const label = active ? '기반 가설' : (voided ? '가설 상태' : '대기 가설');
+  const goBtn = h => '<button class="vhyp-go" data-hop="' + h.slot + '">가설 카드 ↓</button>';
+  const topRow = (inner, h) => '<div class="vhyp-top"><div class="vhyp-tl">' + inner + '</div>' + goBtn(h) + '</div>';
+
+  if (voided){
+    return '<div class="vhyp warn" data-hop="' + p.slot + '">' +
+      topRow('<span class="vhyp-k">' + label + '</span>' +
+        '<span class="badge warn">폐기</span><b class="vhyp-title">' + p.title + '</b>', p) +
+      '<div class="vhyp-note">' + a.zone.text + ' — 폐기된 가설입니다. 아래 롱 가설로 전환하는지 확인합니다.</div>' +
+      (opp.length ? '<div class="vhyp-alt">전환 후보 — ' + opp.map(hypShort).join(' · ') + '</div>' : '') +
+    '</div>';
+  }
+
+  if (!active){
+    const row = kind => {
+      const l = hypByKind(kind);
+      if (!l.length) return '';
+      return '<div class="vhyp-row"><span class="badge ' + kind + '">' + (kind === 'short' ? '숏' : '롱') + '</span><span>' +
+        l.map(hypShort).join(' · ') + '</span></div>';
+    };
+    return '<div class="vhyp neutral" data-hop="' + p.slot + '">' +
+      topRow('<span class="vhyp-k">' + label + '</span>' +
+        '<span class="badge neutral">양방향 대기</span>' +
+        '<b class="vhyp-title">세 가설 모두 근거 부족 — 진입 아님</b>', p) +
+      '<div class="vhyp-note">지금은 어느 가설에도 근거가 모자랍니다. 아래 세 가설 중 하나의 조건이 갖춰지면 그 가설이 기반이 됩니다.</div>' +
+      row('short') + row('long') +
+    '</div>';
+  }
+
+  const others = same.filter(h => h.slot !== p.slot);
+  const alt = [];
+  if (others.length) alt.push('같은 방향 — ' + others.map(hypShort).join(' · '));
+  if (opp.length)    alt.push('반대 방향 대기 — ' + opp.map(hypShort).join(' · '));
+  const note = (p.slot === 'br' && a.zone && a.zone.code === 'brk2')
+    ? '지금 «' + a.vLabel + '» 판정 — 하방 이탈(종가 붕괴) 가설 기준입니다. 종가 확인 전 추격 금지.'
+    : '지금 «' + a.vLabel + ' · 근거 ' + best + '/3» 판정이 이 가설 기준 — 진입·손절·목표도 이 가설 값입니다.';
+  const caution = (a.side === 'short' && a.zone && a.zone.code === 'brkup')
+    ? '<div class="vhyp-alt" style="color:#ffd79a">⚠ 지금 가격은 돌파 롱 감시 구간 — 숏 근거가 무효화되는지 먼저 확인.</div>' : '';
+  return '<div class="vhyp ' + hypKindCls(p) + '" data-hop="' + p.slot + '">' +
+    topRow('<span class="vhyp-k">' + label + '</span>' +
+      '<span class="badge ' + hypKindCls(p) + '">' + hypKindKr(p) + '</span>' +
+      (p.tag ? '<span class="badge neutral">' + p.tag + '</span>' : '') +
+      '<b class="vhyp-title">' + p.title + '</b>', p) +
+    '<div class="vhyp-note">' + note + '</div>' +
+    '<div class="vhyp-nums">' + hypNums(p) + '</div>' + caution +
+    (alt.length ? '<div class="vhyp-alt">' + alt.join('<br>') + '</div>' : '') +
+  '</div>';
+}
+/* 3중 점검 카드 머리 — 이 점검이 어느 가설 기준인지 */
+function renderEvHyp(a){
+  const el = $('#evHyp');
+  if (!el) return;
+  if (!a){ el.innerHTML = ''; return; }
+  const p = hypPrimaryFor(a);
+  const n = a.side === 'short' ? a.nS : a.nL;
+  if (!p){
+    el.innerHTML = '<span>' + (a.side === 'short' ? '숏' : '롱') + ' 방향 3중 점검 — 연결된 가설 없음</span>';
+    return;
+  }
+  el.innerHTML = '<span>3중 점검 기준</span><b>' + p.title + '</b>' +
+    '<span class="dim">진입 ' + fmtLv(p.entry) + ' / 손절 ' + fmtLv(p.stop) + '</span>' +
+    '<span class="badge ' + hypKindCls(p) + '" style="margin-left:auto">근거 ' + n + '/3</span>';
+}
+
 /* ------------------------- render: analysis ------------------------- */
 function renderAnalysis(a){
   const badge = $('#vBadge');
   badge.className = 'v-badge ' + a.vCls;
   const bn = Math.max(a.nS, a.nL);
   badge.innerHTML = '<span>' + a.vLabel + '</span><small style="font-size:9px;font-weight:600;opacity:.7;letter-spacing:0">근거 ' + bn + '/3</small>';
-  $('#vTitle').textContent = a.vTitle;
+  const hp = hypPrimaryFor(a);
+  $('#vTitle').innerHTML = a.vTitle + ((hp && a.zone.code !== 'void')
+    ? ' <span class="badge ' + hypKindCls(hp) + '" style="vertical-align:2px">' + hp.title.split(' · ')[0] + '</span>' : '');
   const zc = a.zone.cls === 'short' ? 'var(--down)' : a.zone.cls === 'long' ? 'var(--up)' : a.zone.cls === 'warn' ? 'var(--warn)' : 'var(--dim)';
   $('#vSub').innerHTML = '<span style="color:' + zc + '">' + a.zone.text + '</span> · 근거 ' + Math.max(a.nS, a.nL) + '/3 · 현재가 ' + fmtPx(a.price);
+  $('#vHyp').innerHTML = hypBindHtml(a);
   $('#vSummary').innerHTML = a.summary.map(l => '<div style="margin-bottom:3px">' + l + '</div>').join('');
 
   /* MTF rows */
@@ -1648,7 +1789,8 @@ function renderAnalysis(a){
     '<br><span style="color:var(--dim2)">반대(' + otherName + ') 근거는 ' + otherN + '/3.</span>' +
     (a.nextHint ? '<br>' + a.nextHint : '');
   renderEvViz(a);
-  $('#evHint').textContent = (a.side === 'short' ? '숏' : '롱') + ' 근거 ' + n + '/3 · 그림 점검';
+  renderEvHyp(a);
+  $('#evHint').textContent = (a.side === 'short' ? '숏' : '롱') + ' 기준 · 그림 점검';
 
   /* 감시선 */
   const wl = watchItems();
@@ -1833,6 +1975,11 @@ function renderScenarios(){
   }
   const price = currentPrice();
   const slots = ['h1', 'h2', 'br'];
+  /* 판정이 어느 가설을 기반하는지 가설 카드에도 그대로 표시합니다. */
+  const an = state.ana;
+  const bestN = an ? Math.max(an.nS, an.nL) : 0;
+  const liveSide = an && bestN >= 2 && !(an.zone && an.zone.code === 'void') ? an.side : null;
+  const prim = an ? hypPrimaryFor(an) : null;
   host.innerHTML = slots.map(slot => {
     const def = hypOf(slot);
     const p = planFor(slot);
@@ -1840,8 +1987,15 @@ function renderScenarios(){
     const d = p.entry ? (p.entry - price) / price * 100 : NaN;
     const stCls = c.status.cls === 'ok' ? 'long' : c.status.cls === 'warn' ? 'warn' : 'short';
     const kindBadge = def.kind === 'short' ? 'short' : 'long';
-    return '<div class="scn ' + def.cls + '">' +
-      '<div class="scn-top"><div class="scn-title">' + def.title + ' <span class="badge ' + kindBadge + '">' + (def.kind === 'short' ? '숏' : '롱') + '</span></div>' +
+    const dead = !!(an && prim && prim.slot === slot && an.zone && an.zone.code === 'void');
+    const isPrim = !!(liveSide && prim && prim.slot === slot) && !dead;
+    const isSame = !!(liveSide && def.kind === liveSide) && !isPrim;
+    const tagBadge = dead ? '<span class="badge warn">폐기</span>'
+      : isPrim ? '<span class="badge link">판정 기반</span>'
+      : isSame ? '<span class="badge neutral">같은 방향 대기</span>' : '';
+    const flash = (HOP.slot === slot && Date.now() - HOP.at < 1600) ? ' flash' : '';
+    return '<div class="scn ' + def.cls + flash + '" data-slot="' + slot + '">' +
+      '<div class="scn-top"><div class="scn-title">' + def.title + ' <span class="badge ' + kindBadge + '">' + (def.kind === 'short' ? '숏' : '롱') + '</span>' + tagBadge + '</div>' +
         '<div class="scn-dist">진입까지 <b style="color:' + (d >= 0 ? 'var(--up)' : 'var(--down)') + '">' + fmtPct(d) + '</b></div></div>' +
       miniChartSVG(slot) +
       '<div class="scn-grid">' +
@@ -2658,7 +2812,9 @@ function renderAll(){
     $('#vSub').textContent = state.error
       ? ('OKX 응답: ' + state.error + ' · 15초마다 다시 시도합니다.')
       : 'OKX에서 1D·4H·1H 캔들을 받아 RSI와 다이버전스를 계산합니다.';
+    $('#vHyp').innerHTML = '';
     renderEvViz(null);
+    renderEvHyp(null);
   }
   renderScenarios();
   renderPlanner(false);
@@ -2685,6 +2841,17 @@ function bindMisc(){
     const el = document.getElementById(b.dataset.go);
     if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
   }));
+  /* 판정 카드의 기반 가설 → 그 가설 카드로 이동 */
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-hop]');
+    if (!b) return;
+    HOP.slot = b.dataset.hop;
+    HOP.at = Date.now();
+    const card = document.querySelector('#scnList .scn[data-slot="' + HOP.slot + '"]');
+    if (!card) return;
+    card.classList.add('flash');
+    card.scrollIntoView({ behavior:'smooth', block:'center' });
+  });
   if (window.IntersectionObserver){
     const io = new IntersectionObserver(entries => {
       entries.forEach(en => {
