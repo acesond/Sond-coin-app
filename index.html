@@ -706,7 +706,7 @@ const ZONE_DEF = {
 
 /* 감시선 — scheduled-actions/📊-btcusdt-매억남-타점-감시 check.sh 신호와 같은 수치 */
 const WATCH_DEF = {
-  'BTC-USDT-SWAP': { upper:{ p:61500, note:'상위 저항 숏 존 상단 · 1H 윗꼬리' }, stopClose:62200, stopNote:'상위 저항 숏 폐기 · 1D 회복', longClose:61600, longNote:'돌파 롱 안착 · 1H 종가', shortZone:61400, pullLo:59900, pullHi:60400, sup:59500, supNote:'돌파 실패 이탈 · 1H 종가 59,500 이하' },
+  'BTC-USDT-SWAP': { stopClose:62200, stopNote:'상위 저항 숏 폐기 · 1D 회복', longClose:61600, longNote:'돌파 롱 안착 · 1H 종가', shortZone:61400, pullLo:59900, pullHi:60400, pullLabel:'눌림목 롱 60,200 지지 · 59,900~60,400', sup:59500, supNote:'돌파 실패 이탈 · 1H 종가 59,500 이하' },
   'ETH-USDT-SWAP': { longClose:1730,  shortZone:1720,  pullLo:1630,  pullHi:1650,  sup:1630,  supNote:'이탈 시 1,605 손절' },
   'XRP-USDT-SWAP': { longClose:0.9450,shortZone:0.9350,pullLo:0.8900,pullHi:0.9000,sup:0.8900,supNote:'이탈 시 0.8750 손절' },
   'SOL-USDT-SWAP': { longClose:72.00, shortZone:71.20, pullLo:67.80, pullHi:68.80, sup:67.80, supNote:'이탈 시 66.50 손절' }
@@ -1680,7 +1680,7 @@ function watchItems(){
     { ok: price >= w.shortZone || !!(cur1h && cur1h.h >= w.shortZone), t:'현재가 또는 1H 고가 ≥ ' + f(w.shortZone) + ' (숏 리테스트 존)',
       cur:'현재가 ' + fmtPx(price) + ' · 1H 고가 ' + (cur1h ? fmtPx(cur1h.h) : '—'), d:(w.shortZone - price) / price * 100 }
   );
-  if (w.pullLo) items.push({ ok: price >= w.pullLo && price <= w.pullHi, t:'눌림목 롱 지지 ' + f(w.pullLo) + ' ~ ' + f(w.pullHi) + ' (가설 2)',
+  if (w.pullLo) items.push({ ok: price >= w.pullLo && price <= w.pullHi, t:(w.pullLabel || ('눌림목 롱 지지 ' + f(w.pullLo) + ' ~ ' + f(w.pullHi))) + ' (가설 2)',
     cur:'현재가 ' + fmtPx(price) + ' · 눌림목 지지 확인', d:(w.pullHi - price) / price * 100 });
   items.push({ ok: price <= w.sup, t:'현재가 ≤ ' + f(w.sup) + ' (' + w.supNote + ')',
     cur:'현재가 ' + fmtPx(price) + ' · 4H 확정 종가 ' + (c4 ? fmtPx(c4.c) : '—'), d:(w.sup - price) / price * 100 });
