@@ -12,3 +12,4 @@
 ## 구성
 
 - `index.html` — 단일 파일 앱 (외부 빌드·서버 불필요)
+- `crypto-events.json` — 코인·거시 주요 일정 원본(시장 자극 요약 `stimulus_summary`, 자세히 보기 풀이 `detail`)
