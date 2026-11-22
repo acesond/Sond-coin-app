@@ -503,6 +503,7 @@ section{scroll-margin-top:76px}
   <section id="scnSec">
     <div class="sec-title"><h2><i></i>가설 시나리오</h2><span class="hint" id="scnHint">종목별 기준</span></div>
     <div id="scnList"></div>
+    <div class="evt-note" id="hypNote" style="display:none;color:#ffd79a"></div>
   </section>
 
   <!-- ===== 내 타점 ===== -->
@@ -701,7 +702,7 @@ const HYP = {
   'XRP-USDT-SWAP': {
     h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 메인 숏', tag:'메인',
           entry:0.930, stop:0.968, t1:0.895, t2:0.865,
-          why:'0.8593 저점(거래량 1.6배)에서 반등해 0.930~0.950 매물대 초입. 0.9300은 숏 진입 라인, 0.9680은 오늘 고점(0.9528) 위 — 근거가 깨지는 라인. 1차 0.895는 4H 저점대, 2차 0.865는 오늘 저점 0.8593 바로 위. 3종목 중 저항 숏 손익비가 가장 깔끔하지만 0.9307에서 윗꼬리를 달고 있어 1H 음봉 마감 확인이 필요하다.' },
+          why:'0.8593 저점(거래량 1.6배)에서 반등해 0.930~0.950 매물대 초입. 0.9300은 숏 진입 라인, 0.9680은 오늘 고점(0.9528) 위 — 근거가 깨지는 라인. 1차 0.895는 4H 저점대, 2차 0.865는 오늘 저점 0.8593 바로 위. 다만 손익비 0.92:1로 1차 목표가 손절 폭보다 짧아 지정가 선주문은 금지하고, 0.9307에서 윗꼬리를 달고 있어 1H 음봉 마감 확인이 필요하다.' },
     h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 돌파·눌림목 롱', tag:'서브',
           entry:0.900, stop:0.875, t1:0.930, t2:0.970,
           why:'① 0.9450 위 1H 종가 안착 돌파, ② 0.890~0.900 눌림목 지지 확인. 손절 0.8750은 반등 출발점 아래. 1차 0.930은 숏 진입 라인, 2차 0.970은 0.945~0.970 매물대 상단. 4H 거래량이 0.6배대로 약해 돌파 추격은 금지 — 0.945 1H 종가 확인 후에만.' },
@@ -744,6 +745,30 @@ const DEFAULT_PLANS = {
   'XRP-USDT-SWAP': { side:'short', entry:0.9300, stop:0.9680,t1:0.8950,t2:0.8650,lev:7, margin:0 },
   'SOL-USDT-SWAP': { side:'short', entry:70.80,  stop:74.20, t1:68.00, t2:65.50, lev:7, margin:0 }
 };
+
+/* 가설값 버전 — 가설 숫자를 새로 배포할 때 이 문자열만 올리면 됩니다.
+   이 기기에 저장된 예전 '내 타점' 수정값이 새 가설값을 덮어쓰지 않도록,
+   저장된 버전이 다르면 저장값을 비우고 새 가설 기본값으로 시작합니다. */
+const HYP_VERSION = '2026-11-22-2318';
+const HYP_VER_KEY = 'maeyo.hypver.v1';
+const PLAN_KEY = 'maeyo.plans.v1';
+let hypResetNotice = '';
+
+function loadPlans(){
+  const ver = store(HYP_VER_KEY);
+  const plans = store(PLAN_KEY) || {};
+  if (ver !== HYP_VERSION){
+    const syms = Object.keys(plans).filter(k => plans[k] && Object.keys(plans[k]).length);
+    store(PLAN_KEY, {});
+    store(HYP_VER_KEY, HYP_VERSION);
+    if (ver && syms.length){
+      hypResetNotice = '가설값 v' + HYP_VERSION + ' 적용 — 이 기기에 남아 있던 예전 저장값(' +
+        syms.map(id => symOf(id).code).join('·') + ')을 초기화하고 새 가설값으로 시작합니다.';
+    }
+    return {};
+  }
+  return plans;
+}
 
 const state = {
   sym: 'BTC-USDT-SWAP',
@@ -1645,16 +1670,30 @@ function hypPrimaryFor(a){
   }
   return same.find(h => h.tag === '메인') || same[0];
 }
+/* 판정 카드·가설 카드·차트·계산기가 함께 쓰는 단일 가설값
+   = HYP 기본값 + 이 기기에서 직접 수정해 저장한 값 (planFor가 합칩니다) */
+function hypPlan(slot){
+  const def = hypOf(slot);
+  const p = planFor(slot);
+  const edited = !!(def && ['entry','stop','t1','t2'].some(k => isNum(p[k]) && isNum(def[k]) && Math.abs(p[k] - def[k]) > 1e-9));
+  return { slot:slot, kind:def ? def.kind : p.side, side:p.side, entry:p.entry, stop:p.stop, t1:p.t1, t2:p.t2,
+           lev:p.lev, margin:p.margin, edited:edited };
+}
+const EDIT_BADGE = ' <span class="badge neutral" style="font-size:8.5px;padding:1px 5px">내 수정값</span>';
 function hypNums(h){
   if (!h) return '';
-  const c = calcPlan({ side:h.kind, entry:h.entry, stop:h.stop, t1:h.t1, t2:h.t2, lev:7, margin:0 });
-  return '진입 <b>' + fmtLv(h.entry) + '</b> · 손절 <b>' + fmtLv(h.stop) + '</b>' +
-    ' · 1차 <b>' + fmtLv(h.t1) + '</b> · 2차 <b>' + fmtLv(h.t2) + '</b>' +
-    (isNum(c.r1) ? ' · 손익비 <b>' + c.r1.toFixed(2) + ':1</b>' : '');
+  const p = hypPlan(h.slot);
+  const c = calcPlan({ side:p.side, entry:p.entry, stop:p.stop, t1:p.t1, t2:p.t2, lev:p.lev, margin:p.margin });
+  return '진입 <b>' + fmtPx(p.entry) + '</b> · 손절 <b>' + fmtPx(p.stop) + '</b>' +
+    ' · 1차 <b>' + fmtPx(p.t1) + '</b> · 2차 <b>' + fmtPx(p.t2) + '</b>' +
+    (isNum(c.r1) ? ' · 손익비 <b>' + c.r1.toFixed(2) + ':1</b>' : '') +
+    (p.edited ? EDIT_BADGE : '');
 }
 function hypShort(h){
   const w = h.slot === 'br' ? (h.kind === 'short' ? '이탈 ' : '돌파 ') : '진입 ';
-  return '<b>' + h.title + '</b> — ' + w + '<span class="num">' + fmtLv(h.entry) + '</span>';
+  const p = hypPlan(h.slot);
+  return '<b>' + h.title + '</b> — ' + w + '<span class="num">' + fmtPx(p.entry) + '</span>' +
+    (p.edited ? ' <span style="opacity:.7">(내 수정값)</span>' : '');
 }
 /* 판정 카드 안의 ‘기반 가설’ 띨 — 판정 방향·근거 개수와 가설을 한 줄에서 읽히게 */
 function hypBindHtml(a){
@@ -1699,9 +1738,11 @@ function hypBindHtml(a){
   const alt = [];
   if (others.length) alt.push('같은 방향 — ' + others.map(hypShort).join(' · '));
   if (opp.length)    alt.push('반대 방향 대기 — ' + opp.map(hypShort).join(' · '));
+  const hp = hypPlan(p.slot);
+  const valSrc = hp.edited ? '이 기기에 저장된 <b>내 수정값</b>' : '이 가설 값';
   const note = (p.slot === 'br' && a.zone && a.zone.code === 'brk2')
     ? '지금 «' + a.vLabel + '» 판정 — 하방 이탈(종가 붕괴) 가설 기준입니다. 종가 확인 전 추격 금지.'
-    : '지금 «' + a.vLabel + ' · 근거 ' + best + '/3» 판정이 이 가설 기준 — 진입·손절·목표도 이 가설 값입니다.';
+    : '지금 «' + a.vLabel + ' · 근거 ' + best + '/3» 판정이 이 가설 기준 — 진입·손절·목표도 ' + valSrc + '입니다.';
   const caution = (a.side === 'short' && a.zone && a.zone.code === 'brkup')
     ? '<div class="vhyp-alt" style="color:#ffd79a">⚠ 지금 가격은 돌파 롱 감시 구간 — 숏 근거가 무효화되는지 먼저 확인.</div>' : '';
   return '<div class="vhyp ' + hypKindCls(p) + '" data-hop="' + p.slot + '">' +
@@ -1725,8 +1766,9 @@ function renderEvHyp(a){
     el.innerHTML = '<span>' + (a.side === 'short' ? '숏' : '롱') + ' 방향 3중 점검 — 연결된 가설 없음</span>';
     return;
   }
+  const hp = hypPlan(p.slot);
   el.innerHTML = '<span>3중 점검 기준</span><b>' + p.title + '</b>' +
-    '<span class="dim">진입 ' + fmtLv(p.entry) + ' / 손절 ' + fmtLv(p.stop) + '</span>' +
+    '<span class="dim">진입 ' + fmtPx(hp.entry) + ' / 손절 ' + fmtPx(hp.stop) + '</span>' +
     '<span class="badge ' + hypKindCls(p) + '" style="margin-left:auto">근거 ' + n + '/3</span>';
 }
 
@@ -1816,10 +1858,12 @@ function watchItems(){
     cur:'현재가 ' + fmtPx(price), d:(w.upper.p - price) / price * 100 });
   if (w.stopClose) items.push({ ok: !!(c1 && c1.c >= w.stopClose), t:'1H 종가 ≥ ' + f(w.stopClose) + ' (' + (w.stopNote || '가설 폐기선') + ')',
     cur:'1H 확정 종가 ' + (c1 ? fmtPx(c1.c) : '—'), d:(w.stopClose - price) / price * 100 });
+  const hz = hypOf('h1');
+  const zoneEntry = (hz && isNum(hz.entry) && Math.abs(hz.entry - w.shortZone) > 1e-9) ? ' · 진입 ' + f(hz.entry) : '';
   items.push(
     { ok: !!(c1 && c1.c >= w.longClose), t:'1H 종가 ≥ ' + f(w.longClose) + ' (' + (w.longNote || '돌파 롱 안착') + ')',
       cur:'1H 확정 종가 ' + (c1 ? fmtPx(c1.c) : '—'), d:(w.longClose - price) / price * 100 },
-    { ok: price >= w.shortZone || !!(cur1h && cur1h.h >= w.shortZone), t:'현재가 또는 1H 고가 ≥ ' + f(w.shortZone) + ' (숏 리테스트 존)',
+    { ok: price >= w.shortZone || !!(cur1h && cur1h.h >= w.shortZone), t:'현재가 또는 1H 고가 ≥ ' + f(w.shortZone) + ' (숏 리테스트 존' + zoneEntry + ')',
       cur:'현재가 ' + fmtPx(price) + ' · 1H 고가 ' + (cur1h ? fmtPx(cur1h.h) : '—'), d:(w.shortZone - price) / price * 100 }
   );
   if (w.pullLo) items.push({ ok: price >= w.pullLo && price <= w.pullHi, t:(w.pullLabel || ('눌림목 롱 지지 ' + f(w.pullLo) + ' ~ ' + f(w.pullHi))) + ' (가설 2)',
@@ -1863,7 +1907,11 @@ function planFor(slot){
   const saved = savedPlan(slot);
   const def = hypOf(slot);
   if (!def) return saved ? Object.assign({}, saved) : defaultCustomPlan();
-  return Object.assign({ side:def.kind, entry:def.entry, stop:def.stop, t1:def.t1, t2:def.t2, lev:7, margin:0 }, saved || {});
+  const p = Object.assign({ side:def.kind, entry:def.entry, stop:def.stop, t1:def.t1, t2:def.t2, lev:7, margin:0 }, saved || {});
+  /* 가설 슬롯의 방향은 가설이 정합니다 — 계산기에서 방향만 바꿔 저장해도
+     가설 카드·판정의 숏/롱 근거와 수치가 어긋나지 않게 합니다. */
+  p.side = def.kind;
+  return p;
 }
 function calcPlan(p){
   const risk = p.side === 'short' ? p.stop - p.entry : p.entry - p.stop;
@@ -1881,7 +1929,8 @@ function calcPlan(p){
   const best = Math.max(isNum(r1) ? r1 : -9, isNum(r2) ? r2 : -9);
   let status = { cls:'bad', big:'진입 금지', sub:'손익비가 1:1도 안 된다 — 매억남 기준 진입 없음' };
   if (!okRisk) status = { cls:'bad', big:'값 확인', sub:'손절가가 ' + (p.side === 'short' ? '진입가 위' : '진입가 아래') + '에 있어야 한다' };
-  else if (best >= 3) status = { cls:'ok', big:'3:1 충족', sub:'규칙 통과 — 그래도 근거 3개와 비중(정찰병 10~30%)을 먼저' };
+  else if (best >= 3 && r1 >= 3) status = { cls:'ok', big:'3:1 충족', sub:'규칙 통과 — 그래도 근거 3개와 비중(정찰병 10~30%)을 먼저' };
+  else if (best >= 3) status = { cls:'warn', big:'2차만 3:1', sub:'1차 목표는 3:1 미달(' + (isNum(r1) ? r1.toFixed(2) : '—') + ':1) — 1차에서 절반 청산하거나 목표를 늘려 조정' };
   else if (best >= 1) status = { cls:'warn', big:'3:1 미달', sub:'최소 1:1은 넘지만 3:1 미달 — 목표를 늘리거나 진입가를 조정' };
   const warns = [];
   if (!okRisk) warns.push('손절가 방향이 틀렸습니다. ' + (p.side === 'short' ? '숏은 손절이 진입가 위' : '롱은 손절이 진입가 아래') + '여야 합니다.');
@@ -1984,6 +2033,7 @@ function renderScenarios(){
     const def = hypOf(slot);
     const p = planFor(slot);
     const c = calcPlan(p);
+    const pEdit = hypPlan(slot).edited ? EDIT_BADGE : '';
     const d = p.entry ? (p.entry - price) / price * 100 : NaN;
     const stCls = c.status.cls === 'ok' ? 'long' : c.status.cls === 'warn' ? 'warn' : 'short';
     const kindBadge = def.kind === 'short' ? 'short' : 'long';
@@ -1995,7 +2045,7 @@ function renderScenarios(){
       : isSame ? '<span class="badge neutral">같은 방향 대기</span>' : '';
     const flash = (HOP.slot === slot && Date.now() - HOP.at < 1600) ? ' flash' : '';
     return '<div class="scn ' + def.cls + flash + '" data-slot="' + slot + '">' +
-      '<div class="scn-top"><div class="scn-title">' + def.title + ' <span class="badge ' + kindBadge + '">' + (def.kind === 'short' ? '숏' : '롱') + '</span>' + tagBadge + '</div>' +
+      '<div class="scn-top"><div class="scn-title">' + def.title + ' <span class="badge ' + kindBadge + '">' + (def.kind === 'short' ? '숏' : '롱') + '</span>' + tagBadge + pEdit + '</div>' +
         '<div class="scn-dist">진입까지 <b style="color:' + (d >= 0 ? 'var(--up)' : 'var(--down)') + '">' + fmtPct(d) + '</b></div></div>' +
       miniChartSVG(slot) +
       '<div class="scn-grid">' +
@@ -2013,6 +2063,12 @@ function renderScenarios(){
   }).join('');
   $$('#scnList [data-load]').forEach(b => b.addEventListener('click', () => loadPlanToForm(b.dataset.load)));
   $('#scnHint').textContent = symOf(state.sym).code + ' 기준 · 가설값에서 수정 가능';
+}
+/* 타점을 저장·수정·초기화했을 때 판정 카드·가설 카드·차트의 수치를 같은 값으로 즉시 맞춥니다 */
+function refreshPlanViews(){
+  renderScenarios();
+  if (state.ana) renderAnalysis(state.ana);
+  drawChart();
 }
 
 /* ------------------------- events: 코인·거시 주요 일정 ------------------------- */
@@ -2156,7 +2212,6 @@ async function loadEvents(){
 }
 
 /* ------------------------- planner ------------------------- */
-const PLAN_KEY = 'maeyo.plans.v1';
 function readPlanForm(){
   const n = id => { const v = parseFloat($(id).value); return isNum(v) ? v : NaN; };
   return { side: state.planSide || 'short', entry:n('#fEntry'), stop:n('#fStop'), t1:n('#fT1'), t2:n('#fT2'),
@@ -2182,6 +2237,7 @@ function loadPlanToForm(slot){
   renderPlanner(true);
   $('#planSaved').textContent = (hypOf(slot) ? hypOf(slot).title : '내 타점') + ' 값 불러옴 — 수정하면 자동 저장됩니다';
   $('#planSec').scrollIntoView({ behavior:'smooth', block:'start' });
+  drawChart();
 }
 function renderPlanner(force){
   const p = readPlanForm();
@@ -2220,7 +2276,7 @@ function savePlanDebounced(){
     putPlan(state.activeSlot || 'custom', p);
     const nm = hypOf(state.activeSlot) ? hypOf(state.activeSlot).title : '내 타점';
     $('#planSaved').textContent = nm + ' · 저장됨 ' + kst(Date.now());
-    renderScenarios();
+    refreshPlanViews();
   }, 400);
 }
 function bindPlanner(){
@@ -2242,13 +2298,14 @@ function bindPlanner(){
     fillPlanForm({ side:def.kind, entry:def.entry, stop:def.stop, t1:def.t1, t2:def.t2, lev:7, margin:0 });
     if (state.plans && state.plans[state.sym]) delete state.plans[state.sym][state.activeSlot];
     store(PLAN_KEY, state.plans);
-    renderPlanner(); renderScenarios();
+    renderPlanner();
+    refreshPlanViews();
     $('#planSaved').textContent = '가설값으로 되돌렸습니다';
   });
   $('#savePlanBtn').addEventListener('click', () => {
     const p = sanitizePlan(readPlanForm());
     putPlan(state.activeSlot || 'custom', p);
-    renderScenarios();
+    refreshPlanViews();
     $('#planSaved').textContent = '저장됨 · ' + kst(Date.now()) + ' (이 기기에 보관)';
   });
   $('#resetPlanBtn').addEventListener('click', () => {
@@ -2875,7 +2932,7 @@ function bindMisc(){
 
 function init(){
   loadChecklist();
-  state.plans = store(PLAN_KEY) || {};
+  state.plans = loadPlans();
   state.planSide = 'short';
   renderChips();
   renderTabs();
@@ -2893,6 +2950,10 @@ function init(){
   loadEvents();
   loadAll();
   updatePlanLabel();
+  if (hypResetNotice){
+    const el = $('#hypNote');
+    if (el){ el.textContent = hypResetNotice; el.style.display = 'block'; }
+  }
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
