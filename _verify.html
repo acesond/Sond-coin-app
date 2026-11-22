@@ -5,8 +5,8 @@
 <title>검증용 390px 모바일 하네스 (일시적)</title>
 <style>
   html,body{margin:0;padding:0;background:#0a0f16}
-  #frame{width:390px;height:844px;border:0;display:block;position:absolute;left:0;top:0;background:#070b12}
-  #log{position:fixed;left:402px;top:0;width:500px;height:100vh;overflow:auto;margin:0;padding:8px 10px;box-sizing:border-box;
+  #frame{width:405px;height:900px;border:0;display:block;position:absolute;left:0;top:0;background:#070b12}
+  #log{position:fixed;left:418px;top:0;width:500px;height:100vh;overflow:auto;margin:0;padding:8px 10px;box-sizing:border-box;
        background:#0d131c;color:#8ef0b0;font:11px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap}
 </style>
 </head>
@@ -52,7 +52,7 @@
     var canvas = d.querySelectorAll('#chart').length;
     var price = (d.querySelector('.price') && d.querySelector('.price').textContent) || '(가격 없음)';
     var widths = d.documentElement.clientWidth;
-    log('viewport iframe: ' + widths + 'x' + f.clientHeight);
+    log('viewport(iframe content): ' + widths + 'x' + f.clientHeight);
     log('일정 카드: ' + cards + ' · 자세히보기 버튼: ' + btns + ' · 상세 패널: ' + panels + ' · 시장자극 줄: ' + stim);
     log('차트 캔버스: ' + canvas + ' · 현재가 표시: ' + price);
     log('콘솔 오류: ' + V.console.length + '건');
