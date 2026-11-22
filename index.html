@@ -177,6 +177,14 @@ body{
 .line-legend .ll{display:inline-flex; align-items:center; gap:4px; font-size:9.5px; color:var(--dim2); background:#0c1421; border:1px solid rgba(30,42,60,.9); border-radius:6px; padding:2px 5px; line-height:1.25}
 .line-legend .ll i{width:7px; height:2.5px; border-radius:1px; display:inline-block; flex:none}
 .line-legend .ll b{color:#c8d6e8; font-weight:700; font-variant-numeric:tabular-nums}
+.line-legend .ll.on{border-color:rgba(91,140,255,.42); background:#0f1b2c}
+/* 판정 연동 가설선 — 차트에 깔린 4개 선이 어느 가설 기준인지 */
+.hyp-src{display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:10px; color:var(--dim2); padding:7px 3px 0; line-height:1.4}
+.hyp-src:empty{display:none}
+.hyp-src .hs-k{font-size:9px; font-weight:800; letter-spacing:.03em; color:#9fb6d8; background:rgba(91,140,255,.13); border:1px solid rgba(91,140,255,.28); border-radius:5px; padding:1px 5px; flex:none}
+.hyp-src .hs-k.warn{color:#ffd79a; background:rgba(245,158,11,.12); border-color:rgba(245,158,11,.3)}
+.hyp-src .hs-t{font-size:10.5px; font-weight:800; color:#e6eefb; letter-spacing:-.2px}
+.hyp-src .hs-d{color:var(--dim2); font-variant-numeric:tabular-nums}
 
 /* ---------- verdict ---------- */
 .verdict{display:flex; align-items:center; gap:12px; margin-bottom:11px}
@@ -510,9 +518,10 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
       </div>
       <div class="chart-legend" id="chartLegend"></div>
       <div class="chart-wrap"><canvas id="chart"></canvas></div>
+      <div class="hyp-src" id="hypSrc"></div>
       <div class="line-legend" id="lineLegend"></div>
       <div class="chart-foot">
-        <span id="lineHint">가설선 · 점선 예상경로 표시</span>
+        <span id="lineHint">판정 가설선 · 점선 예상경로 (15초 자동)</span>
         <span class="toggle on" id="lineToggle"><span class="sw"></span>가설선</span>
       </div>
     </div>
@@ -1292,6 +1301,7 @@ function selectSymbol(id){
   state.sym = id;
   state.activeSlot = 'h1';
   state.zoom = 90;
+  state.ana = null;
   state.mtf = { '1Dutc':[], '4H':[], '1H':[] };
   state.candles = [];
   state.ticker = null;
@@ -1390,15 +1400,16 @@ function updateAutoBar(){
   $('#autoMsg').textContent = state.error ? '재시도까지 ' + state.countdown + '초' : '15초 자동 갱신 · 다음 ' + state.countdown + '초';
 }
 function renderLineLegend(){
-  const el = $('#lineLegend');
+  const el = $('#lineLegend'), src = $('#hypSrc');
   if (!el) return;
-  const lv = LEVELS[state.sym];
-  if (!state.showLines || !lv){ el.innerHTML = ''; return; }
+  const b = state.showLines ? hypBound() : null;
+  if (!b){ el.innerHTML = ''; if (src) src.innerHTML = ''; return; }
+  if (src) src.innerHTML = boundLabelHtml(b);
   const price = currentPrice();
-  el.innerHTML = lv.map(l => {
-    const col = l.side === 'short' ? '#f43f5e' : '#22c55e';
+  el.innerHTML = hypLines(b).map(l => {
+    const c = roleColor(l);
     const d = isNum(price) ? (l.p - price) / price * 100 : NaN;
-    return '<span class="ll"><i style="background:' + col + '"></i>' + l.tag +
+    return '<span class="ll' + (l.role === 'entry' ? ' on' : '') + '"><i style="background:' + c.hex + '"></i>' + l.name +
       ' <b>' + fmtPx(l.p) + '</b>' +
       (isNum(d) ? '<span style="opacity:.75">' + fmtPct(d) + '</span>' : '') + '</span>';
   }).join('');
@@ -2545,13 +2556,82 @@ function roundRect(ctx, x, y, w, h, r){
   ctx.arcTo(x, y, x+w, y, rr);
   ctx.closePath();
 }
-function showProj(){
-  if (!HYP[state.sym]) return null;
-  const h = hypOf(state.activeSlot);
+/* ===== 판정 연동 가설선 =====
+   차트와 범례는 ‘지금 멀티 타임프레임 판정이 가리키는 가설’ 하나만 그립니다.
+   - 판정이 방향을 정했을 때(근거 2/3 이상): hypPrimaryFor가 고른 가설
+   - 관망(근거 0~1/3)·폐기: 현재가와 가장 가까운 대기 가설 (메인 가설이 아니면 라벨에 그 사실을 적음)
+   15초 자동 갱신마다 renderAll → buildAnalysis → drawChart 순서로 다시 계산되므로
+   판정 가설이 바뀌면 선·점선 경로·범례 칩이 같이 바뀝니다. */
+function hypBound(){
+  const all = hypAll();
+  if (!all.length) return null;
+  const a = (state.ana && state.ana.sym === state.sym) ? state.ana : null;
+  let h = null, mode = 'wait', n = 0;
+  if (a){
+    n = Math.max(a.nS, a.nL);
+    const voided = !!(a.zone && a.zone.code === 'void');
+    if (n >= 2 && !voided){ h = hypPrimaryFor(a); mode = 'live'; }
+  }
+  if (!h){
+    const price = currentPrice();
+    const near = all.map(x => {
+      const p = hypPlan(x.slot);
+      const d = (isNum(p.entry) && isNum(price) && price > 0) ? Math.abs(p.entry - price) / price : Infinity;
+      return { h:x, d:d };
+    }).sort((u, v) => u.d - v.d)[0];
+    h = near ? near.h : all[0];
+  }
   if (!h) return null;
-  const p = planFor(state.activeSlot);
+  return { h:h, plan:hypPlan(h.slot), mode:mode, n:n, a:a };
+}
+/* 가설 하나의 4개 선 — 진입 · 손절 · 1차 · 2차 */
+function hypLines(b){
+  if (!b) return [];
+  const p = b.plan;
+  const side = p.side === 'long' ? 'long' : 'short';
+  const out = [
+    { p:p.entry, side:side, role:'entry', tag:'진입', name:'진입' },
+    { p:p.stop,  side:side, role:'stop',  tag:'손절', name:'손절' },
+    { p:p.t1,    side:side, role:'t1',    tag:'1차',  name:'1차 목표' },
+    { p:p.t2,    side:side, role:'t2',    tag:'2차',  name:'2차 목표' }
+  ];
+  return out.filter(l => isNum(l.p) && l.p > 0);
+}
+/* 선 색 — 방향(숏·롱)을 따르고 손절선만 주황으로 분리 */
+function roleColor(l){
+  if (l.role === 'stop') return { line:'rgba(245,158,11,.62)', hex:'#f59e0b', soft:'rgba(245,158,11,.45)' };
+  const short = l.side === 'short';
+  if (l.role === 'entry') return short
+    ? { line:'rgba(244,63,94,.90)', hex:'#f43f5e', soft:'rgba(244,63,94,.55)' }
+    : { line:'rgba(34,197,94,.88)', hex:'#22c55e', soft:'rgba(34,197,94,.52)' };
+  if (l.role === 't1') return short
+    ? { line:'rgba(244,63,94,.60)', hex:'#f43f5e', soft:'rgba(244,63,94,.4)' }
+    : { line:'rgba(34,197,94,.58)', hex:'#22c55e', soft:'rgba(34,197,94,.38)' };
+  return short
+    ? { line:'rgba(244,63,94,.42)', hex:'#f43f5e', soft:'rgba(244,63,94,.32)' }
+    : { line:'rgba(34,197,94,.40)', hex:'#22c55e', soft:'rgba(34,197,94,.3)' };
+}
+/* 점선 예상경로 — 판정 가설 기준 */
+function projFor(b){
+  if (!b || !HYP[state.sym]) return null;
+  const p = b.plan;
   if (!isNum(p.entry) || !isNum(p.t1) || !isNum(p.t2)) return null;
-  return { kind:h.kind, entry:p.entry, t1:p.t1, t2:p.t2, title:h.title };
+  return { kind:b.h.kind, entry:p.entry, t1:p.t1, t2:p.t2, title:b.h.title };
+}
+function boundLabelHtml(b){
+  if (!b) return '';
+  const a = b.a;
+  if (!a) return '<span class="hs-k">판정 대기</span><b class="hs-t">' + b.h.title + '</b>' +
+    '<span class="hs-d">데이터가 오면 판정 가설로 자동 전환</span>';
+  if (b.mode === 'live') return '<span class="hs-k">현재 판정</span>' +
+    '<span class="badge ' + hypKindCls(b.h) + '">' + hypKindKr(b.h) + '</span>' +
+    '<b class="hs-t">' + b.h.title + '</b>' +
+    '<span class="hs-d">' + a.vLabel + ' · 근거 ' + b.n + '/3 · 15초 자동</span>';
+  const voided = !!(a.zone && a.zone.code === 'void');
+  return '<span class="hs-k' + (voided ? ' warn' : '') + '">' + (voided ? '가설 폐기' : '관망 중') + '</span>' +
+    '<span class="badge neutral">근거 ' + b.n + '/3 · 진입 아님</span>' +
+    '<b class="hs-t">' + b.h.title + '</b>' +
+    '<span class="hs-d">현재가와 가장 가까운 대기 가설 기준 · 15초 자동</span>';
 }
 function chartInit(){
   chart.canvas = $('#chart');
@@ -2619,7 +2699,8 @@ function drawChart(){
 
   const vis = Math.max(20, Math.min(state.zoom || 90, cs.length));
   const start = Math.max(0, cs.length - vis), end = cs.length;
-  const proj = state.showLines ? showProj() : null;
+  const bound = state.showLines ? hypBound() : null;
+  const proj = projFor(bound);
   const FUT = (proj && state.showLines) ? 28 : 0;   /* 오른쪽에 가설 예상경로를 그릴 미래 칸 */
   const step = areaW / (vis + FUT);
   let min = Infinity, max = -Infinity, maxVol = 0;
@@ -2629,10 +2710,10 @@ function drawChart(){
     if (c.h > max) max = c.h;
     if (c.v > maxVol) maxVol = c.v;
   }
-  if (proj) [proj.entry, proj.t1, proj.t2].forEach(v => {
-    if (!isNum(v)) return;
-    if (v < min) min = v;
-    if (v > max) max = v;
+  if (bound) hypLines(bound).forEach(l => {
+    if (!isNum(l.p)) return;
+    if (l.p < min) min = l.p;
+    if (l.p > max) max = l.p;
   });
   const padY = (max - min) * 0.10 || max * 0.002;
   min -= padY; max += padY;
@@ -2641,7 +2722,8 @@ function drawChart(){
   chart.geo = { padL, areaW, step, start, end, H, Y, X };
 
   /* grid + 가격축 (가설선 라벨과 겹치면 축 숫자는 생략) */
-  const drawLevels = state.showLines ? levelsFor().filter(l => isNum(l.p)) : [];
+  const drawLevels = bound ? hypLines(bound) : [];
+  const levelTagYs = [];   /* 오른쪽 축에 가격표를 그린 높이 — 현재가 표가 겹치지 않게 */
   /* 축 숫자 생략 판단은 이름표가 붙는 라인(가설선·타점)만 본다 — 흐린 스윙선은 라벨이 없어 겹쳐도 된다 */
   const labelLevels = drawLevels.filter(l => l.role !== 'swing');
   const gs = niceStep((max - min) / 4);
@@ -2722,45 +2804,73 @@ function drawChart(){
     ctx.fillText(lastRsi.toFixed(1), padL + areaW + padR - 5, RY(lastRsi));
   }
 
-  /* 가설선 */
-  if (state.showLines){
-    const prio = l => l.role === 'entry' ? 0 : l.role === 'stop' ? 1 : l.role === 'break' ? 2 : 9;
-    const lv = drawLevels.slice().sort((a, b) => prio(a) - prio(b));
-    const offTop = [], offBot = [], tagYs = [];
-    const solid = c => c.replace(/[\d.]+\)$/, '1)');
+  /* 가설선 — 판정이 가리키는 가설의 4개 선(진입·손절·1차·2차)만 */
+  if (state.showLines && bound){
+    const lv = drawLevels.slice().sort((a, b) => Y(a.p) - Y(b.p));
+    const offTop = [], offBot = [];
+    const priceY = Y(cs[end-1].c);   /* 현재가 표가 차지하는 자리 — 그 자리에 선 가설선은 이름표 대신 점으로 */
     lv.forEach(l => {
-      const isSwing = l.role === 'swing';
-      const color = isSwing ? 'rgba(147,162,182,.32)'
-        : l.side === 'short' ? 'rgba(244,63,94,.6)'
-        : l.side === 'long' ? 'rgba(34,197,94,.55)' : 'rgba(245,158,11,.6)';
+      const rc = roleColor(l);
       if (l.p > max){ if (offTop.length < 2) offTop.push(l); return; }
       if (l.p < min){ if (offBot.length < 2) offBot.push(l); return; }
       const y = Y(l.p);
-      ctx.strokeStyle = color;
-      ctx.setLineDash(isSwing ? [2, 5] : [6, 4]);
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = rc.line;
+      ctx.setLineDash(l.role === 'entry' ? [7, 3] : l.role === 'stop' ? [2, 3] : [5, 4]);
+      ctx.lineWidth = l.role === 'entry' ? 1.3 : 1;
       ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + areaW, y); ctx.stroke();
       ctx.setLineDash([]);
-      if (!isSwing){
-        const t = fmtN(l.p, d);
-        ctx.font = '9px ui-monospace, sans-serif';
-        const tw = ctx.measureText(t).width;
-        if (tagYs.some(v => Math.abs(v - y) < 12)){
-          ctx.fillStyle = solid(color);
-          ctx.fillRect(padL + areaW + 1.5, y - 2, 4, 4);
-        } else {
-          tagYs.push(y);
-          ctx.fillStyle = 'rgba(9,14,22,.97)';
-          roundRect(ctx, padL + areaW + 2, y - 6.5, tw + 7, 13, 3); ctx.fill();
-          ctx.fillStyle = solid(color);
-          ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-          ctx.fillText(t, padL + areaW + 5.5, y);
-        }
+      /* 오른쪽 축 가격표 — 현재가 표와 붙으면 점만, 선끼리 붙으면 비켜 그립니다 */
+      const t = fmtN(l.p, d);
+      ctx.font = '9px ui-monospace, sans-serif';
+      const tw = ctx.measureText(t).width;
+      if (Math.abs(y - priceY) < 14){
+        ctx.fillStyle = rc.hex;
+        ctx.fillRect(padL + areaW + 1.5, y - 2, 4, 4);
+        return;
       }
+      const busy = v => levelTagYs.some(u => Math.abs(u - v) < 12);
+      let ty = y;
+      if (busy(ty)){
+        const cand = [ty - 12.5, ty + 12.5];
+        const pick = cand.find(v => v > yP + 6 && v < yP + hPrice - 6 && !busy(v));
+        if (pick == null){
+          ctx.fillStyle = rc.hex;
+          ctx.fillRect(padL + areaW + 1.5, y - 2, 4, 4);
+          return;
+        }
+        ty = pick;
+      }
+      levelTagYs.push(ty);
+      ctx.fillStyle = 'rgba(9,14,22,.97)';
+      roundRect(ctx, padL + areaW + 2, ty - 6.5, tw + 7, 13, 3); ctx.fill();
+      ctx.fillStyle = rc.hex;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(t, padL + areaW + 5.5, ty);
     });
-    /* 내 타점(현재 입력값) 점선 */
+    /* 왼쪽 역할 라벨 — 선이 가까우면 아래로 살짝 밀어 겹침을 피합니다 */
+    let prevY = -1e9;
+    lv.forEach(l => {
+      if (l.p > max || l.p < min) return;
+      const y0 = Y(l.p);
+      const y = Math.max(y0, prevY + 9.5);
+      prevY = y;
+      if (y - y0 > 11 || y < yP + 6 || y > yP + hPrice - 5) return;
+      const rc = roleColor(l);
+      ctx.font = 'bold 8px -apple-system, sans-serif';
+      const tw = ctx.measureText(l.tag).width;
+      ctx.fillStyle = 'rgba(9,14,22,.90)';
+      roundRect(ctx, padL + 1, y - 5.5, tw + 6, 11, 3); ctx.fill();
+      ctx.strokeStyle = rc.soft; ctx.lineWidth = .7;
+      roundRect(ctx, padL + 1, y - 5.5, tw + 6, 11, 3); ctx.stroke();
+      ctx.fillStyle = rc.hex; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(l.tag, padL + 4, y);
+    });
+    /* 내 타점(입력값이 가설선과 다를 때만) 점선 — 같은 선을 두 번 그리지 않습니다 */
     const plan = readPlanForm();
-    if (plan.entry > 0 && isNum(plan.entry)){
+    const onBound = state.activeSlot === bound.h.slot;
+    const diff = (a, b) => isNum(a) && isNum(b) && Math.abs(a - b) / Math.max(1e-9, Math.abs(b)) > 0.0002;
+    const samePlan = !diff(plan.entry, bound.plan.entry) && !diff(plan.stop, bound.plan.stop) && !diff(plan.t1, bound.plan.t1);
+    if (onBound && !samePlan && plan.entry > 0 && isNum(plan.entry)){
       [['E', plan.entry, 'rgba(91,140,255,.95)'], ['S', plan.stop, 'rgba(244,63,94,.9)'], ['T1', plan.t1, 'rgba(34,197,94,.9)']]
         .forEach(([tag, v, col]) => {
           if (!isNum(v) || v <= 0 || v > max || v < min) return;
@@ -2768,8 +2878,8 @@ function drawChart(){
           ctx.strokeStyle = col; ctx.setLineDash([1, 3]); ctx.lineWidth = 1.2;
           ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + areaW, y); ctx.stroke();
           ctx.setLineDash([]);
-          if (tagYs.some(v2 => Math.abs(v2 - y) < 10)) return;
-          tagYs.push(y);
+          if (levelTagYs.some(v2 => Math.abs(v2 - y) < 10)) return;
+          levelTagYs.push(y);
           ctx.font = 'bold 8.5px ui-monospace, sans-serif';
           ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
           ctx.fillText(tag, padL + 2, y - 6);
@@ -2778,12 +2888,12 @@ function drawChart(){
     /* 화면 밖 라인 표시 */
     ctx.font = '8.5px -apple-system, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     offTop.slice(0, 2).forEach((l, k) => {
-      ctx.fillStyle = l.side === 'short' ? 'rgba(244,63,94,.85)' : 'rgba(34,197,94,.85)';
-      ctx.fillText('▲ ' + fmtN(l.p, d), padL + areaW - 4, yP + 8 + k * 11);
+      ctx.fillStyle = roleColor(l).hex;
+      ctx.fillText('▲ ' + l.tag + ' ' + fmtN(l.p, d), padL + areaW - 4, yP + 8 + k * 11);
     });
     offBot.slice(0, 2).forEach((l, k) => {
-      ctx.fillStyle = l.side === 'short' ? 'rgba(244,63,94,.85)' : 'rgba(34,197,94,.85)';
-      ctx.fillText('▼ ' + fmtN(l.p, d), padL + areaW - 4, yP + hPrice - 8 - k * 11);
+      ctx.fillStyle = roleColor(l).hex;
+      ctx.fillText('▼ ' + l.tag + ' ' + fmtN(l.p, d), padL + areaW - 4, yP + hPrice - 8 - k * 11);
     });
   }
 
@@ -2810,22 +2920,7 @@ function drawChart(){
       ctx.beginPath(); ctx.arc(q[0], q[1], 2.2, 0, Math.PI * 2);
       ctx.fillStyle = '#0b1320'; ctx.fill(); ctx.strokeStyle = pcol; ctx.lineWidth = 1.2; ctx.stroke();
     });
-    ctx.font = 'bold 8.5px ui-monospace, SFMono-Regular, Menlo, sans-serif'; ctx.textBaseline = 'middle';
-    const upPath = proj.kind !== 'long';
-    const put = (x, y, txt, anchor) => {
-      const w = ctx.measureText(txt).width;
-      let bx = anchor === 'end' ? x - w - 7 : x + 4;
-      bx = clamp(bx, padL + 1, padL + areaW - w - 9);
-      const by = clamp(y, yP + 8, yP + hPrice - 8);
-      ctx.fillStyle = 'rgba(9,14,22,.95)';
-      roundRect(ctx, bx - 3, by - 7, w + 6, 14, 3); ctx.fill();
-      ctx.strokeStyle = 'rgba(48,66,92,.75)'; ctx.lineWidth = .8;
-      roundRect(ctx, bx - 3, by - 7, w + 6, 14, 3); ctx.stroke();
-      ctx.fillStyle = pcol; ctx.textAlign = 'left'; ctx.fillText(txt, bx, by);
-    };
-    put(pts[1][0] + 2, pts[1][1] + (upPath ? -13 : 13), '진입 ' + fmtLv(proj.entry), 'start');
-    put(pts[2][0], pts[2][1] + (upPath ? 13 : -13), '1차 ' + fmtLv(proj.t1), 'middle');
-    put(pts[3][0], pts[3][1] + (upPath ? 13 : -13), '2차 ' + fmtLv(proj.t2), 'end');
+    /* 경로 위 글자는 찍지 않습니다 — 4개 선이 이미 진입·손절·1차·2차 이름과 가격을 달고 있습니다 */
   }
 
   /* 마지막 가격 */
@@ -2951,9 +3046,10 @@ async function refreshTick(force){
 function renderAll(){
   renderLive();
   renderLegend();
-  renderLineLegend();
   const a = buildAnalysis();
-  state.ana = a;
+  if (a) a.sym = state.sym;
+  state.ana = a;                     /* 차트·범례·판정이 같은 분석 결과를 쓰도록 먼저 계산 */
+  renderLineLegend();
   if (a) renderAnalysis(a);
   else {
     $('#vTitle').textContent = state.error ? '데이터 연결 실패 — 자동 재시도 중' : '데이터 불러오는 중…';
@@ -2992,7 +3088,7 @@ function bindMisc(){
   $('#lineToggle').addEventListener('click', () => {
     state.showLines = !state.showLines;
     $('#lineToggle').classList.toggle('on', state.showLines);
-    $('#lineHint').textContent = state.showLines ? '가설선 · 점선 예상경로 표시' : '가설선 숨김';
+    $('#lineHint').textContent = state.showLines ? '판정 가설선 · 점선 예상경로 (15초 자동)' : '가설선 숨김';
     renderLineLegend();
     drawChart();
   });
