@@ -22,6 +22,7 @@
   --txt:#e9eff8; --dim:#93a2b6; --dim2:#657488; --accent:#5b8cff;
   --up:#22c55e; --down:#f43f5e; --warn:#f59e0b; --gold:#e5b45a; --violet:#a78bfa;
   --r:16px;
+  --hdrH:52px;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
@@ -44,12 +45,16 @@ body{
 /* ---------- top bar ---------- */
 .topbar{
   position:sticky; top:0; z-index:30;
+  height:calc(var(--hdrH) + env(safe-area-inset-top));
+  padding:env(safe-area-inset-top) 0 0;
+  display:flex; align-items:center;
   background:linear-gradient(180deg, rgba(7,11,18,.97) 55%, rgba(7,11,18,.80));
   backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
   border-bottom:1px solid rgba(30,42,60,.7);
-  padding:calc(10px + env(safe-area-inset-top)) 0 8px;
+  transition:box-shadow .2s ease, background .2s ease;
 }
-.topbar-in{max-width:560px; margin:0 auto; padding:0 14px; display:flex; align-items:center; justify-content:space-between; gap:10px}
+.topbar.stuck{box-shadow:0 10px 22px -16px rgba(0,0,0,.95); background:linear-gradient(180deg, rgba(7,11,18,.985), rgba(9,14,22,.93))}
+.topbar-in{width:100%; max-width:560px; margin:0 auto; padding:0 14px; display:flex; align-items:center; justify-content:space-between; gap:10px}
 .brand{display:flex; align-items:center; gap:9px; min-width:0}
 .brand-mark{
   width:34px;height:34px;border-radius:11px;flex:none;
@@ -65,6 +70,31 @@ body{
   background:rgba(34,197,94,.10); border:1px solid rgba(34,197,94,.28); padding:3px 8px; border-radius:999px; font-weight:600;
 }
 .live-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--up); box-shadow:0 0 0 0 rgba(34,197,94,.6); animation:pulse 2s infinite}
+
+/* ---------- sticky compact price bar (scrolled) ---------- */
+.pbar{display:none; align-items:center; gap:9px}
+.topbar:not(.stuck) .pbar{display:none}
+.topbar.stuck .topbar-in:not(.pbar){display:none}
+.topbar.stuck .pbar{display:flex}
+.pbar-mark{
+  width:26px;height:26px;border-radius:9px;flex:none;
+  background:linear-gradient(145deg,#17233a,#0e1727); border:1px solid var(--line2);
+  display:grid;place-items:center;
+}
+.pbar-mark svg{display:block}
+.pbar-syms{display:flex; gap:4px; flex:none}
+.psym{
+  border:1px solid var(--line); background:rgba(16,24,38,.10); color:var(--dim);
+  font-family:inherit; font-size:10px; font-weight:800; letter-spacing:.02em; line-height:1;
+  padding:6px 5px; border-radius:8px; cursor:pointer; transition:.13s;
+}
+.psym.on{background:linear-gradient(160deg,#1b2a44,#152137); border-color:#33507e; color:#fff}
+.psym:active{transform:scale(.95)}
+.pbar-quote{margin-left:auto; display:flex; align-items:baseline; gap:6px; min-width:0}
+.pbar-dot{width:6px;height:6px;border-radius:50%;background:var(--up); flex:none; align-self:center; animation:pulse 2s infinite}
+.pbar-price{font-size:15.5px; font-weight:800; letter-spacing:-.4px; white-space:nowrap; line-height:1.1}
+.pbar-chg{font-size:11.5px; font-weight:700; white-space:nowrap; letter-spacing:-.1px}
+.pbar-chg.up{color:var(--up)} .pbar-chg.down{color:var(--down)}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
 
 /* ---------- live price ---------- */
@@ -386,7 +416,10 @@ table.tbl td:last-child{color:var(--dim)}
 .nav-item svg{opacity:.75}
 .nav-item.on{color:#b9d0f5}
 .nav-item.on svg{opacity:1}
-section{scroll-margin-top:76px}
+.nav-top{color:#a9bfe2}
+.nav-top svg{opacity:.9}
+.nav-top:active{background:rgba(91,140,255,.14)}
+section{scroll-margin-top:calc(var(--hdrH) + 20px)}
 
 @media (min-width:640px){
   .app{max-width:620px}
@@ -419,6 +452,20 @@ section{scroll-margin-top:76px}
         </div>
       </div>
     <span class="live-pill" id="livePill"><span class="dot"></span>LIVE</span>
+  </div>
+  <div class="topbar-in pbar" id="priceBar">
+    <div class="pbar-mark" aria-hidden="true">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+        <path d="M3 17l5-6 4 3.4L18 6l3-1.6" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M3 21h18" stroke="#33425c" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="pbar-syms" id="pbarSyms" role="group" aria-label="종목 전환"></div>
+    <div class="pbar-quote">
+      <span class="pbar-dot" id="pbarDot" aria-hidden="true"></span>
+      <b class="pbar-price num" id="pbarPrice">—</b>
+      <span class="pbar-chg num" id="pbarChg"></span>
+    </div>
   </div>
 </header>
 
@@ -604,6 +651,9 @@ section{scroll-margin-top:76px}
   </button>
   <button class="nav-item" data-go="checkSec">
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>체크
+  </button>
+  <button class="nav-item nav-top" id="navTop" type="button" aria-label="맨 위로 이동">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 19V6M6.5 11.5L12 6l5.5 5.5" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>위로
   </button>
 </nav>
 
@@ -1237,26 +1287,54 @@ function buildAnalysis(){
 }
 
 /* ------------------------- render: live / chips / legend ------------------------- */
+function selectSymbol(id){
+  if (!id || id === state.sym) return;
+  state.sym = id;
+  state.activeSlot = 'h1';
+  state.zoom = 90;
+  state.mtf = { '1Dutc':[], '4H':[], '1H':[] };
+  state.candles = [];
+  state.ticker = null;
+  state.hover = null;
+  renderChips();
+  renderPbarSyms();
+  renderPbarLive();
+  loadAll(true);
+  renderEvents();
+}
 function renderChips(){
   const el = $('#symChips');
   el.innerHTML = SYMBOLS.map(s =>
     '<button class="chip' + (s.id === state.sym ? ' on' : '') + '" data-sym="' + s.id + '">' +
       s.code + '<small>' + s.name + '</small></button>').join('');
   $$('.chip', el).forEach(b => {
-    b.addEventListener('click', () => {
-      if (b.dataset.sym === state.sym) return;
-      state.sym = b.dataset.sym;
-      state.activeSlot = 'h1';
-      state.zoom = 90;
-      state.mtf = { '1Dutc':[], '4H':[], '1H':[] };
-      state.candles = [];
-      state.ticker = null;
-      state.hover = null;
-      renderChips();
-      loadAll(true);
-      renderEvents();
-    });
+    b.addEventListener('click', () => selectSymbol(b.dataset.sym));
   });
+}
+/* 상단 고정 가격 바 — 4종목 미니 탭 + 현재가·등락률 */
+function renderPbarSyms(){
+  const el = $('#pbarSyms');
+  if (!el) return;
+  el.innerHTML = SYMBOLS.map(s =>
+    '<button class="psym' + (s.id === state.sym ? ' on' : '') + '" type="button" data-sym="' + s.id +
+    '" aria-pressed="' + (s.id === state.sym) + '">' + s.code + '</button>').join('');
+  $$('.psym', el).forEach(b => b.addEventListener('click', () => selectSymbol(b.dataset.sym)));
+}
+function renderPbarLive(){
+  const pEl = $('#pbarPrice'), cEl = $('#pbarChg');
+  if (!pEl || !cEl) return;
+  const t = state.ticker;
+  if (!t){
+    pEl.textContent = state.error ? '연결 실패' : '—';
+    cEl.textContent = '';
+    cEl.className = 'pbar-chg num';
+    return;
+  }
+  const last = +t.last, open = +t.open24h;
+  const change = open > 0 ? (last - open) / open * 100 : 0;
+  pEl.textContent = fmtPx(last);
+  cEl.textContent = (change >= 0 ? '▲ ' : '▼ ') + Math.abs(change).toFixed(2) + '%';
+  cEl.className = 'pbar-chg num ' + (change >= 0 ? 'up' : 'down');
 }
 function renderTabs(){
   const el = $('#barTabs');
@@ -1286,6 +1364,7 @@ function renderLive(){
     const chg = $('#chg');
     chg.textContent = '—'; chg.className = 'chg num';
     $('#hi').textContent = '—'; $('#lo').textContent = '—'; $('#upd').textContent = '—';
+    renderPbarLive();
     return;
   }
   const last = +t.last, open = +t.open24h;
@@ -1304,6 +1383,7 @@ function renderLive(){
   $('#hi').textContent = fmtPx(+t.high24h);
   $('#lo').textContent = fmtPx(+t.low24h);
   $('#upd').textContent = kst(Date.now());
+  renderPbarLive();
 }
 function updateAutoBar(){
   $('#autoBar').style.width = (100 - state.countdown / 15 * 100).toFixed(1) + '%';
@@ -2889,6 +2969,22 @@ function renderAll(){
   drawChart();
   updateAutoBar();
 }
+/* 스크롤하면 상단 바를 슬림 가격 바(종목·현재가·등락률)로 전환 */
+function bindStickyPrice(){
+  const hdr = $('.topbar'), card = $('#liveCard');
+  if (!hdr || !card) return;
+  const hH = () => hdr.offsetHeight || 52;
+  if ('IntersectionObserver' in window){
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(en => hdr.classList.toggle('stuck', !en.isIntersecting));
+    }, { rootMargin: '-' + hH() + 'px 0px 0px 0px', threshold: 0 });
+    io.observe(card);
+  } else {
+    const upd = () => hdr.classList.toggle('stuck', window.scrollY + hH() >= card.offsetTop + card.offsetHeight);
+    window.addEventListener('scroll', upd, { passive:true });
+    upd();
+  }
+}
 function bindMisc(){
   $('#refreshBtn').addEventListener('click', () => { state.countdown = 15; refreshTick(true); });
   $('#zoomIn').addEventListener('click', () => { state.zoom = clamp((state.zoom || 90) + 20, 20, (state.candles || []).length || 200); drawChart(); });
@@ -2906,9 +3002,15 @@ function bindMisc(){
     applyChecklist();
   });
   $$('.nav-item').forEach(b => b.addEventListener('click', () => {
+    if (!b.dataset.go) return;
     const el = document.getElementById(b.dataset.go);
     if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
   }));
+  const navTop = $('#navTop');
+  if (navTop) navTop.addEventListener('click', () => {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+    window.scrollTo({ top:0, behavior: reduce ? 'auto' : 'smooth' });
+  });
   /* 판정 카드의 기반 가설 → 그 가설 카드로 이동 */
   document.addEventListener('click', e => {
     const b = e.target.closest('[data-hop]');
@@ -2946,16 +3048,17 @@ function init(){
   state.plans = loadPlans();
   state.planSide = 'short';
   renderChips();
+  renderPbarSyms();
   renderTabs();
   renderChecklist();
   state.activeSlot = 'h1';
   fillPlanForm(planFor('h1'));
   bindPlanner();
   bindMisc();
+  bindStickyPrice();
   chartInit();
   renderPlanner();
-  updateAutoBar();
-  renderScenarios();
+  updateAutoBar();  renderScenarios();
   renderEvtFilter();
   bindEvtToggle();
   loadEvents();
