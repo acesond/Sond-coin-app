@@ -1175,8 +1175,19 @@ function buildAnalysis(){
   /* ① 파동 — 마지막 레그의 0.5~0.618 되돌림 */
   const fibZone = (leg) => leg ? [leg.level(0.5), leg.level(0.618)].sort((a, b) => a - b) : null;
   const f4 = fibZone(leg4);
-  const waveShort = !!(leg4 && !leg4.up && inFib(leg4, 0.45, 0.68, price));
-  const waveLong  = !!(leg4 && leg4.up && inFib(leg4, 0.45, 0.68, price));
+  /* ① 자리 — 4H 레그 0.5~0.618 되돌림, 또는 지금 가격이 가설의 숏·롱 핵심 존 안(리테스트 자리) */
+  const zz0 = ZONE_DEF[state.sym];
+  const zTol = price * 0.0009;
+  const zsLo = zz0 ? Math.min(zz0.short, zz0.shortTop) : null;
+  const zsHi = zz0 ? Math.max(zz0.short, zz0.shortTop) : null;
+  const zlLo = zz0 ? Math.min(zz0.long, zz0.mid) : null;
+  const zlHi = zz0 ? Math.max(zz0.long, zz0.mid) : null;
+  const fibShort = !!(leg4 && !leg4.up && inFib(leg4, 0.45, 0.68, price));
+  const fibLong  = !!(leg4 && leg4.up && inFib(leg4, 0.45, 0.68, price));
+  const inZShort = !!(isNum(zsLo) && zsHi > zsLo && price >= zsLo - zTol && price <= zsHi + zTol);
+  const inZLong  = !!(isNum(zlLo) && zlHi > zlLo && price >= zlLo - zTol && price <= zlHi + zTol);
+  const waveShort = fibShort || inZShort;
+  const waveLong  = fibLong || inZLong;
   /* ② 라인 — 가설·스윙 라인 0.6% 이내 */
   const lineShort = !!(nearShort && Math.abs(nearShort.d) <= 0.6);
   const lineLong  = !!(nearLong && Math.abs(nearLong.d) <= 0.6);
@@ -1265,11 +1276,14 @@ function buildAnalysis(){
     price, tfs, levels: withDist, zone, leg4, leg1d, f4,
     ev: {
       short: [
-        { ok:waveShort, name:'파동', text: waveShort
-            ? '4H 하락 레그의 ' + (leg4.retr(price) * 100).toFixed(0) + '% 되돌림 — 0.5~0.618 숏 자리'
+        { ok:waveShort, name:'자리', text: waveShort
+            ? (fibShort
+                ? '4H 하락 레그의 ' + (leg4.retr(price) * 100).toFixed(0) + '% 되돌림 — 0.5~0.618 숏 자리'
+                : '가설 숏 자리 ' + fmtLv(zsLo) + '~' + fmtLv(zsHi) + ' 안 — 리테스트 자리 충족')
             : (leg4 && !leg4.up
                 ? '4H 하락 레그 되돌림 ' + (leg4.retr(price) * 100).toFixed(0) + '% (필요 45~68%)' + (f4 ? ' · 자리는 ' + fmtPx(f4[0]) + '~' + fmtPx(f4[1]) : '')
-                : '4H 레그가 ' + (leg4 ? (leg4.up ? '상승' : '하락') : '—') + ' — 숏 되돌림 자리 아님 (필요 45~68%)') },
+                : '4H 레그가 ' + (leg4 ? (leg4.up ? '상승' : '하락') : '—') + ' — 숏 되돌림 자리 아님 (필요 45~68%)')
+              + (isNum(zsLo) ? ' · 숏 자리 ' + fmtLv(zsLo) + '~' + fmtLv(zsHi) + ' 대기' : '') },
         { ok:lineShort, name:'라인', text: lineShort
             ? nearShort.label + ' ' + fmtPx(nearShort.p) + ' 도달 (' + fmtPct(nearShort.d) + ')'
             : (nearShort ? '가장 가까운 숏 라인 ' + fmtPx(nearShort.p) + '까지 ' + fmtPct(nearShort.d) + ' — 0.6% 밖' : '숏 라인 없음') },
@@ -1278,9 +1292,12 @@ function buildAnalysis(){
             : '4H·1H 하락 다이버전스 없음' }
       ],
       long: [
-        { ok:waveLong, name:'파동', text: waveLong
-            ? '4H 상승 레그의 ' + (leg4.retr(price) * 100).toFixed(0) + '% 되돌림 — 0.5~0.618 롱 자리'
-            : '상승 레그 0.5~0.618 되돌림 자리 아님 (현재 4H 레그는 ' + (leg4 ? (leg4.up ? '상승' : '하락') : '—') + ')' },
+        { ok:waveLong, name:'자리', text: waveLong
+            ? (fibLong
+                ? '4H 상승 레그의 ' + (leg4.retr(price) * 100).toFixed(0) + '% 되돌림 — 0.5~0.618 롱 자리'
+                : '가설 롱 자리 ' + fmtLv(zlLo) + '~' + fmtLv(zlHi) + ' 안 — 지지 자리 충족')
+            : '상승 레그 0.5~0.618 되돌림 자리 아님 (현재 4H 레그는 ' + (leg4 ? (leg4.up ? '상승' : '하락') : '—') + ')'
+              + (isNum(zlLo) ? ' · 롱 자리 ' + fmtLv(zlLo) + '~' + fmtLv(zlHi) + ' 대기' : '') },
         { ok:lineLong, name:'라인', text: lineLong
             ? nearLong.label + ' ' + fmtPx(nearLong.p) + ' 도달 (' + fmtPct(nearLong.d) + ')'
             : (nearLong ? '가장 가까운 롱 라인 ' + fmtPx(nearLong.p) + '까지 ' + fmtPct(nearLong.d) + ' — 0.6% 밖' : '롱 라인 없음') },
