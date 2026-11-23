@@ -215,6 +215,11 @@ body{
 .hyp-src .hs-k.warn{color:#ffd79a; background:rgba(245,158,11,.12); border-color:rgba(245,158,11,.3)}
 .hyp-src .hs-t{font-size:10.5px; font-weight:800; color:#e6eefb; letter-spacing:-.2px}
 .hyp-src .hs-d{color:var(--dim2); font-variant-numeric:tabular-nums}
+/* 진입 타이밍 배지 — 차트 판정 바용 축약형 */
+.hyp-src .hs-tm{font-size:9.5px; font-weight:800; padding:1px 6px; border-radius:6px; flex:none; white-space:nowrap; font-variant-numeric:tabular-nums}
+.hyp-src .hs-tm.go{color:#a7f3c4; background:rgba(34,197,94,.14); border:1px solid rgba(34,197,94,.38)}
+.hyp-src .hs-tm.wait{color:#ffd79a; background:rgba(245,158,11,.13); border:1px solid rgba(245,158,11,.34)}
+.hyp-src .hs-tm.hold{color:#a9b8cc; background:rgba(147,162,182,.12); border:1px solid rgba(147,162,182,.24)}
 
 /* ---------- verdict ---------- */
 .verdict{display:flex; align-items:center; gap:12px; margin-bottom:11px}
@@ -227,6 +232,17 @@ body{
 .v-badge.bad{color:#ffb3c0; border-color:rgba(244,63,94,.35); background:rgba(244,63,94,.10)}
 .v-badge.ok{color:#a7f3c4; border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.10)}
 .v-badge.long{color:#a7f3c4; border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.08)}
+/* 진입 타이밍 박스 — 지금 진입 가능 / 정각 마감 대기 / 대기 */
+.vtiming{display:flex; align-items:flex-start; gap:7px; margin:0 0 10px; padding:8px 10px; border-radius:11px;
+  border:1px solid rgba(147,162,182,.26); background:#0b1320; color:#b3c2d6; font-size:12px; font-weight:800; line-height:1.45; letter-spacing:-.2px}
+.vtiming[hidden]{display:none}
+.vtiming .vt-b{flex:1; min-width:0}
+.vtiming .vt-k{display:block; font-size:8.5px; font-weight:800; letter-spacing:.05em; color:var(--dim2); margin-bottom:2px}
+.vtiming .vt-d{display:block; font-size:10px; font-weight:500; color:var(--dim2); margin-top:3px; line-height:1.5; letter-spacing:0}
+.vtiming.go{border-color:rgba(34,197,94,.48); background:linear-gradient(180deg,rgba(34,197,94,.15),rgba(11,19,32,.94)); color:#a7f3c4}
+.vtiming.go .vt-d{color:#8fd3a8}
+.vtiming.wait{border-color:rgba(245,158,11,.48); background:linear-gradient(180deg,rgba(245,158,11,.14),rgba(11,19,32,.94)); color:#ffd79a}
+.vtiming.wait .vt-d{color:#dfbd8a}
 .v-main{min-width:0}
 .v-main h3{margin:0 0 3px; font-size:16.5px; letter-spacing:-.4px}
 .v-main p{margin:0; font-size:11.5px; color:var(--dim); line-height:1.5}
@@ -573,6 +589,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
           <p id="vSub">OKX에서 1D·4H·1H 캔들을 받아 RSI와 다이버전스를 계산합니다.</p>
         </div>
       </div>
+      <div class="vtiming hold" id="vTiming" hidden></div>
       <div id="vHyp"></div>
       <div id="vSummary" class="ev-sum" style="border-top:0;padding-top:0;margin-top:0"></div>
     </div>
@@ -1319,7 +1336,7 @@ function buildAnalysis(c){
       + (lh ? ' 3개가 겹치면 <b>' + lh.title + '</b>(' + fmtLv(lh.entry) + ') 기준으로 타점.' : '');
   }
 
-  return {
+  const out = {
     price, tfs, levels: withDist, zone, leg4, leg1d, f4, sym,
     ev: {
       short: [
@@ -1357,6 +1374,124 @@ function buildAnalysis(c){
     summary: lines, nextHint,
     counters: { anyDiv, divT4:t4.div, divT1:t1.div }
   };
+  out.timing = entryTiming(out, null);
+  return out;
+}
+
+/* ------------------------- 진입 타이밍 — 지금 진입 vs 정각 마감 대기 -------------------------
+   타점(근거 3/3)이 와도 ‘언제 들어갈지’는 1H 봉이 마감됐는지가 정합니다.
+   · conf=1 확정봉 → 저항 거부(음봉·긴 윗꼬리) / 지지 확인(양봉·긴 아래꼬리)의 근거
+   · conf=0 진행봉 → 모양이 아직 안 끝났으니 그 봉의 정각 마감까지 대기
+   순수 함수: state를 읽지 않고 넘겨받은 분석(a)과 1H 캔들(c1h)만 사용합니다. */
+function nextHourInfo(){
+  const now = Date.now();
+  const nextMs = (Math.floor(now / 3600000) + 1) * 3600000;
+  return { at: kst(nextMs), mins: Math.max(1, Math.round((nextMs - now) / 60000)) };
+}
+function candleShape(c){
+  if (!c) return null;
+  const body = Math.abs(c.c - c.o);
+  const range = Math.max(c.h - c.l, 0);
+  const upper = Math.max(c.h - Math.max(c.o, c.c), 0);
+  const lower = Math.max(Math.min(c.o, c.c) - c.l, 0);
+  const wickOk = w => range > 0 && w > 0 && w >= body && w >= range * 0.15;   /* 꼬리 ≥ 몸통 */
+  return {
+    body, range, upper, lower, bear: c.c < c.o, bull: c.c > c.o,
+    longUpper: wickOk(upper), longLower: wickOk(lower),
+    text: (c.c < c.o ? '음봉' : c.c > c.o ? '양봉' : '도지') +
+          (wickOk(upper) ? '·윗꼬리' : wickOk(lower) ? '·아래꼬리' : '')
+  };
+}
+function entryTiming(a, c1h){
+  const nh = nextHourInfo();
+  const base = { at: nh.at, mins: nh.mins };
+  if (!a || !isNum(a.price) || a.price <= 0){
+    return Object.assign(base, { state:'hold', cls:'hold', branch:'none', branchKr:'관망', short:'대기', compact:'⏸ 진입 대기',
+      label:'⏸ 진입 대기 — 타점 조건 미충족', detail:'시세·1H 캔들이 아직 없습니다.' });
+  }
+  const dpx = symOf(a.sym).dp;
+  const fx = n => fmtN(n, dpx);
+  const z = ZONE_DEF[a.sym];
+  const cs = (Array.isArray(c1h) && c1h.length ? c1h : ((a.tfs && a.tfs['1H'] && a.tfs['1H'].cs) || []));
+  const conf = cs.filter(c => c && c.conf);
+  const last = conf.length ? conf[conf.length - 1] : null;          /* 직전 확정 마감봉 */
+  const cur  = (cs.length && cs[cs.length - 1] && !cs[cs.length - 1].conf) ? cs[cs.length - 1] : null;   /* 진행 중 봉 */
+  const ic = candleShape(last);
+  const price = a.price;
+  const best = Math.max(a.nS || 0, a.nL || 0);
+  const tol = price * 0.004;                                        /* 존 판정 여유 ±0.4% */
+  const inR = (v, lo, hi) => isNum(v) && v >= lo - tol && v <= hi + tol;
+  const lastTxt = last ? '직전 확정봉 ' + kst(last.t) + ' ' + ic.text + ' · 고가 ' + fx(last.h) + ' · 종가 ' + fx(last.c) : '직전 확정 1H 봉 없음';
+  const curTxt = cur ? ' · ' + kst(cur.t) + ' 봉이 ' + fx(cur.c) + '로 진행 중' : '';
+
+  if (!z || !a.zone || a.zone.code === 'void' || best < 2){
+    return Object.assign(base, { state:'hold', cls:'hold', branch:'none', branchKr:'관망', short:'대기', compact:'⏸ 진입 대기',
+      label:'⏸ 진입 대기 — 타점 조건 미충족',
+      detail: (!z || (a.zone && a.zone.code === 'void'))
+        ? '가설 폐기 구간 — 새 가설이 서야 진입 타이밍을 봅니다.'
+        : '근거 ' + best + '/3 — 2개 이상 겹쳐야 진입 타이밍을 봅니다. ' + lastTxt + '.' });
+  }
+
+  const brk = price >= z.brkup;
+  const branch = brk ? 'br' : (a.side === 'short' ? 'short' : 'long');
+  const branchKr = branch === 'br' ? '돌파 롱' : branch === 'short' ? '숏 리테스트' : '눌림목 롱';
+  const sideKr = a.side === 'short' ? '숏' : '롱';
+  const waitAt = (label, detail, compact) => Object.assign(base, { state:'wait', cls:'wait', branch, branchKr,
+    short:'마감 대기', compact:compact || ('⏳ ' + nh.at + ' 마감 대기'), label:label, detail:detail });
+  const goNow = (label, detail, compact) => Object.assign(base, { state:'go', cls:'go', branch, branchKr,
+    short:'지금 진입', compact:compact || '✅ 지금 진입 가능', label:label, detail:detail });
+
+  /* ── 근거 2/3 — 한 개 더 + 정각 마감 대기 ── */
+  if (best === 2){
+    const reached = branch === 'br' ? true
+      : branch === 'short' ? price >= z.short - tol
+      : price <= z.mid + tol;
+    if (!reached){
+      const goal = branch === 'short' ? z.short : z.long;
+      return waitAt('⏳ ' + fx(goal) + ' 도달 후 1H 마감 확인',
+        sideKr + ' 자리 ' + fx(goal) + '까지 ' + fmtPct((goal - price) / price * 100) + ' — 도달하면 그 1H 봉의 마감을 확인합니다. ' + lastTxt + curTxt + '.',
+        '⏳ ' + fx(goal) + ' 도달 대기');
+    }
+    return waitAt('⏳ 조건 1개 더 + ' + nh.at + ' 1H 마감 확인 대기',
+      sideKr + ' 근거 2/3 — 한 개(다이버전스·전환 캔들)가 더 필요하고, ' + nh.at + ' 마감까지 ' + nh.mins + '분 남았습니다. ' + lastTxt + curTxt + '.');
+  }
+
+  /* ── 근거 3/3 — 지금 들어갈지, 정각 마감을 기다릴지 ── */
+  if (branch === 'br'){
+    if (last && last.c >= z.brkup)
+      return goNow('✅ 지금 진입 가능 (1H 돌파 안착 확인 — 리테스트 진입)',
+        '직전 확정봉 ' + kst(last.t) + ' 종가 ' + fx(last.c) + '가 돌파선 ' + fx(z.brkup) + ' 위에서 마감 안착 — ' + fx(z.brkup) + ' 리테스트에서 진입하고, 종가 위 추격은 금지.');
+    return waitAt('⏳ ' + nh.at + ' 1H 종가 안착 확인 후 진입',
+      '아직 ' + (cur ? kst(cur.t) + ' 봉이 ' + fx(cur.c) + '로 진행 중' : '확정 종가 없음') + ' — ' + fx(z.brkup) + ' 위에서 1H 종가가 찍혀야 안착입니다. ' + nh.at + '까지 ' + nh.mins + '분.');
+  }
+
+  if (branch === 'short'){
+    if (price > z.stop)
+      return Object.assign(base, { state:'hold', cls:'hold', branch, branchKr, short:'대기', compact:'⏸ 진입 대기',
+        label:'⏸ 진입 대기 — 타점 조건 미충족', detail:'현재가 ' + fx(price) + '가 숏 손절선 ' + fx(z.stop) + ' 위 — 가설 폐기 구간입니다.' });
+    if (price < z.short - tol)
+      return waitAt('⏳ ' + fx(z.short) + ' 리테스트 도달 후 1H 마감 확인',
+        '숏 진입 존 ' + fx(z.short) + '~' + fx(z.shortTop) + '까지 ' + fmtPct((z.short - price) / price * 100) + ' — 반등이 와서 존에 닿은 뒤 1H 마감을 확인합니다. ' + lastTxt + '.');
+    const bearAtZone = !!(last && ic.bear && (inR(last.c, z.short, z.shortTop) || inR(last.o, z.short, z.shortTop)));
+    const wickAtZone = !!(last && ic.longUpper && inR(last.h, z.short, z.shortTop));
+    if (bearAtZone || wickAtZone)
+      return goNow('✅ 지금 진입 가능 (직전 1H 저항 마감 확인)',
+        '직전 확정봉 ' + kst(last.t) + '이 ' + (ic.bear ? '음봉' : '긴 윗꼬리') + '(고가 ' + fx(last.h) + ' · 종가 ' + fx(last.c) + ')으로 ' + fx(z.short) + '~' + fx(z.shortTop) + ' 저항에서 밀렸고 현재가 ' + fx(price) + '가 손절선 ' + fx(z.stop) + ' 아래 — 지금 들어가도 됩니다.');
+    return waitAt('⏳ ' + nh.at + ' 1H 마감 확인 후 진입 (음봉·윗꼬리 확인)',
+      lastTxt + ' — 저항 존 ' + fx(z.short) + '~' + fx(z.shortTop) + '에서 밀린 음봉·윗꼬리가 아직 없습니다. ' + nh.at + ' 마감까지 ' + nh.mins + '분, 그 봉이 음봉·윗꼬리로 끝나면 진입.');
+  }
+
+  /* 눌림목 롱 */
+  if (price > z.mid + tol)
+    return waitAt('⏳ ' + fx(z.long) + ' 눌림 도달 후 1H 마감 확인',
+      '롱 지지 존 ' + fx(z.long) + '~' + fx(z.mid) + '까지 ' + fmtPct((z.long - price) / price * 100) + ' — 눌림이 와서 존에 닿은 뒤 1H 마감을 확인합니다. ' + lastTxt + '.');
+  const bullAtZone = !!(last && ic.bull && (inR(last.c, z.long, z.mid) || inR(last.o, z.long, z.mid)));
+  const lowWick = !!(last && ic.longLower && inR(last.l, z.long, z.mid));
+  if ((bullAtZone || lowWick) && price > z.warnL)
+    return goNow('✅ 지금 진입 가능 (직전 1H 지지 마감 확인)',
+      '직전 확정봉 ' + kst(last.t) + '이 ' + (ic.bull ? '양봉' : '긴 아래꼬리') + '(저가 ' + fx(last.l) + ' · 종가 ' + fx(last.c) + ')으로 ' + fx(z.long) + '~' + fx(z.mid) + ' 지지에서 받았고 현재가 ' + fx(price) + '가 손절선 ' + fx(z.warnL) + ' 위 — 지금 들어가도 됩니다.');
+  return waitAt('⏳ ' + nh.at + ' 1H 마감 확인 후 진입 (양봉·아래꼬리 확인)',
+    lastTxt + ' — 지지 존 ' + fx(z.long) + '~' + fx(z.mid) + '에서 받은 양봉·아래꼬리가 아직 없습니다. ' + nh.at + ' 마감까지 ' + nh.mins + '분, 그 봉이 양봉·아래꼬리로 끝나면 진입.');
 }
 
 /* ------------------------- render: live / chips / legend ------------------------- */
@@ -1441,7 +1576,8 @@ function statusOfAnalysis(a){
     : level === 3 ? sideKr + ' 타점 도달 3/3'
     : level === 2 ? sideKr + ' 2/3 대기'
     : '관망 ' + best + '/3';
-  return { level, best, side:a.side, voided, price:a.price, label };
+  return { level, best, side:a.side, voided, price:a.price, label,
+           timing: a.timing ? a.timing.short : '', timingCls: a.timing ? a.timing.cls : '' };
 }
 function applySymStatus(){
   cacheStateData();
@@ -1466,7 +1602,7 @@ function paintSymStatus(){
     b.classList.toggle('st3', lvl === 3);
     b.classList.toggle('st2', lvl === 2);
     const s = symOf(id);
-    const txt = st ? st.label : '상태 계산 중';
+    const txt = st ? st.label + (st.timing ? ' · ' + st.timing : '') : '상태 계산 중';
     b.setAttribute('aria-label', s.code + ' ' + s.name + ' — ' + txt);
     b.title = s.code + ' — ' + txt + (st && isNum(st.price) ? ' · ' + fmtN(st.price, s.dp) : '');
   });
@@ -2096,6 +2232,19 @@ function renderEvHyp(a){
     '<span class="badge ' + hypKindCls(p) + '" style="margin-left:auto">근거 ' + n + '/3</span>';
 }
 
+/* 판정 카드 상단 진입 타이밍 박스 — ✅ 지금 진입 / ⏳ 정각 마감 대기 / ⏸ 대기 */
+function renderVTiming(tm){
+  const vt = $('#vTiming');
+  if (!vt) return;
+  if (!tm){ vt.hidden = true; vt.innerHTML = ''; return; }
+  vt.hidden = false;
+  vt.className = 'vtiming ' + (tm.cls || 'hold');
+  vt.innerHTML = '<span class="vt-b">' +
+    '<span class="vt-k">진입 타이밍 · ' + (tm.branchKr || '관망') + (tm.at ? ' · ' + tm.at + ' 마감 기준' : '') + '</span>' +
+    tm.label +
+    '<span class="vt-d">' + (tm.detail || '') + '</span>' +
+  '</span>';
+}
 /* ------------------------- render: analysis ------------------------- */
 function renderAnalysis(a){
   const badge = $('#vBadge');
@@ -2107,6 +2256,7 @@ function renderAnalysis(a){
     ? ' <span class="badge ' + hypKindCls(hp) + '" style="vertical-align:2px">' + hp.title.split(' · ')[0] + '</span>' : '');
   const zc = a.zone.cls === 'short' ? 'var(--down)' : a.zone.cls === 'long' ? 'var(--up)' : a.zone.cls === 'warn' ? 'var(--warn)' : 'var(--dim)';
   $('#vSub').innerHTML = '<span style="color:' + zc + '">' + a.zone.text + '</span> · 근거 ' + Math.max(a.nS, a.nL) + '/3 · 현재가 ' + fmtPx(a.price);
+  renderVTiming(a.timing);
   $('#vHyp').innerHTML = hypBindHtml(a);
   $('#vSummary').innerHTML = a.summary.map(l => '<div style="margin-bottom:3px">' + l + '</div>').join('');
 
@@ -2846,6 +2996,7 @@ function boundLabelHtml(b){
   if (!a) return '<span class="hs-k">판정 대기</span><b class="hs-t">' + b.h.title + '</b>' +
     '<span class="hs-d">데이터가 오면 판정 가설로 자동 전환</span>';
   if (b.mode === 'live') return '<span class="hs-k">현재 판정</span>' +
+    (a.timing ? '<span class="hs-tm ' + a.timing.cls + '">' + a.timing.compact + '</span>' : '') +
     '<span class="badge ' + hypKindCls(b.h) + '">' + hypKindKr(b.h) + '</span>' +
     '<b class="hs-t">' + b.h.title + '</b>' +
     '<span class="hs-d">' + a.vLabel + ' · 근거 ' + b.n + '/3 · 15초 자동</span>';
@@ -3276,6 +3427,7 @@ function renderAll(){
       ? ('OKX 응답: ' + state.error + ' · 15초마다 다시 시도합니다.')
       : 'OKX에서 1D·4H·1H 캔들을 받아 RSI와 다이버전스를 계산합니다.';
     $('#vHyp').innerHTML = '';
+    renderVTiming(null);
     renderEvViz(null);
     renderEvHyp(null);
   }
