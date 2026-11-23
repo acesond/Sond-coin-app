@@ -1588,7 +1588,7 @@ function vizZonePanel(a, side){
       (isS ? '가격은 이미 숏 자리 위 · ' : '가격은 이미 롱 자리 아래 · ') + '무효화 경계 ' + vizLv(dryLv),
       { color:'#fcd34d', size:7.6 }));
   } else if (inside){
-    o.push(vizText(padL + 2, yp - 3.2, '지금 이 존 안 — 1H 확정봉만 확인', { color:soft, size:7.6 }));
+    o.push(vizText(padL + 2, yp - 3.2, '1H 확정봉만 확인', { color:soft, size:7.6 }));
   }
   if (!ok && !inside && !dead){
     const xNow = padL + realW;
@@ -1795,7 +1795,7 @@ function renderEvViz(a){
              : '이미 롱 자리를 아래로 지나쳤습니다 — 하위 지지 재확인이 필요')
       : z0 && z0.state === 'in'
       ? '지금 존 안입니다 — 1H 확정봉(거부·지지)만 확인하면 ① 성립'
-      : '존까지 되돌림이 와야 ①이 성립',
+      : (isS ? '존까지 반등 리테스트가 와야 ①이 성립' : '존까지 눌림이 와야 ①이 성립'),
     isS ? '라인까지 올라와 1H 윗꼬리 음봉이어야 ② 성립' : '라인까지 눌려 1H 아래꼬리 양봉이어야 ② 성립',
     isS ? '고점은 더 높게 · RSI는 더 낮게(베어리시)' : '저점은 더 낮게 · RSI는 더 높게(불리시)'
   ];
