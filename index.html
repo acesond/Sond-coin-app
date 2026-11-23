@@ -2240,7 +2240,7 @@ function renderVTiming(tm){
   vt.hidden = false;
   vt.className = 'vtiming ' + (tm.cls || 'hold');
   vt.innerHTML = '<span class="vt-b">' +
-    '<span class="vt-k">진입 타이밍 · ' + (tm.branchKr || '관망') + (tm.at ? ' · ' + tm.at + ' 마감 기준' : '') + '</span>' +
+    '<span class="vt-k">진입 타이밍 · ' + (tm.branchKr || '관망') + (tm.cls && tm.cls !== 'hold' && tm.at ? ' · 다음 1H 마감 ' + tm.at : '') + '</span>' +
     tm.label +
     '<span class="vt-d">' + (tm.detail || '') + '</span>' +
   '</span>';
@@ -3001,7 +3001,9 @@ function boundLabelHtml(b){
     '<b class="hs-t">' + b.h.title + '</b>' +
     '<span class="hs-d">' + a.vLabel + ' · 근거 ' + b.n + '/3 · 15초 자동</span>';
   const voided = !!(a.zone && a.zone.code === 'void');
+  const tm = a.timing ? '<span class="hs-tm ' + a.timing.cls + '">' + a.timing.compact + '</span>' : '';
   return '<span class="hs-k' + (voided ? ' warn' : '') + '">' + (voided ? '가설 폐기' : '관망 중') + '</span>' +
+    tm +
     '<span class="badge neutral">근거 ' + b.n + '/3 · 진입 아님</span>' +
     '<b class="hs-t">' + b.h.title + '</b>' +
     '<span class="hs-d">현재가와 가장 가까운 대기 가설 기준 · 15초 자동</span>';
