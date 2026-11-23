@@ -583,8 +583,8 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
       </div>
       <div class="lev-row">
         <span style="font-size:10.5px; color:var(--dim2); white-space:nowrap">레버리지</span>
-        <input type="range" id="fLev" min="1" max="20" step="1" value="7">
-        <span class="lev-val num" id="levVal">7배</span>
+        <input type="range" id="fLev" min="1" max="20" step="1" value="5">
+        <span class="lev-val num" id="levVal">5배</span>
       </div>
       <div class="calc-grid">
         <div class="calc-cell"><label>손절 폭</label><b id="cRisk">—</b></div>
@@ -810,16 +810,16 @@ const WATCH_DEF = {
 };
 
 const DEFAULT_PLANS = {
-  'BTC-USDT-SWAP': { side:'short', entry:61400,  stop:62200, t1:59800, t2:58800, lev:7, margin:0 },
-  'ETH-USDT-SWAP': { side:'short', entry:1716,   stop:1736,  t1:1685,  t2:1658,  lev:7, margin:0 },
-  'XRP-USDT-SWAP': { side:'short', entry:0.9300, stop:0.9400,t1:0.9145,t2:0.9000,lev:7, margin:0 },
-  'SOL-USDT-SWAP': { side:'short', entry:70.85,  stop:71.75, t1:69.30, t2:68.70, lev:7, margin:0 }
+  'BTC-USDT-SWAP': { side:'short', entry:61400,  stop:62200, t1:59800, t2:58800, lev:5, margin:0 },
+  'ETH-USDT-SWAP': { side:'short', entry:1716,   stop:1736,  t1:1685,  t2:1658,  lev:5, margin:0 },
+  'XRP-USDT-SWAP': { side:'short', entry:0.9300, stop:0.9400,t1:0.9145,t2:0.9000,lev:5, margin:0 },
+  'SOL-USDT-SWAP': { side:'short', entry:70.85,  stop:71.75, t1:69.30, t2:68.70, lev:5, margin:0 }
 };
 
 /* 가설값 버전 — 가설 숫자를 새로 배포할 때 이 문자열만 올리면 됩니다.
    이 기기에 저장된 예전 '내 타점' 수정값이 새 가설값을 덮어쓰지 않도록,
    저장된 버전이 다르면 저장값을 비우고 새 가설 기본값으로 시작합니다. */
-const HYP_VERSION = '2026-11-22-2345';
+const HYP_VERSION = '2026-11-23-1240';
 const HYP_VER_KEY = 'maeyo.hypver.v1';
 const PLAN_KEY = 'maeyo.plans.v1';
 let hypResetNotice = '';
@@ -1992,7 +1992,7 @@ function putPlan(slot, p){
 }
 function defaultCustomPlan(){
   const price = currentPrice();
-  if (!isNum(price)) return { side:'short', entry:0, stop:0, t1:0, t2:0, lev:7, margin:0 };
+  if (!isNum(price)) return { side:'short', entry:0, stop:0, t1:0, t2:0, lev:5, margin:0 };
   const dd = dp(), k = Math.pow(10, dd);
   const r = v => Math.round(v * k) / k;
   const lv = levelsFor().filter(l => isNum(l.p));
@@ -2002,14 +2002,14 @@ function defaultCustomPlan(){
   const stop  = res[1] ? res[1].p : entry * 1.015;
   const t1    = sup[0] ? sup[0].p : price * 0.985;
   const t2    = sup[1] ? sup[1].p : t1 * 0.985;
-  return { side:'short', entry:r(entry), stop:r(stop), t1:r(t1), t2:r(t2), lev:7, margin:0 };
+  return { side:'short', entry:r(entry), stop:r(stop), t1:r(t1), t2:r(t2), lev:5, margin:0 };
 }
 function planFor(slot){
   slot = slot || state.activeSlot;
   const saved = savedPlan(slot);
   const def = hypOf(slot);
   if (!def) return saved ? Object.assign({}, saved) : defaultCustomPlan();
-  const p = Object.assign({ side:def.kind, entry:def.entry, stop:def.stop, t1:def.t1, t2:def.t2, lev:7, margin:0 }, saved || {});
+  const p = Object.assign({ side:def.kind, entry:def.entry, stop:def.stop, t1:def.t1, t2:def.t2, lev:5, margin:0 }, saved || {});
   /* 가설 슬롯의 방향은 가설이 정합니다 — 계산기에서 방향만 바꿔 저장해도
      가설 카드·판정의 숏/롱 근거와 수치가 어긋나지 않게 합니다. */
   p.side = def.kind;
@@ -2325,7 +2325,7 @@ function fillPlanForm(p){
   const set = (id, v) => { $(id).value = isNum(v) ? String(v) : ''; };
   set('#fEntry', p.entry); set('#fStop', p.stop); set('#fT1', p.t1); set('#fT2', p.t2);
   set('#fMargin', p.margin || 0);
-  $('#fLev').value = p.lev || 7;
+  $('#fLev').value = p.lev || 5;
   $('#levVal').textContent = ($('#fLev').value) + '배';
 }
 function updatePlanLabel(){
@@ -2367,7 +2367,7 @@ function renderPlanner(force){
 }
 let saveTimer = null;
 function sanitizePlan(p){
-  const out = { side: p.side === 'long' ? 'long' : 'short', lev: clamp(p.lev || 7, 1, 20), margin: isNum(p.margin) ? p.margin : 0 };
+  const out = { side: p.side === 'long' ? 'long' : 'short', lev: clamp(p.lev || 5, 1, 20), margin: isNum(p.margin) ? p.margin : 0 };
   ['entry','stop','t1','t2'].forEach(k => { if (isNum(p[k]) && p[k] > 0) out[k] = p[k]; });
   return out;
 }
@@ -2397,7 +2397,7 @@ function bindPlanner(){
   });
   $('#presetBtn').addEventListener('click', () => {
     const def = hypOf(state.activeSlot) || hypOf('h1');
-    fillPlanForm({ side:def.kind, entry:def.entry, stop:def.stop, t1:def.t1, t2:def.t2, lev:7, margin:0 });
+    fillPlanForm({ side:def.kind, entry:def.entry, stop:def.stop, t1:def.t1, t2:def.t2, lev:5, margin:0 });
     if (state.plans && state.plans[state.sym]) delete state.plans[state.sym][state.activeSlot];
     store(PLAN_KEY, state.plans);
     renderPlanner();
