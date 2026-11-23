@@ -691,135 +691,135 @@ const MTF = ['1Dutc','4H','1H'];
 const MTF_LABEL = { '1Dutc':'1D', '4H':'4H', '1H':'1H' };
 
 /* 가설선 — scheduled-actions/📊-btcusdt-매억남-타점-감시 기준선
-   BTC 2026-11-22 19:10 KST 갱신분(21~22시 1H 확정에도 유지) · ETH·XRP·SOL 2026-11-22 23:45 KST 갱신분
-   근거 = OKX 1D/4H/1H 실측(23:35 KST): 21시 1H 봉이 4종목 모두 거래량 1.8~3.65배로 윗꼬리 마감 */
+   BTC·ETH·XRP·SOL 2026-11-23 14:00 KST 전면 갱신분
+   근거 = OKX 1D/4H/1H 실측(14:00 KST): 12시 1H 봉이 4종목 모두 거래량 1.9~3.1배로 직전 고점을 위로 스윕한 뒤
+   되돌림·횡보(4H 봉 거래량은 0.75~0.89배 = 평균 이하) → 추격이 아니라 상위 저항 리테스트 숏 기준 */
 const LEVELS = {
   'BTC-USDT-SWAP': [
-    { p:63500, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 목표' },
-    { p:62800, side:'long',  role:'break', tag:'롱 1차 목표', label:'돌파 롱 1차 · 눌림 롱 2차' },
-    { p:62200, side:'short', role:'stop',  tag:'숏 손절', label:'상위 저항 숏 손절' },
-    { p:61600, side:'long',  role:'entry', tag:'돌파 롱', label:'돌파 롱 · 1H 종가' },
-    { p:61400, side:'short', role:'entry', tag:'상위 숏', label:'상위 저항 숏 진입' },
-    { p:60700, side:'long',  role:'stop',  tag:'롱 손절', label:'돌파 롱 손절' },
-    { p:60200, side:'long',  role:'entry', tag:'눌림 롱', label:'눌림목 롱 · S/R 플립' },
-    { p:59800, side:'short', role:'break', tag:'숏 1차 목표', label:'상위 저항 숏 1차 목표' },
-    { p:59500, side:'short', role:'break', tag:'이탈 경계', label:'돌파 실패 이탈 · 1H 종가' },
-    { p:59300, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림목 롱 손절' },
-    { p:58800, side:'short', role:'break', tag:'숏 2차 목표', label:'상위 저항 숏 2차 목표' }
+    { p:64050, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 · 11/19 고점' },
+    { p:63400, side:'long',  role:'break', tag:'롱 1차 목표', label:'돌파 롱 1차 · 62,317 매물대 상단' },
+    { p:62900, side:'short', role:'swing', tag:'4H 저항', label:'4H EMA50 · 상위 매물대' },
+    { p:62100, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 스윕 고점 위' },
+    { p:62050, side:'long',  role:'entry', tag:'돌파 롱', label:'돌파 롱 · 1H 종가 62,050 안착' },
+    { p:61650, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 61,644.9 리테스트' },
+    { p:60760, side:'short', role:'break', tag:'숏 1차 목표', label:'숏 1차 · 4H EMA20·0.382' },
+    { p:60340, side:'long',  role:'entry', tag:'눌림 롱', label:'눌림목 롱 · 0.5 되돌림' },
+    { p:59800, side:'short', role:'break', tag:'숏 2차 목표', label:'숏 2차 · S/R 플립·0.618' },
+    { p:59700, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림목 롱 손절' },
+    { p:58700, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 1H 종가 58,700 이하' }
   ],
   'ETH-USDT-SWAP': [
-    { p:1812, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 목표' },
-    { p:1776, side:'long',  role:'break', tag:'롱 1차 목표', label:'돌파 롱 1차 · 4H EMA50' },
-    { p:1736, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 21시 꼬리 위' },
-    { p:1734, side:'long',  role:'entry', tag:'돌파 롱', label:'돌파 롱 · 1H 종가' },
-    { p:1716, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 18시 종가 리테스트' },
-    { p:1700, side:'long',  role:'break', tag:'눌림 롱 1차 목표', label:'눌림 롱 1차 목표' },
-    { p:1685, side:'short', role:'break', tag:'숏 1차 목표', label:'숏 1차 목표 · 1H EMA20/50' },
-    { p:1665, side:'long',  role:'entry', tag:'눌림 롱', label:'눌림목 롱 · 0.786 되돌림' },
-    { p:1658, side:'short', role:'break', tag:'숏 2차 목표', label:'숏 2차 목표' },
-    { p:1642, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림목 롱 손절' },
-    { p:1536, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 4H 종가' }
+    { p:1860, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 · 11/16 고점 아래' },
+    { p:1817, side:'long',  role:'break', tag:'롱 1차 목표', label:'돌파 롱 1차 · 11/19 고점' },
+    { p:1775, side:'long',  role:'entry', tag:'돌파 롱', label:'돌파 롱 · 4H EMA50 재탈환' },
+    { p:1772, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 4H EMA50 위' },
+    { p:1750, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 1,752 스윕 리테스트' },
+    { p:1706, side:'short', role:'break', tag:'숏 1차 목표', label:'숏 1차 · 4H EMA20·거래량 노드' },
+    { p:1688, side:'long',  role:'entry', tag:'눌림 롱', label:'눌림목 롱 · 0.618 되돌림' },
+    { p:1662, side:'short', role:'break', tag:'숏 2차 목표', label:'숏 2차 · 0.786 아래' },
+    { p:1663, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림목 롱 손절' },
+    { p:1645, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 11/22 저점 아래' }
   ],
   'XRP-USDT-SWAP': [
-    { p:0.9726, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 목표 · 11/20 고점' },
+    { p:0.9726, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 · 11/20 고점' },
     { p:0.9600, side:'long',  role:'break', tag:'롱 1차 목표', label:'돌파 롱 1차 · 0.96 라운드' },
-    { p:0.9400, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 이중고점 위' },
+    { p:0.9400, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 이중천장 위' },
     { p:0.9390, side:'long',  role:'entry', tag:'돌파 롱', label:'돌파 롱 · 1H 종가' },
-    { p:0.9300, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 눌림 롱 1차 목표' },
-    { p:0.9145, side:'long',  role:'entry', tag:'눌림 롱', label:'눌림목 롱 · 숏 1차 목표' },
-    { p:0.9040, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림목 롱 손절' },
-    { p:0.9000, side:'short', role:'break', tag:'숏 2차 목표', label:'숏 2차 목표 · 4H 저점 위' },
-    { p:0.8593, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 4H 종가' }
+    { p:0.9320, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 12시 종가 리테스트' },
+    { p:0.9315, side:'long',  role:'break', tag:'눌림 롱 1차 목표', label:'눌림 롱 1차 · 4H EMA20' },
+    { p:0.9145, side:'short', role:'break', tag:'숏 1차 목표', label:'숏 1차 · 오늘 저점 지지대' },
+    { p:0.9130, side:'long',  role:'entry', tag:'눌림 롱', label:'눌림목 롱 · 오늘 저점 위' },
+    { p:0.9025, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림목 롱 손절' },
+    { p:0.9000, side:'short', role:'break', tag:'숏 2차 목표', label:'숏 2차·이탈 경계 · 4H 저점' }
   ],
   'SOL-USDT-SWAP': [
-    { p:74.30, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 목표 · 11/17 고점' },
+    { p:73.50, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 · 11/20 고점' },
     { p:72.90, side:'long',  role:'break', tag:'롱 1차 목표', label:'돌파 롱 1차 · 11/16 고점' },
-    { p:71.75, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 21시 꼬리 위' },
-    { p:71.45, side:'long',  role:'entry', tag:'돌파 롱', label:'돌파 롱 · 1H 종가' },
-    { p:70.85, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 18시 고점' },
-    { p:70.20, side:'long',  role:'break', tag:'눌림 롱 1차 목표', label:'눌림 롱 1차 목표 · 노드 하단' },
-    { p:69.30, side:'short', role:'break', tag:'숏 1차 목표', label:'숏 1차 목표 · 22시 저점 아래' },
-    { p:69.00, side:'long',  role:'entry', tag:'눌림 롱', label:'눌림목 롱 · 68.8~69.2 노드' },
-    { p:68.70, side:'short', role:'break', tag:'숏 2차 목표', label:'숏 2차 목표 · 오늘 저점' },
-    { p:68.20, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림목 롱 손절' },
-    { p:64.79, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 4H 종가' }
+    { p:72.30, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 스윕 고점 위' },
+    { p:72.05, side:'long',  role:'entry', tag:'돌파 롱', label:'돌파 롱 · 1H 종가 72.0 안착' },
+    { p:71.60, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 71.75 스윕 리테스트' },
+    { p:70.25, side:'short', role:'break', tag:'숏 1차 목표', label:'숏 1차 · 0.5 되돌림·12시 저점' },
+    { p:69.90, side:'long',  role:'entry', tag:'눌림 롱', label:'눌림목 롱 · 0.618 되돌림' },
+    { p:69.35, side:'short', role:'break', tag:'숏 2차 목표', label:'숏 2차 · 0.786·거래량 노드' },
+    { p:69.15, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림목 롱 손절' },
+    { p:68.60, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 11/22 저점 아래' }
   ]
 };
 
 const HYP = {
   'BTC-USDT-SWAP': {
     h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 상위 저항 숏', tag:'메인',
-          entry:61400, stop:62200, t1:59800, t2:58800,
-          why:'18시 1H 확정 종가 61,097.8(고점 61,368.2·거래량 2.73배)로 59,800을 탈환 돌파해 60,900~61,368 상위 매물대까지 한 번에 올라왔다 — 11시 59,500 이탈로 세운 리테스트 숏(59,600 / 손절 60,600)은 폐기. 다만 1D RSI 22.3으로 일봉은 11/12부터 이어진 하락 배열 그대로이고, 4H RSI 49.2(중립) · 1H RSI 64.0은 급등으로 과열권 초입이라 추격 롱보다 되돌림이 먼저다. 61,400~61,500은 11/20 21시 61,782→59,360 대음봉의 상단부이자 18시 고점 61,368.2 바로 위, 11/20 17시 봉 고점 62,317 아래 첫 공급 자리다. 21시 1H 봉이 61,644.9까지 찍고 60,826으로 마감(거래량 1.25M · 3.22배)해 저항 확인은 이미 나왔다 — 23시 현재 60,650이라 61,400은 되돌림 리테스트에서만, 60,500 아래로 내려오면 손익비가 나빠져 추격 금지. 손절 62,200은 11/20 이탈 봉 상단(62,155) 위이자 21시 꼬리 위 1H ATR(645)만큼이라 되찾으면 숏 근거가 깨지고, 1차 59,800은 탈환한 S/R 플립, 2차 58,800은 22일 14시 저점 58,731 위. 손익비 2.00:1 · 3.25:1.' },
+          entry:61650, stop:62100, t1:60760, t2:59800,
+          why:'12시 1H 봉이 61,943까지 찍고 61,262.6로 마감(거래량 1.32M · 2.60배)해 11/22 21시 4H 고점 61,644.9를 위로 스윕한 뒤 되돌렸다 — 4H 09시 봉도 고점 61,943·종가 61,260·거래량 0.88배로 평균 이하 볼륨의 윗꼬리라 돌파가 아니라 유동성 사냥으로 본다. 13시 봉은 61,103~61,147에서 몸통이 거의 없는 도지(0.90배)로 힘을 잃었고 14시 현재 61,150 부근. 1D RSI 26.5로 일봉은 EMA20 67,215·EMA50 72,845 아래 하락 배열 그대로이고, 4H RSI 50.1은 반등이 중립까지 올라온 자리라 추격 롱보다 되돌림이 먼저다. 진입 61,650은 스윕당한 61,644.9 리테스트이자 12시 봉 윗꼬리 중간, 손절 62,100은 스윕 고점 61,943 위·62,000 라운드 위 — 여기 1H 종가가 나오면 숏 근거가 깨진다. 1차 60,760은 4H EMA20 60,760·1H EMA20 60,828·58,731→61,943 레그 0.382(60,716)가 겹치는 자리, 2차 59,800은 0.618(59,958)과 58,700~59,300 매물대(72시간 거래량 14.2%) 상단. 손익비 1.98:1 · 4.11:1.' },
     h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 눌림목 롱', tag:'서브',
-          entry:60200, stop:59300, t1:61600, t2:62800,
-          why:'18시 급등이 3파라면 첫 눌림은 60,000~60,400에서 나온다. 14시 저점 58,731 → 18시 고점 61,368.2 상승 레그(2,637)의 0.382 되돌림이 60,361, 0.5가 60,050이라 60,200은 그 사이이자 60,000 라운드 · 17시 봉 고점 60,399 아래다. 17시 봉은 거래량 1.38M(3.1배)으로 60,399까지 밀어올린 자리여서 60,000~60,400은 매수세가 남은 구간이고, 방금 탈환한 59,800이 지지로 뒤집히면 그 위에서 1H 양봉(아래꼬리) 지지를 확인한 뒤 60,200 진입. 손절 59,300은 18시 봉 저점 59,629와 59,500 플립 아래라 깨지면 돌파 자체가 실패한 것, 1차 61,600은 상위 숏존을 삼킨 뒤의 라운드, 2차 62,800은 11/20 17시 고점 62,317 위 매물대 상단. 손익비 1.56:1 · 2.89:1로 3:1 미달 — 정찰병 최소 비중, 추격 매수 금지.' },
+          entry:60340, stop:59700, t1:61500, t2:62300,
+          why:'1D RSI 26.5의 과매도 반등이 61,943에서 1차 저항을 맞은 상태라 58,731→61,943 상승 레그(3,212)의 되돌림이 첫 매수 자리다. 0.382가 60,716, 0.5가 60,337이라 60,340은 0.5 되돌림이자 12시 봉 저점 60,340과 정확히 겹치고, 4H EMA20 60,760·1H EMA50 60,519가 위아래에서 받친다. 72시간 거래량도 60,814~61,114(7.8%)·60,513~60,814(6.8%)에 몰려 있어 60,300~60,800은 매수세가 남은 구간이다. 1H 양봉(아래꼬리) 지지를 확인한 뒤 진입하고, 손절 59,700은 0.618(59,958) 아래이자 59,500 S/R 플립 아래 — 깨지면 반등 자체가 무너진 것. 1차 61,500은 스윕 고점 아래 라운드, 2차 62,300은 11/20 17시 고점 62,317 매물대. 손익비 1.81:1 · 3.06:1 — 3:1은 2차에서만 되니 정찰병 최소 비중, 추격 매수 금지.' },
     br: { id:'br', cls:'break', kind:'long', title:'가설 3 · 돌파 롱', tag:'추세',
-          entry:61600, stop:60700, t1:62800, t2:63500,
-          why:'상위 저항 숏이 실패하고 61,400~61,500 매물대를 1H 종가로 삼키는 경우. 61,600은 18시 고점 61,368.2 위 라운드이자 11/20 21시 이탈 봉 상단(62,155)으로 가는 첫 관문이라, 여기 위 1H 확정 종가가 나오면 61,782~62,317 매물대를 되돌린 것이라 가짜 돌파가 아니라 추세 전환으로 본다. 진입은 종가 안착 뒤 61,600 리테스트에서, 손절 60,700은 60,900 S/R 플립 아래이자 18시 봉 중간(60,499) 위 — 60,900을 내주면 돌파 근거가 깨진다. 1차 62,800은 62,317 매물대 상단, 2차 63,500은 11/20 고점 63,395.7 바로 위. 손익비 1.33:1 · 2.11:1로 낮아 추격 금지 — 종가 확인 후 분할, 61,900 눌림 재확인 때 본진.' }
+          entry:62100, stop:61650, t1:63400, t2:64050,
+          why:'숏 가설이 폐기되고 61,943 스윕 고점을 1H 종가로 삼키는 경우. 12시 봉 윗꼬리 61,943 위 62,050 안착 후 62,100 리테스트에서 진입한다. 61,943은 11/22 21시 고점 61,644.9와 11/20 21시 고점 61,782를 모두 넘어선 자리라, 종가로 여기를 되찾으면 유동성 스윕이 아니라 추세 전환으로 본다. 손절 61,650은 스윕 고점 리테스트 자리 — 62,100을 내주면 돌파 근거가 깨진다. 1차 63,400은 11/20 17시 고점 62,317~63,395 매물대 상단, 2차 64,050은 11/19 고점 64,054. 손익비 2.89:1 · 4.33:1 — 다만 4H EMA50 62,922가 1차 목표 위에 있어 63,000 부근에서 한 번 막히는지 확인하며 분할.' }
   },
   'ETH-USDT-SWAP': {
-    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 메인 숏', tag:'메인',
-          entry:1716, stop:1736, t1:1685, t2:1658,
-          why:'21시 1H 봉이 고점 1,733.52까지 찍고 1,706.55로 마감(거래량 3.37M · 3.65배)해, 18시 고점 1,724.0(3.02배)과 함께 1,724~1,734 이중 윗꼬리 저항이 확인됐다. 1H RSI도 18시 66.1에서 59.5로 꺾였고, 1,733~1,757은 최근 72시간 거래량이 가장 몰린 공급 노드(6.4 · 8.4 · 5.7%)다. 1D RSI 26.1로 일봉은 EMA20 1,933 아래 하락 배열 그대로라 반등은 되돌림으로 본다. 1,716은 18시 종가(1,716.45) · 19시 고점(1,718.54) 리테스트 자리 — 1H 음봉(윗꼬리) 확인 후 진입. 손절 1,736은 21시 꼬리 1,733.52 위라 되찾으면 숏 근거가 깨진다. 1차 1,685는 1H EMA20/50(1,686.7 / 1,685.7)이자 1,647.12→1,733.52 레그의 0.5(1,690.3)~0.618(1,680.1) 사이, 2차 1,658은 0.786(1,665.6) 아래 16시 저점 1,658.11. 손익비 1.55:1 · 2.90:1 — 지정가 선주문 금지, 1H 음봉 확인 뒤 진입.' },
+    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 상위 스윕 숏', tag:'메인',
+          entry:1750, stop:1772, t1:1706, t2:1662,
+          why:'12시 1H 봉이 1,751.98까지 찍고 1,731.54로 마감(거래량 3.02배)해 11/22 21시 4H 고점 1,733.5를 위로 스윕한 뒤 그 아래로 되돌아왔다 — 4H 09시 봉도 고점 1,752·거래량 0.89배라 평균 이하 볼륨의 윗꼬리, 즉 돌파가 아닌 유동성 사냥이다. 13시 봉은 1,722.6~1,735.8에서 1,726.1로 밀렸고(0.72배) 1H RSI도 59.3으로 꺾였다. 1D RSI 29.9로 일봉은 EMA20 1,909 아래 하락 배열, 4H RSI 51.2는 반등이 중립에 도달한 자리다. 진입 1,750은 스윕 고점 1,752 바로 아래 리테스트, 손절 1,772는 4H EMA50 1,771 위 — 여기를 1H 종가로 되찾으면 반등이 추세 전환으로 바뀐다. 1차 1,706은 4H EMA20 1,708·72시간 최대 거래량 구간 1,706~1,725 하단, 2차 1,662는 1,647→1,752 레그 0.786(1,669.6) 아래이자 11/22 저점 1,647.12 바로 위. 손익비 2.00:1 · 4.00:1 — 1H 윗꼬리 음봉 확인 후 진입.' },
     h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 눌림목 롱', tag:'서브',
-          entry:1665, stop:1642, t1:1700, t2:1724,
-          why:'17시 1H 봉이 거래량 2.88M(2.75배)로 1,665.0에서 1,699까지 밀어올린 자리가 1차 매수 근거다. 1,647.12 저점 → 1,733.52 고점 상승 레그(86.4)의 0.786 되돌림이 1,665.6이라 1,665는 되돌림 · 직전 4H 저점(1,665.0) · 16시 저점(1,658.11) 위가 겹치고, 1,640~1,652에 거래량 노드(5.6%)가 남아 있다. 1H 양봉(아래꼬리) 지지를 확인한 뒤 진입하고, 손절 1,642는 오늘 저점 1,647.12 아래 — 깨지면 반등 자체가 무너진 것. 1차 1,700은 21~22시 지지(1,693~1,695)가 저항으로 뒤집힌 라운드, 2차 1,724는 18시 고점. 손익비 1.52:1 · 2.57:1 — 추격 매수 금지, 되돌림 확인 후 정찰병.' },
+          entry:1688, stop:1663, t1:1735, t2:1772,
+          why:'1,647.12→1,751.98 상승 레그(104.86)의 0.618 되돌림이 1,687.2라 1,688은 0.618 위 첫 자리이자 오늘 4H 봉 저점 1,695.5 아래다. 1H EMA50 1,700.9·4H EMA20 1,708.1이 위에서 버티는 동안 1,688까지 눌리면 0.618 지지 + 과매도 일봉(RSI 29.9) 반등이 겹친다. 72시간 거래량은 1,706~1,725(13.5%)에 가장 몰려 있어 그 아래 1,690~1,700은 상대적으로 얇고, 다음 매물대는 1,611~1,630(11.5%)이다. 1H 양봉(아래꼬리) 지지 확인 후 진입, 손절 1,663은 0.786(1,669.6) 아래 — 깨지면 11/22 저점 1,647 재시험이다. 1차 1,735는 11/22 4H 고점 1,733.5, 2차 1,772는 4H EMA50 1,771. 손익비 1.88:1 · 3.36:1 — 지지 확인 전 진입 금지.' },
     br: { id:'br', cls:'break', kind:'long', title:'가설 3 · 돌파 롱', tag:'추세',
-          entry:1740, stop:1716, t1:1776, t2:1812,
-          why:'숏이 실패하고 21시 꼬리 1,733.52를 1H 확정 종가로 삼키는 경우. 1H 종가 1,734 이상 안착 후 1,740 리테스트에서 진입한다. 1,733~1,757은 거래량 최대 공급 노드라 종가로 뚫고 안착해야 가짜 돌파가 아니고, 그 위 4H EMA50 1,778.6이 첫 관문이다. 손절 1,716은 18시 종가(1,716.45) 아래 — 되돌려 받으면 돌파 근거가 깨진다. 1차 1,776은 4H EMA50 1,778.6 아래, 2차 1,812는 11/19 고점 1,816.82 위 매물대. 손익비 1.50:1 · 3.00:1 — 종가 확인 전 추격 금지, 1,733 아래로 되돌리면 폐기.' }
+          entry:1775, stop:1748, t1:1817, t2:1860,
+          why:'숏이 폐기되고 1,752 스윕 고점과 4H EMA50 1,771을 1H 종가로 함께 넘기는 경우. 진입은 1,775 리테스트 — 4H EMA50 1,771 위에서 받아야 진짜다. 1,733~1,757은 11/22~23 반등이 두 번 막힌 공급대라 종가 안착 없이 윗꼬리만 나오면 돌파가 아니다. 손절 1,748은 스윕 고점 1,752 아래 — 되돌려 받으면 돌파 근거가 깨진다. 1차 1,817은 11/19 고점 1,816.8, 2차 1,860은 11/16 고점 1,866.8 아래. 손익비 1.56:1 · 3.15:1 — 1차 손익비가 낮아 종가 확인 뒤 분할, 추격 금지.' }
   },
   'XRP-USDT-SWAP': {
-    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 메인 숏', tag:'메인',
-          entry:0.9300, stop:0.9400, t1:0.9145, t2:0.9000,
-          why:'0.9262~0.9373은 최근 72시간 거래량이 가장 몰린 구간(8.4 · 8.1%)이라 0.930~0.937이 그대로 공급대다. 21시 1H 봉이 고점 0.9372까지 찍고 0.9224로 마감(거래량 1.80배)해 04시 · 18시 고점 0.9386 / 0.9384와 이중 천장을 만들었고, 1H RSI도 53.2에서 49.0으로 꺾였다. 1D RSI 25.3에 4H EMA20 0.9306이 가격 위 — 반등은 되돌림이다. 0.9300은 4H EMA20 · 08시 고점(0.9307) · 0.9262 노드 상단 리테스트 자리로, 1H 음봉(윗꼬리) 확인 후 진입. 손절 0.9400은 0.9386 이중고점 위이자 라운드. 1차 0.9145는 12시 저점 0.9145 · 오늘 저점 0.9112 지지대 위, 2차 0.9000은 11/21 4H 저점 0.9008 · 라운드. 손익비 1.55:1 · 3.00:1 — 이전 0.92:1 문제는 손절을 0.968에서 0.940으로 이중고점 바로 위까지 좁혀 해결했다.' },
+    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 이중천장 숏', tag:'메인',
+          entry:0.9320, stop:0.9400, t1:0.9145, t2:0.9000,
+          why:'0.9386(11/21 고점)과 0.9384(11/22 17시 4H 고점) 이중천장 아래에서 12시 1H 봉이 0.9372까지 찍고 0.9321로 마감(거래량 1.93배)해 또 한 번 더 낮은 고점을 만들었다. 4H 09시 봉도 고점 0.9372·거래량 0.75배로 평균 이하, 13시 봉은 0.9306~0.9365에서 0.9327로 횡보(0.86배)다. 1D RSI 29.8에 4H EMA20 0.9306이 가격 바로 아래 — 반등은 되돌림이고 0.93은 72시간 거래량 1·2위 구간(0.9251~0.9345, 22%)의 상단이라 물량이 두껍다. 진입 0.9320은 12시 봉 종가·13시 봉 중간 리테스트, 손절 0.9400은 이중천장 0.9386 위 라운드. 1차 0.9145는 11/22 12시 저점 0.9145와 11/23 11시 저점 0.9125 지지대 위, 2차 0.9000은 11/21 4H 저점 0.9008 아래 라운드. 손익비 2.19:1 · 4.00:1 — 1H 윗꼬리 음봉 확인 후 진입.' },
     h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 눌림목 롱', tag:'서브',
-          entry:0.9145, stop:0.9040, t1:0.9315, t2:0.9380,
-          why:'0.9095~0.9150에 거래량 노드(7.0%)가 있고, 0.9145는 12시 저점(0.9145) · 15시 저점(0.9149), 0.9112는 오늘 저점이다. 0.9112~0.9145 지지에서 1H 양봉(아래꼬리) 지지를 확인한 뒤 진입 — 0.9112 아래 종가가 나면 롱 근거가 사라지므로 손절 0.9040은 0.9095 노드 하단이자 0.9008 4H 저점 위. 1차 0.9315는 4H EMA20 0.9306과 0.9318 노드 상단, 2차 0.9380은 0.9386 이중고점 바로 아래. 손익비 1.62:1 · 2.24:1 — 돌파 추격은 금지, 지지 확인 후 진입.' },
+          entry:0.9130, stop:0.9025, t1:0.9315, t2:0.9385,
+          why:'0.9112(11/22 저점)에서 0.9372까지 오른 레그의 0.5가 0.9242, 0.618이 0.9211인데 지금 가격은 그 위 0.9318이라 눌림이 와야 자리가 된다. 0.9130은 11/23 11시 저점 0.9125와 11/22 12시 저점 0.9145 사이 — 오늘 두 번 지켜진 자리이고, 72시간 거래량도 0.9157~0.9204(7.2%)에 남아 있다. 1H 양봉(아래꼬리) 확인 후 진입, 손절 0.9025는 이전 손절선 0.9040과 11/21 4H 저점 0.9008 아래. 1차 0.9315는 4H EMA20 0.9306과 12시 봉 종가, 2차 0.9385는 이중천장 0.9386 바로 아래. 손익비 1.76:1 · 2.43:1 — 3:1 미달이라 정찰병만, 돌파 추격 금지.' },
     br: { id:'br', cls:'break', kind:'long', title:'가설 3 · 돌파 롱', tag:'추세',
           entry:0.9400, stop:0.9280, t1:0.9600, t2:0.9726,
-          why:'0.9386 / 0.9384 이중고점을 1H 확정 종가로 삼키는 경우. 0.9373 아래는 거래량 최대 노드라 종가 안착 없이 윗꼬리만 나오면 돌파가 아니다(21시 0.9372 윗꼬리 전례). 1H 종가 0.9390 이상 후 0.9400 리테스트에서 진입, 손절 0.9280은 0.9262~0.9318 노드 아래이자 4H EMA20 0.9306 아래. 1차 0.9600은 0.96 라운드와 11/20 0.9597 거래량 노드, 2차 0.9726은 11/20 04시 고점. 손익비 1.67:1 · 2.72:1 — 종가 확인 전 추격 금지.' }
+          why:'0.9386/0.9384 이중천장을 1H 확정 종가로 삼키는 경우. 0.9372 아래는 72시간 거래량 22%가 깔린 구간이라 종가 안착 없이 윗꼬리만 나오면 돌파가 아니다(오늘 12시 0.9372, 13시 0.9365 두 번 실패). 1H 종가 0.9390 이상 후 0.9400 리테스트에서 진입, 손절 0.9280은 0.93 노드 아래이자 4H EMA20 0.9306 아래. 1차 0.9600은 0.96 라운드와 11/20 0.9598~0.9726 매물대, 2차 0.9726은 11/20 고점. 손익비 1.67:1 · 2.72:1 — 종가 확인 전 추격 금지.' }
   },
   'SOL-USDT-SWAP': {
-    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 메인 숏', tag:'메인',
-          entry:70.85, stop:71.75, t1:69.30, t2:68.70,
-          why:'70.9~71.4는 오늘 두 번 막힌 자리다 — 18시 고점 70.91, 21시 고점 71.40(거래량 0.735M · 2.60배)에서 70.19로 마감하며 윗꼬리 저항을 만들었다. 70.11~70.55는 거래량 노드(8.4%)라 가격이 그 위에 떠 있는 지금은 되돌림이 먼저고, 1D RSI 27.2에 4H EMA20 70.49 · EMA50 73.07 위쪽 매물이 두껍다. 70.85는 18시 고점과 70.55 노드 상단 리테스트 자리 — 1H 음봉 확인 후 진입. 손절 71.75는 21시 꼬리 71.40 위. 1차 69.30은 22시 저점 69.72 · 69.67 노드 아래, 2차 68.70은 오늘 저점 68.68 바로 위. 손익비 1.72:1 · 2.39:1 — 71.0 위로 종가가 나오면 대기.' },
+    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 상위 스윕 숏', tag:'메인',
+          entry:71.60, stop:72.25, t1:70.25, t2:69.35,
+          why:'12시 1H 봉이 71.75까지 찍고 71.35로 마감(거래량 3.07배)해 11/22 고점 71.40과 11/22 21시 4H 고점 71.40을 위로 스윕했다. 다만 4H 09시 봉 거래량은 0.80배로 평균 이하 — 강한 돌파가 아니라 위쪽 유동성만 걷어간 윗꼬리로 본다. 13시 봉은 71.10~71.54에서 71.30으로 횡보(0.63배)하며 힘이 빠졌고 1H RSI 60.7이다. 1D RSI 29.4로 일봉은 EMA20 78.58 아래 하락 배열, 4H EMA50 72.76이 위에 남아 있다. 진입 71.60은 스윕 고점 71.75 바로 아래 리테스트, 손절 72.25는 스윕 고점 + 1H ATR(0.54) 1배. 1차 70.25는 68.68→71.75 레그 0.5(70.22)와 12시 봉 저점 70.20, 2차 69.35는 0.786(69.34)과 68.49~69.16 매물대(72시간 거래량 14.8%) 상단. 손익비 2.08:1 · 3.46:1 — 71.9 위 1H 종가가 나오면 대기.' },
     h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 눌림목 롱', tag:'서브',
-          entry:69.00, stop:68.20, t1:70.20, t2:70.90,
-          why:'68.34~69.22는 최근 72시간 거래량 1 · 2위 노드(8.2 · 8.3%)로 매수세가 쌓인 자리이고 오늘 저점 68.68이 그 안에 있다. 17시 봉이 거래량 0.908M(2.81배)로 69.12에서 70.31까지 밀어올린 출발점도 여기다. 69.00은 노드 중간 · 라운드 — 1H 양봉(아래꼬리) 지지 확인 후 진입. 손절 68.20은 오늘 저점 68.68 아래이자 11/20 저점 67.84 위. 1차 70.20은 70.11~70.55 노드 하단, 2차 70.90은 18시 고점. 손익비 1.50:1 · 2.38:1 — 지지 확인 전 진입 금지.' },
+          entry:69.90, stop:69.15, t1:71.40, t2:72.20,
+          why:'68.68→71.75 상승 레그(3.07)의 0.618이 69.85, 0.786이 69.34라 69.90은 0.618 바로 위이자 오늘 저점 69.83 부근이다. 1H EMA20 70.53·EMA50 70.34·4H EMA20 70.64가 위에 몰려 있어 69.9까지 눌리면 그 아래에서 반등을 노리는 자리이고, 72시간 거래량 68.49~69.16(14.8%)이 받친다. 1H 양봉(아래꼬리) 지지 확인 후 진입, 손절 69.15는 0.786(69.34) 아래 — 깨지면 11/22 저점 68.68 재시험이다. 1차 71.40은 12시 봉 종가 71.35와 11/22 고점, 2차 72.20은 71.75 스윕 고점 위 라운드. 손익비 2.00:1 · 3.07:1 — 지지 확인 전 진입 금지.' },
     br: { id:'br', cls:'break', kind:'long', title:'가설 3 · 돌파 롱', tag:'추세',
-          entry:71.55, stop:70.75, t1:72.90, t2:74.30,
-          why:'21시 꼬리 71.40을 1H 확정 종가로 삼키는 경우. 1H 종가 71.45 이상 후 71.55 리테스트에서 진입한다. 71.0~71.4 위는 오늘 매물이 얇아 뚫리면 72.0~72.9까지 빠르게 갈 수 있지만 4H EMA20 70.49 · EMA50 73.07이 위에 있어 종가 안착이 필수다. 손절 70.75는 18시 고점 70.91 · 70.55 노드 아래 — 70.9를 내주면 돌파 근거가 깨진다. 1차 72.90은 11/16 고점, 2차 74.30은 11/17 고점. 손익비 1.69:1 · 3.44:1 — 윗꼬리만으로는 진입 금지.' }
+          entry:72.05, stop:71.55, t1:72.90, t2:73.50,
+          why:'숏이 폐기되고 71.75 스윕 고점을 1H 종가로 삼키는 경우. 72.05는 71.75 위 라운드이자 11/22 고점 71.40을 완전히 되찾은 자리라, 여기 1H 종가 안착 후 리테스트에서 진입한다. 다만 4H EMA50 72.76이 1차 목표 72.90 바로 아래에 있어 종가 안착 없이는 윗꼬리만 남는다. 손절 71.55는 13시 봉 고점 71.54 아래 — 내주면 돌파 실패다. 1차 72.90은 11/16 고점, 2차 73.50은 11/20 고점 73.52. 손익비 1.70:1 · 2.90:1 — 1차 손익비가 낮아 정찰병, 종가 확인 전 추격 금지.' }
   }
 };
 
 /* 구간 판정 기준 (숏 손절 / 돌파 롱 / 숏 진입 / 눌림목 / 롱 손절 / 이탈 경계) */
 const ZONE_DEF = {
-  'BTC-USDT-SWAP': { stop:62200, brkup:61600, brkupTop:62200, ext:62800, short:61400, shortTop:61600, mid:60700, long:59900, warnL:59500, brk1:59300, midLabel:'눌림 롱 · 상위 숏 대기 · 59,500 이탈 감시' },
-  'ETH-USDT-SWAP': { stop:1736,  brkup:1734,  brkupTop:1736,  ext:1776,  short:1712,  shortTop:1734,  mid:1680,  long:1658,  warnL:1642,  brk1:1536, midLabel:'눌림 롱 대기 · 상위 숏 대기 · 1,647 이탈 감시' },
-  'XRP-USDT-SWAP': { stop:0.9400,brkup:0.9390,brkupTop:0.9400,ext:0.9600,short:0.9280,shortTop:0.9390,mid:0.9180,long:0.9100,warnL:0.9040,brk1:0.8593, midLabel:'눌림 롱 대기 · 상위 숏 대기 · 0.9112 이탈 감시' },
-  'SOL-USDT-SWAP': { stop:71.75, brkup:71.45, brkupTop:71.75, ext:72.90, short:70.75, shortTop:71.45, mid:69.40, long:68.90, warnL:68.20, brk1:64.79, midLabel:'눌림 롱 대기 · 상위 숏 대기 · 68.68 이탈 감시' }
+  'BTC-USDT-SWAP': { stop:62100, brkup:62050, brkupTop:62100, ext:63400, short:61650, shortTop:61900, mid:60900, long:60340, warnL:59700, brk1:58700, midLabel:'눌림 롱 대기 · 상위 숏 대기 · 60,340 지지 감시' },
+  'ETH-USDT-SWAP': { stop:1775,  brkup:1772,  brkupTop:1775,  ext:1817,  short:1750,  shortTop:1765,  mid:1706,  long:1688,  warnL:1663,  brk1:1645, midLabel:'눌림 롱 대기 · 상위 숏 대기 · 1,695.5 이탈 감시' },
+  'XRP-USDT-SWAP': { stop:0.9400,brkup:0.9390,brkupTop:0.9400,ext:0.9600,short:0.9300,shortTop:0.9380,mid:0.9190,long:0.9130,warnL:0.9025,brk1:0.9000, midLabel:'눌림 롱 대기 · 상위 숏 대기 · 0.9112 이탈 감시' },
+  'SOL-USDT-SWAP': { stop:72.30, brkup:72.05, brkupTop:72.30, ext:72.90, short:71.55, shortTop:71.80, mid:70.50, long:69.90, warnL:69.15, brk1:68.60, midLabel:'눌림 롱 대기 · 상위 숏 대기 · 69.83 이탈 감시' }
 };
 
 /* 감시선 — scheduled-actions/📊-btcusdt-매억남-타점-감시 check.sh 신호와 같은 수치 */
 const WATCH_DEF = {
-  'BTC-USDT-SWAP': { stopClose:62200, stopNote:'상위 저항 숏 폐기 · 1D 회복', longClose:61600, longNote:'돌파 롱 안착 · 1H 종가', shortZone:61400, pullLo:59900, pullHi:60400, pullLabel:'눌림목 롱 60,200 지지 · 59,900~60,400', sup:59500, supNote:'돌파 실패 이탈 · 1H 종가 59,500 이하' },
-  'ETH-USDT-SWAP': { stopClose:1736, stopNote:'숏 폐기 · 1H 종가', longClose:1734, longNote:'돌파 롱 안착 · 1H 종가', shortZone:1712, pullLo:1658, pullHi:1680, pullLabel:'눌림목 롱 1,665 지지 · 1,658~1,680', sup:1647, supNote:'오늘 저점 이탈 · 눌림 롱 1,642 손절' },
-  'XRP-USDT-SWAP': { stopClose:0.9400, stopNote:'숏 폐기 · 1H 종가', longClose:0.9390, longNote:'돌파 롱 안착 · 1H 종가', shortZone:0.9280, pullLo:0.9100, pullHi:0.9180, pullLabel:'눌림목 롱 0.9145 지지 · 0.910~0.918', sup:0.9112, supNote:'오늘 저점 이탈 · 눌림 롱 0.9040 손절' },
-  'SOL-USDT-SWAP': { stopClose:71.75, stopNote:'숏 폐기 · 1H 종가', longClose:71.45, longNote:'돌파 롱 안착 · 1H 종가', shortZone:70.75, pullLo:68.90, pullHi:69.40, pullLabel:'눌림목 롱 69.00 지지 · 68.90~69.40', sup:68.68, supNote:'오늘 저점 이탈 · 눌림 롱 68.20 손절' }
+  'BTC-USDT-SWAP': { stopClose:62100, stopNote:'상위 저항 숏 폐기 · 1H 종가', longClose:62050, longNote:'돌파 롱 안착 · 1H 종가', shortZone:61650, pullLo:60340, pullHi:60900, pullLabel:'눌림목 롱 60,340 지지 · 60,340~60,900', sup:58700, supNote:'하방 이탈 · 1H 종가 58,700 이하' },
+  'ETH-USDT-SWAP': { stopClose:1775, stopNote:'숏 폐기 · 1H 종가 4H EMA50 상회', longClose:1772, longNote:'돌파 롱 안착 · 1H 종가', shortZone:1750, pullLo:1688, pullHi:1706, pullLabel:'눌림목 롱 1,688 지지 · 1,688~1,706', sup:1663, supNote:'눌림 롱 손절 · 1H 종가 1,663 이하' },
+  'XRP-USDT-SWAP': { stopClose:0.9400, stopNote:'숏 폐기 · 이중천장 위 1H 종가', longClose:0.9390, longNote:'돌파 롱 안착 · 1H 종가', shortZone:0.9320, pullLo:0.9130, pullHi:0.9190, pullLabel:'눌림목 롱 0.9130 지지 · 0.913~0.919', sup:0.9025, supNote:'눌림 롱 손절 · 1H 종가 0.9025 이하' },
+  'SOL-USDT-SWAP': { stopClose:72.30, stopNote:'숏 폐기 · 1H 종가', longClose:72.05, longNote:'돌파 롱 안착 · 1H 종가', shortZone:71.60, pullLo:69.90, pullHi:70.50, pullLabel:'눌림목 롱 69.90 지지 · 69.90~70.50', sup:69.15, supNote:'눌림 롱 손절 · 1H 종가 69.15 이하' }
 };
 
 const DEFAULT_PLANS = {
-  'BTC-USDT-SWAP': { side:'short', entry:61400,  stop:62200, t1:59800, t2:58800, lev:5, margin:0 },
-  'ETH-USDT-SWAP': { side:'short', entry:1716,   stop:1736,  t1:1685,  t2:1658,  lev:5, margin:0 },
-  'XRP-USDT-SWAP': { side:'short', entry:0.9300, stop:0.9400,t1:0.9145,t2:0.9000,lev:5, margin:0 },
-  'SOL-USDT-SWAP': { side:'short', entry:70.85,  stop:71.75, t1:69.30, t2:68.70, lev:5, margin:0 }
+  'BTC-USDT-SWAP': { side:'short', entry:61650,  stop:62100, t1:60760, t2:59800, lev:5, margin:0 },
+  'ETH-USDT-SWAP': { side:'short', entry:1750,   stop:1772,  t1:1706,  t2:1662,  lev:5, margin:0 },
+  'XRP-USDT-SWAP': { side:'short', entry:0.9320, stop:0.9400,t1:0.9145,t2:0.9000,lev:5, margin:0 },
+  'SOL-USDT-SWAP': { side:'short', entry:71.60,  stop:72.25, t1:70.25, t2:69.35, lev:5, margin:0 }
 };
 
 /* 가설값 버전 — 가설 숫자를 새로 배포할 때 이 문자열만 올리면 됩니다.
    이 기기에 저장된 예전 '내 타점' 수정값이 새 가설값을 덮어쓰지 않도록,
    저장된 버전이 다르면 저장값을 비우고 새 가설 기본값으로 시작합니다. */
-const HYP_VERSION = '2026-11-23-1240';
+const HYP_VERSION = '2026-11-23-1415';
 const HYP_VER_KEY = 'maeyo.hypver.v1';
 const PLAN_KEY = 'maeyo.plans.v1';
 let hypResetNotice = '';
@@ -1480,20 +1480,45 @@ function vizBar(c, x, bw, Y, o){
     (o.dash ? ' stroke="' + (up ? 'rgba(34,197,94,.85)' : 'rgba(244,63,94,.85)') + '" stroke-width="0.9"' + dash : '') + '/>';
   return s;
 }
+/* ① 자리 존 — 숏은 '가격 위', 롱은 '가격 아래'의 유효한 존만 그립니다.
+   가격이 존을 이미 지나쳤으면(숏: 위로 통과) state='past'로 돌려주고, 그 방향의 상위 저항·무효화 경계로
+   다시 잡습니다. 그래야 숏인데 '떨어져야 자리 충족'처럼 반대로 향하는 점선이 그려지지 않습니다. */
 function vizZoneOf(a, side){
-  const leg = a.leg4;
+  const leg = a.leg4, price = a.price, isS = side === 'short';
+  const z = ZONE_DEF[state.sym];
   const f4 = (a.f4 && isNum(a.f4[0]) && isNum(a.f4[1]))
     ? { lo:Math.min(a.f4[0], a.f4[1]), hi:Math.max(a.f4[0], a.f4[1]) } : null;
   const aligned = !!(leg && f4 && (leg.up ? side === 'long' : side === 'short') && f4.hi > f4.lo);
-  if (aligned) return { lo:f4.lo, hi:f4.hi, fib:true, aligned:true };
-  const z = ZONE_DEF[state.sym];
-  if (z){
-    const lo = side === 'short' ? Math.min(z.short, z.shortTop) : Math.min(z.long, z.mid);
-    const hi = side === 'short' ? Math.max(z.short, z.shortTop) : Math.max(z.long, z.mid);
-    if (hi > lo) return { lo, hi, fib:false, aligned:false };
+  let lo = null, hi = null, fib = false, al = false;
+  if (z && isNum(z.short) && isNum(z.long)){
+    lo = isS ? Math.min(z.short, z.shortTop) : Math.min(z.long, z.mid);
+    hi = isS ? Math.max(z.short, z.shortTop) : Math.max(z.long, z.mid);
+    if (!(hi > lo)){ lo = hi = null; }
   }
-  if (f4 && f4.hi > f4.lo) return { lo:f4.lo, hi:f4.hi, fib:true, aligned:false };
-  return null;
+  if (!isNum(lo) && aligned){ lo = f4.lo; hi = f4.hi; fib = true; al = true; }
+  if (!isNum(lo) && f4 && f4.hi > f4.lo){ lo = f4.lo; hi = f4.hi; fib = true; }
+  if (!isNum(lo)) return null;
+  const gap = Math.abs(price) * 0.0009;
+  if (price >= lo - gap && price <= hi + gap) return { lo, hi, fib:fib, aligned:al, state:'in' };
+  const past = isS ? price > hi : price < lo;
+  if (!past) return { lo, hi, fib:fib, aligned:al, state:'wait' };
+  /* 이미 지나친 존 → 위(숏)/아래(롱)의 유효한 경계로 다시 잡는다 */
+  if (!z) return { lo, hi, fib:fib, aligned:al, state:'past', ref:isS ? '상위 저항' : '하위 지지' };
+  const lv = (a.levels || []).filter(l => isNum(l.p) && (isS ? l.side === 'short' && l.p > price * 1.0005
+                                                            : l.side === 'long'  && l.p < price * 0.9995)).map(l => l.p);
+  const dry = isS ? z.stop : z.warnL;
+  if (isS){
+    const cands = lv.concat(dry > price ? [dry] : []).sort((x, y) => x - y);
+    if (!cands.length) return { lo:dry * 0.999, hi:dry * 1.001, fib:false, aligned:false, state:'dead', ref:'무효화 경계' };
+    const nlo = cands[0];
+    const nhi = Math.max(nlo * 1.0015, dry > nlo ? dry : nlo * 1.008);
+    return { lo:nlo, hi:nhi, fib:false, aligned:false, state:'past', ref:'상위 저항' };
+  }
+  const cands = lv.concat(dry < price ? [dry] : []).sort((x, y) => y - x);
+  if (!cands.length) return { lo:dry * 0.999, hi:dry * 1.001, fib:false, aligned:false, state:'dead', ref:'무효화 경계' };
+  const nhi = cands[0];
+  const nlo = Math.min(nhi * 0.9985, dry < nhi ? dry : nhi * 0.992);
+  return { lo:nlo, hi:nhi, fib:false, aligned:false, state:'past', ref:'하위 지지' };
 }
 function vizLineOf(a, side){
   const list = (a.levels || []).filter(l => l.side === side && isNum(l.p) && isNum(l.d));
@@ -1517,11 +1542,14 @@ function vizZonePanel(a, side){
   if (!z) return vizWait(H, '4H 레그·핵심 존을 계산할 수 없습니다');
   const ok = !!a.ev[side][0].ok;
   const isS = side === 'short';
+  const past = z.state === 'past';
+  const dead = z.state === 'dead';
+  const inside = z.state === 'in';
   const price = a.price;
   const col = isS ? '#f43f5e' : '#22c55e';
   const soft = isS ? '#ffb3c0' : '#a7f3c4';
-  const bandFill = isS ? 'rgba(244,63,94,.12)' : 'rgba(34,197,94,.12)';
-  const bandLine = isS ? 'rgba(244,63,94,.36)' : 'rgba(34,197,94,.36)';
+  const bandFill = dead ? 'rgba(148,163,184,.10)' : past ? 'rgba(245,158,11,.13)' : isS ? 'rgba(244,63,94,.12)' : 'rgba(34,197,94,.12)';
+  const bandLine = dead ? 'rgba(148,163,184,.50)' : past ? 'rgba(245,158,11,.55)' : isS ? 'rgba(244,63,94,.36)' : 'rgba(34,197,94,.36)';
   const cs = cAll.slice(ok ? -24 : -14);
   const padL = 4, padR = 46, padT = 15, padB = 10;
   const innerW = VIZ_W - padL - padR;
@@ -1541,17 +1569,34 @@ function vizZonePanel(a, side){
   o.push('<line x1="' + padL + '" y1="' + yp.toFixed(1) + '" x2="' + (VIZ_W - padR) + '" y2="' + yp.toFixed(1) + '" stroke="rgba(233,239,248,.45)" stroke-width="0.8" stroke-dasharray="2.4 2.6"/>');
   o.push('<circle cx="' + (VIZ_W - padR) + '" cy="' + yp.toFixed(1) + '" r="2.1" fill="' + (ok ? col : '#eef4fd') + '"/>');
   o.push(vizText(VIZ_W - padR + 4, yp + 3, fmtLv(price), { color:'#eef4fd', size:8.6, weight:700, mono:true }));
-  const zTxt = (z.fib ? '0.5~0.618 ' : '가설 존 ') + vizLv(z.lo) + '~' + vizLv(z.hi);
+  const zTxt = (dead
+      ? (isS ? '숏 가설 폐기 · 무효화 경계 ' : '롱 가설 폐기 · 무효화 경계 ')
+      : past
+      ? (isS ? '이미 상회 · 상위 저항 ' : '이미 하회 · 하위 지지 ')
+      : inside ? (isS ? '숏 자리 · 지금 존 안 ' : '롱 자리 · 지금 존 안 ')
+      : (z.fib ? '0.5~0.618 ' : (isS ? '숏 자리 ' : '롱 자리 ')))
+    + vizLv(z.lo) + '~' + vizLv(z.hi);
   let zy = yzT + yzH + 9;
   if (zy > yBot - 1) zy = yzT - 3.5;
-  o.push(vizText(padL + 2, zy, zTxt, { color:soft, size:8 }));
-  if (!ok){
+  o.push(vizText(padL + 2, zy, zTxt, { color:dead ? '#94a3b8' : past ? '#fcd34d' : soft, size:8 }));
+  if (dead){
+    o.push(vizText(padL + 2, yp - 3.2, (isS ? '무효화 경계 위 — 숏 가설 폐기' : '무효화 경계 아래 — 롱 가설 폐기'), { color:'#94a3b8', size:7.6 }));
+  } else if (past){
+    const zz = ZONE_DEF[state.sym];
+    const dryLv = isS ? (zz ? zz.stop : z.hi) : (zz ? zz.warnL : z.lo);
+    o.push(vizText(padL + 2, yp - 3.2,
+      (isS ? '가격은 이미 숏 자리 위 · ' : '가격은 이미 롱 자리 아래 · ') + '무효화 경계 ' + vizLv(dryLv),
+      { color:'#fcd34d', size:7.6 }));
+  } else if (inside){
+    o.push(vizText(padL + 2, yp - 3.2, '지금 이 존 안 — 1H 확정봉만 확인', { color:soft, size:7.6 }));
+  }
+  if (!ok && !inside && !dead){
     const xNow = padL + realW;
     o.push('<line x1="' + xNow.toFixed(1) + '" y1="' + yTop + '" x2="' + xNow.toFixed(1) + '" y2="' + yBot + '" stroke="rgba(147,162,182,.26)" stroke-width="0.8" stroke-dasharray="2 3"/>');
     o.push(vizText(xNow - 3, yTop + 6, '지금', { anchor:'end', color:'#66758a', size:7.4 }));
     o.push(vizText(xNow + 3, yTop + 6, '예상', { color:'#66758a', size:7.4 }));
     const lastC = cs[cs.length - 1].c;
-    const target = (z.lo + z.hi) / 2;
+    const target = past ? (isS ? z.lo : z.hi) : (z.lo + z.hi) / 2;
     const pStart = xNow + 1, pEnd = VIZ_W - padR - 1;
     const nS = 4, cstep = (pEnd - pStart) / nS;
     const wig = Math.abs(target - lastC) * 0.12 + Math.abs(price) * 0.0004;
@@ -1691,10 +1736,22 @@ function vizCapZone(a, side){
   const z = vizZoneOf(a, side);
   if (!z) return '핵심 존 계산 불가';
   const price = a.price;
+  const isS = side === 'short';
+  const dPct = v => fmtPct((v - price) / price * 100);
+  if (z.state === 'dead')
+    return '가설 폐기 — ' + (isS ? '무효화 경계 ' : '무효화 경계 ') + vizLv(isS ? z.hi : z.lo)
+      + ' ' + (isS ? '위' : '아래') + ' · 새 가설 기준으로 다시 계산해야 합니다';
+  if (z.state === 'past')
+    return (isS ? '이미 상회 — 숏 자리를 위로 지나쳤습니다 · 상위 저항/무효화 경계 '
+                : '이미 하회 — 롱 자리를 아래로 지나쳤습니다 · 하위 지지/무효화 경계 ')
+      + vizLv(z.lo) + '~' + vizLv(z.hi) + ' (' + dPct(isS ? z.lo : z.hi) + ')';
+  if (z.state === 'in')
+    return '지금 존 안 ' + vizLv(z.lo) + '~' + vizLv(z.hi)
+      + (z.fib && z.aligned && a.leg4 ? ' · 4H 레그 ' + (a.leg4.retr(price) * 100).toFixed(0) + '%' : '')
+      + ' — 1H 확정봉 확인 대기';
   let dTxt;
-  if (price < z.lo) dTxt = '존까지 ' + fmtPct((z.lo - price) / price * 100);
-  else if (price > z.hi) dTxt = '존까지 ' + fmtPct((z.hi - price) / price * 100);
-  else dTxt = '지금 존 안';
+  if (price < z.lo) dTxt = '존까지 ' + dPct(z.lo);
+  else dTxt = '존까지 ' + dPct(z.hi);
   if (z.fib && z.aligned) return '4H 레그 되돌림 ' + (a.leg4.retr(price) * 100).toFixed(0) + '% · 존 ' + vizLv(z.lo) + '~' + vizLv(z.hi) + ' · ' + dTxt;
   if (z.fib) return '4H 레그 ' + (a.leg4 && a.leg4.up ? '상승' : '하락') + ' · 되돌림 존 ' + vizLv(z.lo) + '~' + vizLv(z.hi) + ' · ' + dTxt;
   const legTxt = a.leg4 ? '4H 레그 ' + (a.leg4.up ? '상승' : '하락') + ' — ' + (side === 'short' ? '숏' : '롱') + ' 되돌림 자리 아님 · ' : '';
@@ -1723,14 +1780,22 @@ function renderEvViz(a){
   const evs = a.ev[side];
   const steps = ['①', '②', '③'];
   const titles = [
-    ['자리 · 핵심 존', '4H 레그 0.5~0.618 되돌림'],
+    ['자리 · 핵심 존', '핵심 존 대비 현재 위치'],
     ['캔들 · 저항·지지', '가설·스윙 라인 0.6% 이내'],
     ['RSI · 다이버전스', '4H·1H 스윙 비교']
   ];
   const panels = [vizZonePanel(a, side), vizLinePanel(a, side), vizDivPanel(a, side)];
   const caps = [vizCapZone(a, side), vizCapLine(a, side), vizCapDiv(a, side)];
+  const z0 = vizZoneOf(a, side);
   const needs = [
-    '존까지 되돌림이 와야 ①이 성립',
+    z0 && z0.state === 'dead'
+      ? '가설 폐기 구간입니다 — 새 가설 기준이 서야 ①을 판정합니다'
+      : z0 && z0.state === 'past'
+      ? (isS ? '이미 숏 자리를 위로 지나쳤습니다 — 상위 저항 리테스트가 와야 ① 성립'
+             : '이미 롱 자리를 아래로 지나쳤습니다 — 하위 지지 재확인이 필요')
+      : z0 && z0.state === 'in'
+      ? '지금 존 안입니다 — 1H 확정봉(거부·지지)만 확인하면 ① 성립'
+      : '존까지 되돌림이 와야 ①이 성립',
     isS ? '라인까지 올라와 1H 윗꼬리 음봉이어야 ② 성립' : '라인까지 눌려 1H 아래꼬리 양봉이어야 ② 성립',
     isS ? '고점은 더 높게 · RSI는 더 낮게(베어리시)' : '저점은 더 낮게 · RSI는 더 높게(불리시)'
   ];
