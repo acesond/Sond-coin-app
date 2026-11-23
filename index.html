@@ -1581,7 +1581,7 @@ function vizZonePanel(a, side){
   o.push(vizText(padL + 2, zy, zTxt, { color:dead ? '#94a3b8' : past ? '#fcd34d' : soft, size:8 }));
   if (dead){
     o.push(vizText(padL + 2, yp - 3.2, (isS ? '무효화 경계 위 — 숏 가설 폐기' : '무효화 경계 아래 — 롱 가설 폐기'), { color:'#94a3b8', size:7.6 }));
-  } else if (past){
+  } else if (past && Math.abs(yp - yzT) > 16){
     const zz = ZONE_DEF[state.sym];
     const dryLv = isS ? (zz ? zz.stop : z.hi) : (zz ? zz.warnL : z.lo);
     o.push(vizText(padL + 2, yp - 3.2,
