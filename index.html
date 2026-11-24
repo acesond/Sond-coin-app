@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>매억남 코인 분석 · 바이낸스 선물 거래량 상위 10종목 실시간</title>
-<meta name="description" content="매억남·박경철 실전 1장 기준으로 바이낸스 USDT-M 선물 24시간 거래대금 상위 10종목(BTC·ETH·SOL·ZEC·XRP·HYPE·NEAR·BNB·DOGE·BLESS)을 실시간 분석하는 모바일 웹앱. 멀티 타임프레임 RSI·거래량·다이버전스 자동 판정, 가설 타점, 손익비 계산기, 매매 전 체크리스트.">
+<title>매억남 코인 분석 · 대형 메이저 6종목 실시간</title>
+<meta name="description" content="매억남·박경철 실전 1장 기준으로 바이낸스 USDT-M 선물 대형 메이저 6종목(BTC·ETH·SOL·XRP·BNB·DOGE)을 실시간 분석하는 모바일 웹앱. 멀티 타임프레임 RSI·거래량·다이버전스 자동 판정, 가설 타점, 손익비 계산기, 매매 전 체크리스트.">
 <meta name="theme-color" content="#070b12">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -954,9 +954,9 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
   <div class="chip-legend" id="chipLegend">
     <span><i class="d3"></i>타점 도달 3/3</span>
     <span><i class="d2"></i>2/3 대기</span>
-    <span class="st-upd" id="stUpd">10종목 점검 중</span>
+    <span class="st-upd" id="stUpd">6종목 점검 중</span>
   </div>
-  <div class="chip-easy" id="chipEasy">종목 순서는 <b>진입 중 포지션 → 타점 도달 3/3 → 바이낸스 선물 24시간 거래대금 1~10위</b>입니다. 빨간 점 = 자리·라인·다이버전스가 <b>모두</b> 겹침(3/3, 타점) · 주황 점 = 하나 모자람(2/3, 대기). 3/3이어도 손익비 3:1이 안 되면 진입하지 않습니다.</div>
+  <div class="chip-easy" id="chipEasy">종목 순서는 <b>진입 중 포지션 → 타점 도달 3/3 → 바이낸스 선물 24시간 거래대금 순(6종목)</b>입니다. 빨간 점 = 자리·라인·다이버전스가 <b>모두</b> 겹침(3/3, 타점) · 주황 점 = 하나 모자람(2/3, 대기) 또는 3/3이지만 파동 겹침·1D 역추세 주의. 자리와 라인이 같은 레벨이면 근거 1개로 셉니다. 3/3이어도 손익비 3:1이 안 되면 진입하지 않습니다.</div>
 
   <!-- ===== 차트 ===== -->
   <section id="chartSec">
@@ -1064,6 +1064,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
     <div class="sec-title"><h2><i></i>가설 시나리오</h2><span class="hint" id="scnHint">종목별 기준</span></div>
     <div class="evt-note" id="hypNote" style="display:none;color:#ffd79a;margin:0 3px 8px"></div>
     <div id="scnList"></div>
+    <div id="autoScnList"></div>
   </section>
 
   <!-- ===== 내 타점 ===== -->
@@ -1143,7 +1144,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
   </section>
 
   <div class="foot">
-    <p><b>데이터</b> 바이낸스 USDT-M 무기한 선물(fapi.binance.com) 24시간 거래대금 상위 10종목(BTC · ETH · SOL · ZEC · XRP · HYPE · NEAR · BNB · DOGE · BLESS) 퍼블릭 API · 15초 자동 갱신. 종목 표기는 BINANCE:BTCUSDT.P 형식이며, 일봉은 UTC 기준(한국 09:00 시작)입니다.</p>
+    <p><b>데이터</b> 바이낸스 USDT-M 무기한 선물(fapi.binance.com) 24시간 거래대금 순 대형 메이저 6종목(BTC · ETH · SOL · XRP · BNB · DOGE) 퍼블릭 API · 15초 자동 갱신. 종목 표기는 BINANCE:BTCUSDT.P 형식이며, 일봉은 UTC 기준(한국 09:00 시작)입니다.</p>
     <p><b>기준</b> 매억남 요약(Ep1~Ep8) · 박경철 기법 강의 · <b>실전 매매 1장 체크리스트</b>. 자동 판정은 계산 보조일 뿐이며, 근거 3개가 겹치지 않으면 진입이 아닙니다.</p>
     <p><b>주의</b> 이 앱은 학습·분석 참고용입니다. 주문을 실행하지 않고, 어떤 경우에도 투자 손실에 대한 책임을 지지 않습니다. 가격은 참고값이니 실제 주문 화면에서 다시 확인하세요.</p>
   </div>
@@ -1209,22 +1210,17 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
    ========================================================= */
 
 const BINANCE = 'https://fapi.binance.com';
-/* 바이낸스 USDT-M 무기한 선물 24시간 거래대금(quoteVolume) 상위 10종목 — 큰 순서대로 1위→10위
-   2026-11-24 16:37 KST fapi.binance.com /fapi/v1/ticker/24hr 실측 (USDT · PERPETUAL · TRADING, 스테이블코인 제외)
-   1 BTC 202.8억$ · 2 ETH 111.0억$ · 3 SOL 23.6억$ · 4 ZEC 18.8억$ · 5 XRP 9.5억$
-   6 HYPE 7.0억$ · 7 NEAR 4.4억$ · 8 BNB 3.9억$ · 9 DOGE 3.8억$ · 10 BLESS 3.2억$
-   (11위 EVAA 3.13억$ · 12위 1000PEPE 3.10억$) — 아래 배열 순서가 곧 순위입니다. 탭·매매기록 필터 모두 이 순서. */
+/* 바이낸스 USDT-M 무기한 선물 24시간 거래대금(quoteVolume) 상위권에서 고른 대형 메이저 6종목 — 큰 순서대로 1→6위
+   2026-11-24 16:37 KST fapi.binance.com /fapi/v1/ticker/24hr 실측값 중 6종목만 남김
+   (당시 10종목 순위: 1 BTC 202.8억$ · 2 ETH 111.0억$ · 3 SOL 23.6억$ · 5 XRP 9.5억$ · 8 BNB 3.9억$ · 9 DOGE 3.8억$)
+   — 아래 배열 순서가 곧 거래대금 순위입니다. 탭·매매기록 필터 모두 이 순서. */
 const SYMBOLS = [
   { id:'BTCUSDT',   code:'BTC',   name:'비트코인',      dp:1, rank:1,  vol:'202.8억$' },
   { id:'ETHUSDT',   code:'ETH',   name:'이더리움',      dp:2, rank:2,  vol:'111.0억$' },
   { id:'SOLUSDT',   code:'SOL',   name:'솔라나',        dp:2, rank:3,  vol:'23.6억$' },
-  { id:'ZECUSDT',   code:'ZEC',   name:'지캐시',        dp:2, rank:4,  vol:'18.8억$' },
-  { id:'XRPUSDT',   code:'XRP',   name:'리플',          dp:4, rank:5,  vol:'9.5억$' },
-  { id:'HYPEUSDT',  code:'HYPE',  name:'하이퍼리퀴드',  dp:3, rank:6,  vol:'7.0억$' },
-  { id:'NEARUSDT',  code:'NEAR',  name:'니어',          dp:3, rank:7,  vol:'4.4억$' },
-  { id:'BNBUSDT',   code:'BNB',   name:'바이낸스코인',  dp:2, rank:8,  vol:'3.9억$' },
-  { id:'DOGEUSDT',  code:'DOGE',  name:'도지코인',      dp:5, rank:9,  vol:'3.8억$' },
-  { id:'BLESSUSDT', code:'BLESS', name:'블레스',        dp:6, rank:10, vol:'3.2억$' }
+  { id:'XRPUSDT',   code:'XRP',   name:'리플',          dp:4, rank:4,  vol:'9.5억$' },
+  { id:'BNBUSDT',   code:'BNB',   name:'바이낸스코인',  dp:2, rank:5,  vol:'3.9억$' },
+  { id:'DOGEUSDT',  code:'DOGE',  name:'도지코인',      dp:5, rank:6,  vol:'3.8억$' }
 ];
 const BARS = [
   { k:'15m',  label:'15분', dp:'15m' },
@@ -1283,19 +1279,6 @@ const LEVELS = {
     { p:68.80, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림 롱 손절 · 11/22 4H 저점 68.67 위' },
     { p:68.00, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 1H 종가 68.00 이하' }
   ],
-  'ZECUSDT': [
-    { p:903.00, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 · 야간 스윕 고점 902.97 위 확장' },
-    { p:850.00, side:'long',  role:'break', tag:'롱 1차 목표', label:'돌파 롱 1차 · 4H 0.236 되돌림 850.2 (01시 고점 861.83 아래)' },
-    { p:808.00, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 05시 4H 고점 807.07 위·11/22 고점 809.79 아래 · 1H 종가면 폐기' },
-    { p:791.00, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 4H 0.5 되돌림 791.1·1H EMA50 789.3·10시 고점 790.81' },
-    { p:781.00, side:'short', role:'entry', tag:'숏 감시선', label:'숏 감시선 · 현재가/1H 고가 781 도달 (1H EMA20 780.91)' },
-    { p:770.00, side:'long',  role:'break', tag:'눌림 롱 2차 목표', label:'눌림 롱 2차 · 14시 1H 고점 771.64 아래 라운드' },
-    { p:745.00, side:'short', role:'break', tag:'숏 1차 목표', label:'숏 1차 · 오늘 저점 741.43 위 745 라운드' },
-    { p:735.00, side:'long',  role:'entry', tag:'눌림 롱 감시선', label:'눌림 롱 감시선 · 현재가 735 이하 (0.786 727.2 위)' },
-    { p:720.00, side:'long',  role:'entry', tag:'눌림 롱 진입', label:'눌림 롱 진입 · 4H 0.786 되돌림 727.2 아래·720 라운드' },
-    { p:698.00, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림 롱 손절 · 0.786 727.2와 700 라운드를 모두 내주는 자리' },
-    { p:679.00, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 1H 종가 679 이하 (11/21 저점 679.28)' }
-  ],
   'XRPUSDT': [
     { p:1.0500, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 · 1.05 라운드 확장 (1D EMA20 1.0205 위)' },
     { p:1.0260, side:'long',  role:'break', tag:'롱 1차 목표', label:'야간 스윕 고점 1.0259 (돌파 롱 1차 · 숏 폐기 확인)' },
@@ -1307,31 +1290,6 @@ const LEVELS = {
     { p:0.9320, side:'long',  role:'entry', tag:'눌림 롱 진입', label:'눌림 롱 진입 · 오늘 저점 0.9316·상승 레그 0.5 되돌림 0.9425 아래' },
     { p:0.9180, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림 롱 손절 · 0.618 되돌림 0.9229 아래·11/22 저점 0.9112 위' },
     { p:0.9050, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 1H 종가 0.905 이하' }
-  ],
-  'HYPEUSDT': [
-    { p:75.00, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 · 75.00 라운드 (1D EMA50 74.90 부근)' },
-    { p:71.04, side:'long',  role:'break', tag:'롱 1차 목표', label:'돌파 롱 1차 · 11/16 1D 고점 71.04' },
-    { p:70.60, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 야간 고점 69.77·11/19 고점 70.213 위 · 1H 종가면 폐기' },
-    { p:69.30, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 야간 스윕 고점 69.77 리테스트 (1D EMA20 69.19 / 눌림 롱 2차 목표)' },
-    { p:66.86, side:'short', role:'entry', tag:'숏 감시선', label:'숏 감시선 · 현재가/1H 고가 66.86 도달 (01시 고점 66.857 / 눌림 롱 1차 목표)' },
-    { p:65.00, side:'long',  role:'break', tag:'눌림 롱 1차 목표', label:'눌림 롱 1차 · 4H EMA50 65.02·하락 0.618 되돌림 65.01' },
-    { p:63.40, side:'long',  role:'entry', tag:'눌림 롱 감시선', label:'눌림 롱 감시선 · 현재가 63.40 이하 (4H EMA20 63.41)' },
-    { p:62.80, side:'long',  role:'entry', tag:'눌림 롱 진입', label:'눌림 롱 진입 · 4H 55.803→69.77의 0.5 되돌림 62.787' },
-    { p:61.00, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림 롱 손절 · 11/23 4H 저점 61.448·0.618 되돌림 61.148 아래' },
-    { p:59.50, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 1H 종가 59.50 이하 (11/22 저점 59.527)' }
-  ],
-  'NEARUSDT': [
-    { p:3.600, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 · 3.60 라운드 확장' },
-    { p:3.475, side:'long',  role:'break', tag:'롱 1차 목표', label:'돌파 롱 1차 · 11/19 1D 고점 3.475' },
-    { p:3.320, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 야간 스윕 고점 3.278 위 · 1H 종가면 폐기' },
-    { p:3.200, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 반등 0.236 되돌림 3.184·01시 4H 고점 3.149 위' },
-    { p:3.090, side:'short', role:'entry', tag:'숏 감시선', label:'숏 감시선 · 현재가/1H 고가 3.09 도달 (반등 0.5 되돌림 3.078·4H EMA50 3.0917)' },
-    { p:3.150, side:'long',  role:'break', tag:'눌림 롱 2차 목표', label:'눌림 롱 2차 · 01시 4H 고점 3.149' },
-    { p:2.990, side:'long',  role:'entry', tag:'눌림 롱 감시선', label:'눌림 롱 감시선 · 현재가 2.99 이하 (4H EMA20 2.9967)' },
-    { p:2.950, side:'short', role:'break', tag:'숏 1차 목표', label:'숏 1차 · 05시 4H 저점 2.932 위 라운드' },
-    { p:2.920, side:'long',  role:'entry', tag:'눌림 롱 진입', label:'눌림 롱 진입 · 2.546→3.278의 0.5 되돌림 2.912·11/23 4H 저점 2.934 아래' },
-    { p:2.820, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림 롱 손절 · 0.618 되돌림 2.826·11/22 1D 저점 2.843 아래' },
-    { p:2.790, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 1H 종가 2.79 이하' }
   ],
   'BNBUSDT': [
     { p:630.00, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 · 630 라운드 (1D EMA20 609.5 위 확장)' },
@@ -1356,18 +1314,6 @@ const LEVELS = {
     { p:0.05300, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림 롱 손절 · 11/21 이후 저점 0.05075·0.05373·0.05431 클러스터 아래' },
     { p:0.05070, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 1H 종가 0.0507 이하 (11/21 저점 0.05075)' }
   ],
-  'BLESSUSDT': [
-    { p:0.02400, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 · 0.024 라운드 확장' },
-    { p:0.02185, side:'long',  role:'break', tag:'롱 1차 목표', label:'돌파 롱 1차 · 11/21 1D 고점 0.02185' },
-    { p:0.02080, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 야간·11/23 고점 0.02035 위 · 1H 종가면 폐기' },
-    { p:0.01970, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 11/23 17시 4H 종가 0.019672·스파이크 하락 0.618 되돌림 0.01756 위' },
-    { p:0.01760, side:'short', role:'entry', tag:'숏 감시선', label:'숏 감시선 · 현재가/1H 고가 0.0176 도달 (하락 0.618 되돌림 0.01756)' },
-    { p:0.01700, side:'long',  role:'break', tag:'눌림 롱 2차 목표', label:'눌림 롱 2차 · 시야 확보용 0.017 라운드' },
-    { p:0.01670, side:'short', role:'break', tag:'숏 1차 목표', label:'숏 1차 · 하락 0.5 되돌림 0.01669 (눌림 롱 감시선 겸)' },
-    { p:0.01541, side:'long',  role:'entry', tag:'눌림 롱 진입', label:'눌림 롱 진입 · 반등 레그 0.5 되돌림 0.01541' },
-    { p:0.01405, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림 롱 손절 · 반등 레그 0.786 0.01405 아래' },
-    { p:0.01300, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 1H 종가 0.013 이하 (오늘 저점 0.013042)' }
-  ]
 };
 
 const HYP = {
@@ -1404,17 +1350,6 @@ const HYP = {
           entry:75.50, stop:74.00, t1:78.50, t2:80.00,
           why:'1H 확정 종가 75.50 위 — 01시 고점 75.88과 05시 고점 73.39 사이를 넘겨 11·12시 이탈이 스윕이었음을 확인하는 자리다. 진입 75.50, 손절 74.00은 숏 진입 기준선 — 내주면 돌파 근거가 깨진다. 1차 78.50은 야간 스윕 고점 78.49, 2차 80.00은 1D EMA20 78.00 위 확장 라운드. 손익비 1.97:1 · 3.00:1 — 종가 안착 확인 뒤 분할.' }
   },
-  'ZECUSDT': {
-    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 반등 저항 숏', tag:'메인',
-          entry:791, stop:808, t1:745, t2:727,
-          why:'11/23 21시 4H 봉이 794.7에서 902.97까지 3.36배 거래량으로 찍고 859.36에 마감했지만, 01시 봉이 803.57로 되돌리고 05시 776.40·09시 759.22로 고점을 계속 낮췄다 — 11/23 일봉도 902.97 고점에서 776.40 마감(-14.0%)으로 윗꼬리만 남긴 실패 스파이크다. 11/24 12시 1H 봉은 741.43까지 2.23배 거래량으로 밀었고(11시 봉 2.76배), 지금 762.9는 4H 679.28→902.97 상승 레그의 0.618(764.75)에 걸쳐 있다. 1D RSI 31.3으로 과매도지만 1D EMA20 937.4·EMA50 1,059.8 아래 하락 배열이고 4H도 EMA20 796.6·EMA50 847.0 아래다. 791은 4H 0.5 되돌림 791.1·1H EMA50 789.3·10시 고점 790.81이 겹치는 자리 — 이탈한 783~791 구간을 아래에서 다시 두드리는 곳이다. 진입 791(위험 17), 1차 745는 오늘 저점 741.43 위 라운드, 2차 727은 0.786 되돌림 727.2. 손익비 2.71:1 · 3.76:1 — 1H 종가 808 위면 근거 무효.' },
-    h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 하단 눌림목 롱', tag:'서브',
-          entry:720, stop:698, t1:770, t2:791,
-          why:'0.618(764.75)을 내주면 다음 자리는 0.786 되돌림 727.2다. 720은 그 바로 아래 라운드이자 11/21 저점 679.28에서 올라온 첫 지지 구간이고, 12시 1H 봉이 741.43에서 759.22로 반등하며 2.23배 거래량의 아래꼬리를 남긴 자리도 이 위다. 다만 1D EMA20 937.4·EMA50 1,059.8 아래 하락 배열이라 추세 매수가 아니라 첫 지지 확인용 정찰병 비중으로만 본다. 손절 698(위험 22)은 0.786과 700 라운드를 모두 내주는 자리 — 1H 종가 698이면 0.618 지지 시나리오 폐기, 11/21 저점 679.28 재시험이다. 1차 770은 14시 1H 고점 771.64, 2차 791은 4H 0.5 되돌림이자 숏 진입 기준선. 손익비 2.27:1 · 3.23:1 — 735 이하에서 1H 양봉(아래꼬리) 확인 후 진입, 추격 금지.' },
-    br: { id:'br', cls:'break', kind:'long', title:'가설 3 · 돌파 롱', tag:'추세',
-          entry:808, stop:781, t1:850, t2:903,
-          why:'1H 확정 종가 808 위 — 4H 05:00 고점 807.07와 11/22 17:00 고점 809.79를 넘겨 11/24 하락이 유동성 사냥이었음을 확인하는 자리다. 진입 808, 손절 781은 숏 진입 기준선 겸 1H EMA20 780.91 아래 — 내주면 돌파 근거가 깨진다. 1차 850은 4H 0.236 되돌림 850.2, 2차 903은 야간 스윕 고점 902.97. 손익비 1.56:1 · 3.52:1 — 1차 손익비가 낮으니 종가 안착 확인 후 분할.' }
-  },
   'XRPUSDT': {
     h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 반등 저항 숏', tag:'메인',
           entry:0.9880, stop:1.0020, t1:0.9500, t2:0.9320,
@@ -1425,28 +1360,6 @@ const HYP = {
     br: { id:'br', cls:'break', kind:'long', title:'가설 3 · 돌파 롱', tag:'추세',
           entry:1.0020, stop:0.9880, t1:1.0260, t2:1.0500,
           why:'1H 확정 종가 1.0020 위 — 00시 4H 고점 0.9935와 1.00 라운드를 넘겨 11·12시 이탈이 스윕이었음을 확인하는 자리다. 진입 1.0020, 손절 0.9880은 숏 진입 기준선 — 내주면 돌파 근거가 깨진다. 1차 1.0260은 야간 스윕 고점 1.0259, 2차 1.0500은 그 위 라운드 확장(1D EMA20 1.0205 위). 손익비 1.71:1 · 3.43:1 — 1차가 얇으니 1.0260 위 종가 안착 확인 후 2차까지.' }
-  },
-  'HYPEUSDT': {
-    h1: { id:'h1', cls:'long', kind:'long', title:'가설 1 · 눌림목 롱', tag:'메인',
-          entry:62.80, stop:61.00, t1:66.86, t2:69.77,
-          why:'11/21 저점 55.803 이후 4H 저점이 59.527(11/22)·61.448(11/23)·62.081(11/24)로 계속 올라온 상승 구조다. 11/23 21시 봉이 64.08에서 69.77까지 3.40배 거래량으로 쏘고 66.782에 마감한 뒤 62.081까지 되밀렸지만, 11/24 12시 1H 봉이 62.081에서 63.334로 1.87배 거래량의 아래꼬리를 남기고 14시 64.45·15시 64.34로 다시 올라 1H EMA20 64.06 위에 서 있다. 62.80은 4H 55.803→69.77 상승 레그의 0.5 되돌림 62.787이자 12시 저점 62.081 바로 위 — 상승 구조가 살아 있는 한 첫 매수 자리다. 1D는 EMA20 69.19·EMA50 74.90 아래라 추세 추종이 아니라 반등 파동 매매이고, 1D RSI 36.0으로 과매도 탈출 초입이다. 진입 62.80(위험 1.80), 1차 66.86은 01시 고점 66.857·하락 0.618 되돌림 66.82, 2차 69.77은 야간 스윕 고점. 손익비 2.26:1 · 3.87:1 — 1H 종가 61.00 아래면 상승 구조 폐기.' },
-    h2: { id:'h2', cls:'short', kind:'short', title:'가설 2 · 반등 저항 숏', tag:'서브',
-          entry:69.30, stop:70.60, t1:65.00, t2:62.10,
-          why:'69.30은 11/23 21시 스윕 고점 69.77을 다시 두드리는 자리이자 11/19 고점 70.213 아래 — 1D EMA20 69.19와 겹쳐 위쪽은 전부 공급대다. 스파이크 뒤 4H 고점이 69.77→66.86→64.51로 낮아졌으므로 69.30 리테스트에서 윗꼬리 음봉이 나오면 숏이다. 손절 70.60(위험 1.30)은 스윕 고점 69.77과 11/19 고점 70.213을 모두 넘는 자리 — 1H 종가 70.60이면 숏 근거 폐기. 1차 65.00은 4H EMA50 65.02·하락 0.618 되돌림 65.01, 2차 62.10은 오늘 저점 62.081. 손익비 3.31:1 · 5.54:1 — 69.30 터치 후 1H 윗꼬리 확인 전 진입 금지.' },
-    br: { id:'br', cls:'break', kind:'long', title:'가설 3 · 돌파 롱', tag:'추세',
-          entry:70.60, stop:69.20, t1:75.00, t2:80.00,
-          why:'1H 확정 종가 70.60 위 — 69.77과 70.213 두 고점을 한 번에 넘겨 11/21 저점 55.803 이후 반등이 추세 전환임을 확인하는 자리다. 진입 70.60, 손절 69.20은 스윕 고점 아래 — 내주면 돌파 근거가 깨진다. 1차 75.00은 11/16 1D 고점 71.04를 넘긴 뒤의 75 라운드(1D EMA50 74.90 부근), 2차 80.00은 그 위 라운드 확장. 손익비 3.14:1 · 6.71:1 — 1D EMA20 69.19을 종가로 회복하는 첫 신호이니 1차에서 절반 익절 후 2차로.' }
-  },
-  'NEARUSDT': {
-    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 반등 저항 숏', tag:'메인',
-          entry:3.20, stop:3.32, t1:2.95, t2:2.83,
-          why:'11/23 21시 4H 봉이 3.004에서 3.278까지 3.39배 거래량으로 쏘고 3.14에 마감했지만, 01시 3.031·05시 2.986·09시 2.967로 되돌려 스파이크 전 3.00 아래로 내려왔다. 지금 3.026은 2.879→3.278 반등의 0.618(3.032)에 걸쳐 있고, 1D는 EMA20 3.3518·EMA50 3.7144 아래 하락 배열에 RSI 37.2다. 3.20은 반등 0.236 되돌림 3.184 위이자 01시 4H 고점 3.149 위 — 박스 상단 3.278을 두드리러 갈 때 꺾이는 자리다. 진입 3.20(위험 0.12), 1차 2.95는 05시 4H 저점 2.932·1H 12시 저점 2.879 위 라운드, 2차 2.83은 2.546→3.278 상승의 0.618 되돌림 2.826. 손익비 2.08:1 · 3.08:1 — 1H 종가 3.32 위면 무효.' },
-    h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 박스 하단 롱', tag:'서브',
-          entry:2.92, stop:2.82, t1:3.15, t2:3.28,
-          why:'2.92는 2.546→3.278 상승 레그의 0.5 되돌림 2.912이자 11/23 4H 저점 2.934 바로 아래 — 11/21 저점 2.546 이후 박스 하단 2.879~2.934의 아래 경계다. 1D RSI 37.2·4H RSI 51.1로 과매도는 아니지만, 4H EMA20 2.9967 위에서 버티던 가격이 여기까지 밀리면 첫 지지 테스트가 된다. 손절 2.82(위험 0.10)는 0.618 되돌림 2.826과 11/22 1D 저점 2.843을 모두 내주는 자리 — 1H 종가 2.82면 박스 붕괴, 2.546 재시험이다. 1차 3.15는 01시 4H 고점 3.149, 2차 3.28은 야간 스윕 고점 3.278. 손익비 2.30:1 · 3.60:1 — 1H 양봉(아래꼬리) 확인 후 정찰병 비중.' },
-    br: { id:'br', cls:'break', kind:'long', title:'가설 3 · 돌파 롱', tag:'추세',
-          entry:3.32, stop:3.20, t1:3.475, t2:3.60,
-          why:'1H 확정 종가 3.32 위 — 11/23 21시 고점 3.278을 넘어 11/21 저점 2.546 이후 첫 고점 돌파가 나오는 자리다. 진입 3.32, 손절 3.20은 숏 진입 기준선 — 내주면 돌파 근거가 깨진다. 1차 3.475는 11/19 1D 고점 3.475, 2차 3.60은 그 위 라운드 확장. 손익비 1.29:1 · 2.33:1 — 1차가 얇으니 3.475 위 종가 안착 확인 후 분할.' }
   },
   'BNBUSDT': {
     h1: { id:'h1', cls:'long', kind:'long', title:'가설 1 · 눌림목 롱', tag:'메인',
@@ -1470,17 +1383,6 @@ const HYP = {
           entry:0.0606, stop:0.0588, t1:0.0630, t2:0.0700,
           why:'1H 확정 종가 0.0606 위 — 11/23 21시 고점 0.06022와 11/17 고점 0.06045를 함께 넘겨 1D 하락 배열 안에서 첫 고점 돌파가 나오는 자리다. 진입 0.0606, 손절 0.0588은 숏 진입 기준선 — 내주면 돌파 근거가 깨진다. 1차 0.0630은 0.063 라운드(1D EMA20 0.06211 위), 2차 0.0700은 0.07 라운드이자 1D EMA50 0.07053 아래. 손익비 1.33:1 · 5.22:1 — 1차가 얇으니 0.063 위 1H 종가 안착 확인 후 2차까지.' }
   },
-  'BLESSUSDT': {
-    h1: { id:'h1', cls:'long', kind:'long', title:'가설 1 · 눌림목 롱', tag:'메인',
-          entry:0.01541, stop:0.01390, t1:0.01907, t2:0.02035,
-          why:'상장 직후 초고변동 종목이다 — 11/16 0.01969 급등 → 0.00956 급락, 11/21 0.02185 스파이크 후 0.01023까지 밀렸고, 11/23 17시 4H 봉이 0.020346까지 2.26배 거래량으로 찍은 뒤 11/24 01시 봉이 0.014721·05시 0.013042까지 2.29배 거래량으로 무너졌다. 그 저점에서 09시 0.014732·13시 0.017785까지 1시간 10%씩 반등해 지금 0.017528 — 반등 레그(0.013042→0.017785)의 0.5 되돌림 0.01541이 첫 지지이자 4H EMA20 0.01535와 겹치는 자리다. 1D는 EMA20 0.011923·EMA50 0.010299 위 상승 배열이고 RSI 62.3, 1H RSI 58.9로 과열까지 여유가 있다. 손절 0.01390(위험 0.00151)은 반등 레그 0.786 되돌림 0.01405 아래 — 1H 종가 0.0139면 반등 실패, 0.013042 재시험이다. 1차 0.01907은 11/23 21시 4H 종가, 2차 0.02035는 야간 고점. 손익비 2.42:1 · 3.27:1 — 변동성이 큰 종목이라 정찰병 비중(10~20%)으로만, 1H 양봉 확인 후.' },
-    h2: { id:'h2', cls:'short', kind:'short', title:'가설 2 · 반등 저항 숏', tag:'서브',
-          entry:0.01970, stop:0.02080, t1:0.01670, t2:0.01310,
-          why:'0.01970은 11/23 17시·21시 4H 봉이 0.020346/0.020345로 두 번 막힌 이중천장 아래이자 17시 종가 0.019672 자리 — 스파이크 하락(0.020346→0.013042)의 0.618 되돌림 0.01756을 이미 넘어선 상태라 0.0197~0.0203은 상단 공급대다. 다만 1D EMA20 0.0119 위 상승 배열이라 추세 역행이므로 정찰병 비중으로만 본다. 손절 0.02080(위험 0.00110)은 이중천장 0.02035 위 — 1H 종가 0.0208이면 숏 근거 폐기. 1차 0.01670은 하락 0.5 되돌림 0.01669, 2차 0.01310은 오늘 저점 0.013042. 손익비 2.73:1 · 6.00:1 — 0.0197 리테스트 윗꼬리 확인 전 진입 금지.' },
-    br: { id:'br', cls:'break', kind:'long', title:'가설 3 · 돌파 롱', tag:'추세',
-          entry:0.02080, stop:0.01970, t1:0.02185, t2:0.02400,
-          why:'1H 확정 종가 0.02080 위 — 0.020346 이중천장을 넘겨 11/24 01시 급락이 유동성 사냥이었음을 확인하는 자리다. 진입 0.02080, 손절 0.01970은 숏 진입 기준선 — 내주면 돌파 근거가 깨진다. 1차 0.02185는 11/21 1D 고점 0.02185, 2차 0.02400은 그 위 0.024 라운드. 손익비 0.95:1 · 2.91:1 — 1차가 얇으니 0.02185 위 종가 안착 후 2차까지, 실패하면 바로 정리.' }
-  }
 };
 
 /* 구간 판정 기준 (숏 손절 / 돌파 롱 / 숏 진입 / 눌림목 / 롱 손절 / 이탈 경계) */
@@ -1488,13 +1390,9 @@ const ZONE_DEF = {
   'BTCUSDT': { stop:63100, brkup:63100, brkupTop:64570, ext:65800, short:61800, shortTop:63100, mid:59200, long:58800, warnL:57800, brk1:56700, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 58,800 지지 감시' },
   'ETHUSDT': { stop:1795,  brkup:1795,  brkupTop:1845,  ext:1880,  short:1750,  shortTop:1795,  mid:1665,  long:1655,  warnL:1625,  brk1:1600,  midLabel:'눌림 롱 대기 · 반등 숏 대기 · 1,655 지지 감시' },
   'SOLUSDT': { stop:75.50, brkup:75.50, brkupTop:78.50, ext:80.00, short:73.60, shortTop:75.50, mid:70.30, long:70.00, warnL:68.80, brk1:68.00, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 70.00 지지 감시' },
-  'ZECUSDT': { stop:808, brkup:808, brkupTop:850, ext:903, short:781, shortTop:808, mid:745, long:720, warnL:698, brk1:679, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 720 지지 감시' },
   'XRPUSDT': { stop:1.0020, brkup:1.0020, brkupTop:1.0260, ext:1.0500, short:0.9680, shortTop:1.0020, mid:0.9500, long:0.9320, warnL:0.9180, brk1:0.9050, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 0.9320 지지 감시' },
-  'HYPEUSDT': { stop:70.60, brkup:70.60, brkupTop:75.00, ext:80.00, short:66.86, shortTop:70.60, mid:63.40, long:62.80, warnL:61.00, brk1:59.50, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 62.80 지지 감시', shortLabel:'가설 2 숏 리테스트 구간', voidLabel:'돌파 롱 안착 · 반등 숏 폐기 — 70.60 상회' },
-  'NEARUSDT': { stop:3.32, brkup:3.32, brkupTop:3.475, ext:3.60, short:3.09, shortTop:3.32, mid:2.99, long:2.92, warnL:2.82, brk1:2.79, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 2.92 지지 감시' },
   'BNBUSDT': { stop:588, brkup:588, brkupTop:609.50, ext:630, short:567, shortTop:588, mid:556.50, long:545, warnL:534.50, brk1:503.50, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 545 지지 감시', shortLabel:'가설 2 숏 리테스트 구간', voidLabel:'돌파 롱 안착 · 반등 숏 폐기 — 588 상회' },
-  'DOGEUSDT': { stop:0.0606, brkup:0.0606, brkupTop:0.0630, ext:0.0700, short:0.0572, shortTop:0.0606, mid:0.0553, long:0.0543, warnL:0.0530, brk1:0.0507, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 0.0543 지지 감시' },
-  'BLESSUSDT': { stop:0.02080, brkup:0.02080, brkupTop:0.02185, ext:0.02400, short:0.01760, shortTop:0.02080, mid:0.01670, long:0.01541, warnL:0.01390, brk1:0.01300, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 0.01541 지지 감시', shortLabel:'가설 2 숏 리테스트 구간', voidLabel:'돌파 롱 안착 · 반등 숏 폐기 — 0.02080 상회' }
+  'DOGEUSDT': { stop:0.0606, brkup:0.0606, brkupTop:0.0630, ext:0.0700, short:0.0572, shortTop:0.0606, mid:0.0553, long:0.0543, warnL:0.0530, brk1:0.0507, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 0.0543 지지 감시' }
 };
 
 /* 감시선 — scheduled-actions/📊-btcusdt-매억남-타점-감시 check.sh 신호와 같은 수치 */
@@ -1502,26 +1400,18 @@ const WATCH_DEF = {
   'BTCUSDT': { stopClose:63100, stopNote:'반등 저항 숏 폐기 · 1H 종가 63,100 이상', longClose:63100, longNote:'돌파 롱 안착 · 1H 종가', shortZone:61800, pullLo:58800, pullHi:59200, pullLabel:'하단 눌림목 롱 58,800 지지 · 58,800~59,200', sup:57800, supNote:'눌림 롱 손절 · 1H 종가 57,800 이하' },
   'ETHUSDT': { stopClose:1795, stopNote:'반등 저항 숏 폐기 · 1H 종가 1,795 이상', longClose:1795, longNote:'돌파 롱 안착 · 1H 종가', shortZone:1750, pullLo:1655, pullHi:1665, pullLabel:'하단 눌림목 롱 1,655 지지 · 1,655~1,665', sup:1625, supNote:'눌림 롱 손절 · 1H 종가 1,625 이하' },
   'SOLUSDT': { stopClose:75.50, stopNote:'반등 저항 숏 폐기 · 1H 종가 75.50 이상', longClose:75.50, longNote:'돌파 롱 안착 · 1H 종가', shortZone:73.60, pullLo:70.00, pullHi:70.30, pullLabel:'하단 눌림목 롱 70.00 지지 · 70.00~70.30', sup:68.80, supNote:'눌림 롱 손절 · 1H 종가 68.80 이하' },
-  'ZECUSDT': { stopClose:808, stopNote:'반등 저항 숏 폐기 · 1H 종가 808 이상', longClose:808, longNote:'돌파 롱 안착 · 1H 종가', shortZone:781, pullLo:720, pullHi:745, pullLabel:'하단 눌림목 롱 720 지지 · 720~745', sup:698, supNote:'눌림 롱 손절 · 현재가 698 이하' },
   'XRPUSDT': { stopClose:1.0020, stopNote:'반등 저항 숏 폐기 · 1H 종가 1.0020 이상', longClose:1.0020, longNote:'돌파 롱 안착 · 1H 종가', shortZone:0.9680, pullLo:0.9320, pullHi:0.9500, pullLabel:'눌림목 롱 0.9320 지지 · 0.9320~0.9500', sup:0.9180, supNote:'눌림 롱 손절 · 현재가 0.9180 이하' },
-  'HYPEUSDT': { stopClose:70.60, stopNote:'반등 저항 숏(가설 2) 폐기 · 1H 종가 70.60 이상', longClose:70.60, longNote:'돌파 롱 안착 · 1H 종가', shortZone:66.86, pullLo:62.80, pullHi:63.40, pullLabel:'눌림목 롱 62.80 지지 · 62.80~63.40', sup:61.00, supNote:'눌림목 롱 손절 · 현재가 61.00 이하' },
-  'NEARUSDT': { stopClose:3.32, stopNote:'반등 저항 숏 폐기 · 1H 종가 3.32 이상', longClose:3.32, longNote:'돌파 롱 안착 · 1H 종가', shortZone:3.09, pullLo:2.92, pullHi:2.99, pullLabel:'박스 하단 롱 2.92 지지 · 2.92~2.99', sup:2.82, supNote:'박스 하단 롱 손절 · 현재가 2.82 이하' },
   'BNBUSDT': { stopClose:588, stopNote:'반등 저항 숏(가설 2) 폐기 · 1H 종가 588 이상', longClose:588, longNote:'돌파 롱 안착 · 1H 종가', shortZone:567, pullLo:545, pullHi:556.50, pullLabel:'눌림목 롱 545 지지 · 545~556.50', sup:534.50, supNote:'눌림목 롱 손절 · 현재가 534.50 이하' },
-  'DOGEUSDT': { stopClose:0.0606, stopNote:'반등 저항 숏 폐기 · 1H 종가 0.0606 이상', longClose:0.0606, longNote:'돌파 롱 안착 · 1H 종가', shortZone:0.0572, pullLo:0.0543, pullHi:0.0553, pullLabel:'눌림목 롱 0.0543 지지 · 0.0543~0.0553', sup:0.0530, supNote:'눌림 롱 손절 · 현재가 0.0530 이하' },
-  'BLESSUSDT': { stopClose:0.02080, stopNote:'반등 저항 숏(가설 2) 폐기 · 1H 종가 0.02080 이상', longClose:0.02080, longNote:'돌파 롱 안착 · 1H 종가', shortZone:0.01760, pullLo:0.01541, pullHi:0.01670, pullLabel:'눌림목 롱 0.01541 지지 · 0.01541~0.01670', sup:0.01390, supNote:'눌림목 롱 손절 · 현재가 0.01390 이하' }
+  'DOGEUSDT': { stopClose:0.0606, stopNote:'반등 저항 숏 폐기 · 1H 종가 0.0606 이상', longClose:0.0606, longNote:'돌파 롱 안착 · 1H 종가', shortZone:0.0572, pullLo:0.0543, pullHi:0.0553, pullLabel:'눌림목 롱 0.0543 지지 · 0.0543~0.0553', sup:0.0530, supNote:'눌림 롱 손절 · 현재가 0.0530 이하' }
 };
 
 const DEFAULT_PLANS = {
   'BTCUSDT': { side:'short', entry:62000,  stop:63100, t1:60100, t2:58800, lev:5, margin:0 },
   'ETHUSDT': { side:'short', entry:1760,   stop:1795,  t1:1695,  t2:1655,  lev:5, margin:0 },
   'SOLUSDT': { side:'short', entry:74.00,  stop:75.50, t1:71.20, t2:70.00, lev:5, margin:0 },
-  'ZECUSDT': { side:'short', entry:791,    stop:808,   t1:745,   t2:727,   lev:5, margin:0 },
   'XRPUSDT': { side:'short', entry:0.9880, stop:1.0020,t1:0.9500,t2:0.9320,lev:5, margin:0 },
-  'HYPEUSDT': { side:'long', entry:62.80,  stop:61.00, t1:66.86, t2:69.77, lev:5, margin:0 },
-  'NEARUSDT': { side:'short', entry:3.20,  stop:3.32,  t1:2.95,  t2:2.83,  lev:5, margin:0 },
   'BNBUSDT': { side:'long',  entry:545.00, stop:534.50,t1:566.00,t2:587.50,lev:5, margin:0 },
-  'DOGEUSDT': { side:'short', entry:0.0588, stop:0.0606, t1:0.0553, t2:0.0537, lev:5, margin:0 },
-  'BLESSUSDT': { side:'long', entry:0.01541, stop:0.01390, t1:0.01907, t2:0.02035, lev:5, margin:0 }
+  'DOGEUSDT': { side:'short', entry:0.0588, stop:0.0606, t1:0.0553, t2:0.0537, lev:5, margin:0 }
 };
 
 /* 가설값 버전 — 가설 숫자를 새로 배포할 때 이 문자열만 올리면 됩니다.
@@ -1586,7 +1476,7 @@ function symOf(id){ return SYMBOLS.find(s => s.id === id) || SYMBOLS[0]; }
 /* ------------------------- 종목 탭 정렬 — 포지션 > 타점 도달 > 거래대금 -------------------------
    1순위: 매매 중(매매기록의 진행 중 포지션 status === 'open' 또는 state.pos) 종목 — 최근 진입 순.
    2순위: 포지션은 없지만 3중 점검이 3/3(빨간 점, 타점 도달)인 종목 — 거래대금 순서 유지.
-   3순위: 나머지 종목 — 바이낸스 24시간 거래대금 1~10위(SYMBOLS 배열 순서 그대로).
+   3순위: 나머지 종목 — 바이낸스 24시간 거래대금 순위(SYMBOLS 배열 순서 그대로 · 6종목).
    · 3/3 도달·해제는 15초 갱신(applySymStatus)에서 상태가 바뀌는 즉시 반영하되,
      순서만 다시 그리고 사용자가 고른 종목(state.sym)은 건드리지 않습니다. */
 function openTradesByRecency(){
@@ -1664,7 +1554,7 @@ function store(key, val){
 }
 
 /* ------------------------- data layer ------------------------- */
-/* 바이낸스 선물 요청 스케줄러 — 10종목 캔들·시세를 한꺼번에 부르면 요청 한도(429)·IP 제한(418)에 걸립니다.
+/* 바이낸스 선물 요청 스케줄러 — 6종목 캔들·시세를 한꺼번에 부르면 요청 한도(429)·IP 제한(418)에 걸립니다.
    · 동시 3개 · 요청 간 최소 70ms 간격(초당 14건 이하)으로 줄을 세웁니다 (fapi 한도 2,400 weight/분의 1/10 수준)
    · 429/418을 받으면 Retry-After(없으면 3초)만큼 큐 전체를 멈추고 그 요청만 재시도합니다 */
 const NET = { max:3, gap:70, active:0, last:0, until:0, q:[], timer:null };
@@ -1940,7 +1830,7 @@ function extractMonowaves(cs, atr){
       }
     }
   }
-  /* 진행 중인 극값과 현재가를 마지막 피벗으로 — 마지막 파동이 곧 진행 중인 조정/되전입니다 */
+  /* 진행 중인 극값과 현재가를 마지막 피벗으로 — 마지막 파동이 곧 진행 중인 조정/되돌림입니다 */
   if (dir !== 0 && extIdx > pivots[pivots.length - 1].idx) pivots.push({ idx: extIdx, price: extVal });
   if (pivots[pivots.length - 1].idx < n - 1) pivots.push({ idx: n - 1, price: cs[n - 1].c });
   const waves = [];
@@ -1976,7 +1866,7 @@ function analyzeNeowave(waves){
   const slopeRatio = mPrev.slope > 0 ? mLast.slope / mPrev.slope : 1;
 
   let ruleId = '', ruleText = '', ruleGroup = '';
-  if (retracePct < 38.2){ ruleId = 'Rule 1~2'; ruleGroup = 'impulse'; ruleText = '얬은 되돌림 (<38.2%) · 추세 강함/터미널 후보'; }
+  if (retracePct < 38.2){ ruleId = 'Rule 1~2'; ruleGroup = 'impulse'; ruleText = '얕은 되돌림 (<38.2%) · 추세 강함/터미널 후보'; }
   else if (retracePct <= 61.8){ ruleId = 'Rule 3~4'; ruleGroup = 'standard'; ruleText = '표준 되돌림 (38.2~61.8%) · 지그재그/2·4파 조정'; }
   else if (retracePct <= 100){ ruleId = 'Rule 5~6'; ruleGroup = 'complex'; ruleText = '깊은 되돌림 (61.8~100%) · 플랫/트라이앵글/다이아메트릭'; }
   else { ruleId = 'Rule 7'; ruleGroup = 'reversal'; ruleText = '100% 초과 · 불규칙 B파 또는 추세 반전'; }
@@ -2007,7 +1897,7 @@ function analyzeNeowave(waves){
       integrityStatus = '2파 규칙 위반';
       integrityDetail = '2파가 1파 시작점을 넘었습니다(>100%) — 충격파 카운트 폐기, 조정/반전 구조 재검토';
     } else if (overlap){
-      integrityStatus = '1·4파 결침 감지';
+      integrityStatus = '1·4파 겹침 감지';
       integrityDetail = '4파가 1파 영역을 침범 — 일반 충격파 폐기, 터미널 또는 다이아메트릭 후보';
     } else if (w3.len < w1.len && w3.len < w5.len){
       violated = true;
@@ -2028,13 +1918,13 @@ function analyzeNeowave(waves){
       name: '표준 충격파 (Impulse)',
       status: impulseOut ? '폐기' : (ruleGroup === 'impulse' || ruleGroup === 'standard' ? '유력' : '보조'),
       desc: impulseOut
-        ? '2파 100% · 3파 최단 · 1·4파 결침 또는 되돌림 100% 초과로 일반 충격파에서 제외'
+        ? '2파 100% · 3파 최단 · 1·4파 겹침 또는 되돌림 100% 초과로 일반 충격파에서 제외'
         : '3파 확장과 2·4파 교대 법칙에 기댄 추세 추종 시나리오'
     },
     {
       name: '터미널 충격파 (Terminal)',
       status: (overlap && !violated) ? '유력' : '대기',
-      desc: '2·4파 결침을 허용하는 추세 말단 패턴 — 완성되면 건전한 100% 되돌림 주의'
+      desc: '2·4파 겹침을 허용하는 추세 말단 패턴 — 완성되면 급격한 100% 되돌림 주의'
     },
     {
       name: '다이아메트릭 / 플랫 (Complex)',
@@ -2088,11 +1978,11 @@ function renderNeowave(){
   $('#nwIntegTxt').textContent = r.integrityDetail;
   $('#nwInteg').style.color = r.integrityStatus.indexOf('위반') >= 0 ? '#ffb3c0'
     : r.integrityStatus.indexOf('부합') >= 0 ? '#a7f3c4'
-    : r.integrityStatus.indexOf('결침') >= 0 || r.integrityStatus.indexOf('잠정') >= 0 ? '#ffd79a' : '';
+    : r.integrityStatus.indexOf('겹침') >= 0 || r.integrityStatus.indexOf('잠정') >= 0 ? '#ffd79a' : '';
   const tag = (verdict, label) => '<span class="nw-tag ' + verdict + '">' + label + '</span>';
   const w23 = (v) => v === 'pass' ? 'ok' : v === 'fail' ? 'bad' : v === 'half' ? 'half' : '';
   $('#nwIntegTxt').innerHTML = r.integrityDetail +
-    '<div class="nw-tags">' + tag(w23(r.rules.w2), '2파 100%') + tag(w23(r.rules.overlap), '1·4파 결침') + tag(w23(r.rules.w3), '3파 최단') + '</div>';
+    '<div class="nw-tags">' + tag(w23(r.rules.w2), '2파 100%') + tag(w23(r.rules.overlap), '1·4파 겹침') + tag(w23(r.rules.w3), '3파 최단') + '</div>';
 
   /* 초보자용 한 줄 설명 — 지금 수치가 유리한지/주의할지까지 */
   nwTip('#nwRetTip', hasTwo ? retTipText(r) : '', hasTwo ? retTipCls(r) : '');
@@ -2153,7 +2043,7 @@ function integTipText(r){
   const s = r.integrityStatus;
   if (s.indexOf('부합') >= 0) return '세 규칙을 모두 통과 — 이 파동 카운트를 근거로 써도 됩니다. 3파 방향 눌림이 우선입니다.';
   if (s.indexOf('위반') >= 0) return '규칙 위반 — 이 카운트는 폐기합니다. 파동을 근거로 진입하지 말고 조정·반전 구조로 다시 보세요.';
-  if (s.indexOf('결침') >= 0) return '1·4파가 겹쳤습니다 — 일반 충격파가 아니라 터미널·다이아메트릭 후보. 되돌림 100%가 나올 수 있어 주의.';
+  if (s.indexOf('겹침') >= 0) return '1·4파가 겹쳤습니다 — 일반 충격파가 아니라 터미널·다이아메트릭 후보. 되돌림 100%가 나올 수 있어 주의.';
   if (s.indexOf('잠정') >= 0) return '아직 통과지만 3파가 1파보다 짧습니다 — 5파가 더 길어지면 위반으로 바뀌니 확인하며 봅니다.';
   return '모노웨이브 5개가 쌓여야 세 규칙을 검사합니다 — 지금은 참고만 하세요.';
 }
@@ -2167,7 +2057,7 @@ function neowaveHint(nw, waveCount){
   if (!nw || !(waveCount >= 2)) return wait;
   const integ = nw.integrityStatus || '';
   const pct = v => isNum(v) ? (+v).toFixed(1) + '%' : '—';
-  const overlap = !!nw.overlap || integ.indexOf('결침') >= 0;
+  const overlap = !!nw.overlap || integ.indexOf('겹침') >= 0;
   const violation = !!nw.violated || integ.indexOf('위반') >= 0;
   const terminal = (nw.primaryPattern || '').indexOf('터미널') >= 0;
   const complexAdj = nw.ruleGroup === 'complex' || nw.ruleGroup === 'reversal';
@@ -2233,7 +2123,7 @@ function integTipCls(r){
   const s = r.integrityStatus;
   if (s.indexOf('부합') >= 0) return 'ok';
   if (s.indexOf('위반') >= 0) return 'bad';
-  if (s.indexOf('결침') >= 0 || s.indexOf('잠정') >= 0) return 'warn';
+  if (s.indexOf('겹침') >= 0 || s.indexOf('잠정') >= 0) return 'warn';
   return '';
 }
 function patTip(p){
@@ -2478,13 +2368,38 @@ function buildAnalysis(c){
   const divShort = !!(tfs['4H'].div.bear || tfs['1H'].div.bear);
   const divLong  = !!(tfs['4H'].div.bull || tfs['1H'].div.bull);
 
-  const nS = [waveShort, lineShort, divShort].filter(Boolean).length;
-  const nL = [waveLong, lineLong, divLong].filter(Boolean).length;
+  /* 자리와 라인이 같은 숫자에서 나온 경우는 근거 1개로 셉니다.
+     (가설 존 안에서 «자리»가 충족됐는데 «라인»이 그 가설의 진입·감시선이거나 같은 되돌림 레벨이면 같은 근거를 두 번 센 것) */
+  const sameLvl = (wave, line, near, inZ, fib) =>
+    !!(wave && line && near && near.role === 'entry' && (inZ || (fib && /되돌림/.test(near.label || ''))));
+  const dupShort = sameLvl(waveShort, lineShort, nearShort, inZShort, fibShort);
+  const dupLong  = sameLvl(waveLong, lineLong, nearLong, inZLong, fibLong);
+  const lineShortInd = lineShort && !dupShort;
+  const lineLongInd  = lineLong && !dupLong;
+  const nS = [waveShort, lineShortInd, divShort].filter(Boolean).length;
+  const nL = [waveLong, lineLongInd, divLong].filter(Boolean).length;
   const side = nS > nL ? 'short' : nL > nS ? 'long' : (tfs['4H'].trend === 'up' ? 'long' : 'short');
 
   let vLabel = '관망', vCls = 'neutral', vTitle = '관망 — 지금은 자리가 아니다';
   const best = Math.max(nS, nL);
+  /* 주의 조건 — 근거가 3/3이어도 1H 파동이 겹침·조정 구간(NEoWave ‘비중 축소’)이거나
+     1D 큰 방향과 반대면 ‘타점 도달’로 올리지 않습니다 */
+  let caution = null;
   if (best >= 3) {
+    const reasons = [];
+    const cs1 = tfs['1H'].cs;
+    const w1 = extractMonowaves(cs1, mwAtr(cs1));
+    const nh = neowaveHint(analyzeNeowave(w1), w1.length);
+    if (nh.level === 'reduce') reasons.push('NEoWave(1H) ' + nh.title + ' — ' + String(nh.why || '').replace(/^근거:\s*/, ''));
+    const d1 = tfs['1Dutc'].trend;
+    if ((side === 'long' && d1 === 'down') || (side === 'short' && d1 === 'up'))
+      reasons.push('1D ' + (d1 === 'down' ? '하락' : '상승') + ' 배열 — 역추세 ' + (side === 'long' ? '롱' : '숏'));
+    if (reasons.length) caution = { reasons };
+  }
+  if (best >= 3 && caution) {
+    vLabel = '주의'; vCls = 'warn';
+    vTitle = (side === 'short' ? '숏' : '롱') + ' 근거 3/3이지만 주의 — ' + caution.reasons.join(' / ');
+  } else if (best >= 3) {
     vLabel = '타점 도달'; vCls = side === 'short' ? 'bad' : 'long';
     vTitle = (side === 'short' ? '숏' : '롱') + ' 타점 도달 — 근거 3/3';
   } else if (best === 2) {
@@ -2505,7 +2420,7 @@ function buildAnalysis(c){
   const lines = [];
   const t1d = tfs['1Dutc'], t4 = tfs['4H'], t1 = tfs['1H'];
   if (t1d.ok && t4.ok && t1.ok){
-    lines.push('국면 — 일بان'.replace('بان','봉') + ' ' + (t1d.trend === 'down' ? 'EMA20·EMA50 아래(하락 배열)' : t1d.trend === 'up' ? 'EMA20·EMA50 위(상승 배열)' : 'EMA 혼재')
+    lines.push('국면 — 일봉' + ' ' + (t1d.trend === 'down' ? 'EMA20·EMA50 아래(하락 배열)' : t1d.trend === 'up' ? 'EMA20·EMA50 위(상승 배열)' : 'EMA 혼재')
       + ', 4H ' + (t4.trend === 'down' ? '역시 하락 배열' : t4.trend === 'up' ? '상승 배열' : '혼재') + '.');
     lines.push('RSI14 — 1D <b>' + t1d.rsiNow.toFixed(1) + '</b> · 4H <b>' + t4.rsiNow.toFixed(1) + '</b> · 1H <b>' + t1.rsiNow.toFixed(1) + '</b>'
       + (Math.max(t1d.rsiNow, t4.rsiNow, t1.rsiNow) <= 32 ? ' — 세 프레임 모두 과매도.' : Math.min(t1d.rsiNow, t4.rsiNow, t1.rsiNow) >= 68 ? ' — 세 프레임 모두 과매수.' : '.'));
@@ -2567,8 +2482,8 @@ function buildAnalysis(c){
                 ? '4H 하락 레그 되돌림 ' + (leg4.retr(price) * 100).toFixed(0) + '% (필요 45~68%)' + (f4 ? ' · 자리는 ' + fmtPx(f4[0]) + '~' + fmtPx(f4[1]) : '')
                 : '4H 레그가 ' + (leg4 ? (leg4.up ? '상승' : '하락') : '없음(마지막 고·저점이 같은 봉)') + ' — 숏 되돌림 자리 아님 (필요 45~68%)')
               + (isNum(zsLo) ? ' · 숏 자리 ' + fmtLv(zsLo) + '~' + fmtLv(zsHi) + ' 대기' : '') },
-        { ok:lineShort, name:'라인', text: lineShort
-            ? nearShort.label + ' ' + fmtPx(nearShort.p) + ' 도달 (' + fmtPct(nearShort.d) + ')'
+        { ok:lineShortInd, dup:dupShort, name:'라인', text: lineShort
+            ? (dupShort ? '자리와 같은 레벨 — 별도 근거로 세지 않음 · ' : '') + nearShort.label + ' ' + fmtPx(nearShort.p) + ' 도달 (' + fmtPct(nearShort.d) + ')'
             : (nearShort ? '가장 가까운 숏 라인 ' + fmtPx(nearShort.p) + '까지 ' + fmtPct(nearShort.d) + ' — 0.6% 밖' : '숏 라인 없음') },
         { ok:divShort, name:'다이버전스', text: divShort
             ? (tfs['4H'].div.bear ? '4H ' : '') + (tfs['1H'].div.bear ? '1H ' : '') + '하락 다이버전스 확인'
@@ -2581,15 +2496,15 @@ function buildAnalysis(c){
                 : '가설 롱 자리 ' + fmtLv(zlLo) + '~' + fmtLv(zlHi) + ' 안 — 지지 자리 충족')
             : '상승 레그 0.5~0.618 되돌림 자리 아님 (현재 4H 레그는 ' + (leg4 ? (leg4.up ? '상승' : '하락') : '없음') + ')'
               + (isNum(zlLo) ? ' · 롱 자리 ' + fmtLv(zlLo) + '~' + fmtLv(zlHi) + ' 대기' : '') },
-        { ok:lineLong, name:'라인', text: lineLong
-            ? nearLong.label + ' ' + fmtPx(nearLong.p) + ' 도달 (' + fmtPct(nearLong.d) + ')'
+        { ok:lineLongInd, dup:dupLong, name:'라인', text: lineLong
+            ? (dupLong ? '자리와 같은 레벨 — 별도 근거로 세지 않음 · ' : '') + nearLong.label + ' ' + fmtPx(nearLong.p) + ' 도달 (' + fmtPct(nearLong.d) + ')'
             : (nearLong ? '가장 가까운 롱 라인 ' + fmtPx(nearLong.p) + '까지 ' + fmtPct(nearLong.d) + ' — 0.6% 밖' : '롱 라인 없음') },
         { ok:divLong, name:'다이버전스', text: divLong
             ? (tfs['4H'].div.bull ? '4H ' : '') + (tfs['1H'].div.bull ? '1H ' : '') + '상승 다이버전스 확인'
             : '4H·1H 상승 다이버전스 없음' }
       ]
     },
-    nS, nL, side, vLabel, vCls, vTitle,
+    nS, nL, side, vLabel, vCls, vTitle, caution, dup:{ short:dupShort, long:dupLong },
     summary: lines, nextHint,
     counters: { anyDiv, divT4:t4.div, divT1:t1.div }
   };
@@ -2636,6 +2551,8 @@ function entryTiming(a, c1h){
   const last = conf.length ? conf[conf.length - 1] : null;          /* 직전 확정 마감봉 */
   const cur  = (cs.length && cs[cs.length - 1] && !cs[cs.length - 1].conf) ? cs[cs.length - 1] : null;   /* 진행 중 봉 */
   const ic = candleShape(last);
+  /* 직전 확정봉의 종가 위치(0=저가, 1=고가) — 꼬리 캔들은 종가가 유리한 쪽 절반에 있어야 ‘확인’으로 인정 */
+  const cf = (last && last.h > last.l) ? (last.c - last.l) / (last.h - last.l) : null;
   const price = a.price;
   const best = Math.max(a.nS || 0, a.nL || 0);
   const tol = price * 0.004;                                        /* 존 판정 여유 ±0.4% */
@@ -2659,6 +2576,13 @@ function entryTiming(a, c1h){
     short:'마감 대기', compact:compact || ('⏳ ' + nh.at + ' 마감 대기'), label:label, detail:detail });
   const goNow = (label, detail, compact) => Object.assign(base, { state:'go', cls:'go', branch, branchKr,
     short:'지금 진입', compact:compact || '✅ 지금 진입 가능', label:label, detail:detail });
+
+  /* ── 근거 3/3이어도 주의 조건(파동 겹침·조정 구간 / 1D 역추세)이 있으면 ‘지금 진입 가능’으로 올리지 않습니다 ── */
+  if (best >= 3 && a.caution){
+    return Object.assign(base, { state:'wait', cls:'wait', branch, branchKr, short:'주의', compact:'⚠ 주의 — 진입 보류',
+      label:'⚠ 근거 3/3이지만 주의 조건 — 지금 진입 가능으로 올리지 않습니다',
+      detail: a.caution.reasons.join(' · ') + '. ' + lastTxt + curTxt + '. 들어간다면 절반 비중 이하로, 확인 캔들과 손익비 3:1을 먼저 보세요.' });
+  }
 
   /* ── 근거 2/3 — 한 개 더 + 정각 마감 대기 ── */
   if (best === 2){
@@ -2691,8 +2615,8 @@ function entryTiming(a, c1h){
     if (price < z.short - tol)
       return waitAt('⏳ ' + fx(z.short) + ' 리테스트 도달 후 1H 마감 확인',
         '숏 진입 존 ' + fx(z.short) + '~' + fx(z.shortTop) + '까지 ' + fmtPct((z.short - price) / price * 100) + ' — 반등이 와서 존에 닿은 뒤 1H 마감을 확인합니다. ' + lastTxt + '.');
-    const bearAtZone = !!(last && ic.bear && (inR(last.c, z.short, z.shortTop) || inR(last.o, z.short, z.shortTop)));
-    const wickAtZone = !!(last && ic.longUpper && inR(last.h, z.short, z.shortTop));
+    const bearAtZone = !!(last && ic.bear && last.c < z.stop && (inR(last.c, z.short, z.shortTop) || inR(last.o, z.short, z.shortTop)));
+    const wickAtZone = !!(last && ic.longUpper && cf != null && cf <= 0.5 && last.c < z.stop && inR(last.h, z.short, z.shortTop));
     if (bearAtZone || wickAtZone)
       return goNow('✅ 지금 진입 가능 (직전 1H 저항 마감 확인)',
         '직전 확정봉 ' + kst(last.t) + '이 ' + (ic.bear ? '음봉' : '긴 윗꼬리') + '(고가 ' + fx(last.h) + ' · 종가 ' + fx(last.c) + ')으로 ' + fx(z.short) + '~' + fx(z.shortTop) + ' 저항에서 밀렸고 현재가 ' + fx(price) + '가 손절선 ' + fx(z.stop) + ' 아래 — 지금 들어가도 됩니다.');
@@ -2704,8 +2628,8 @@ function entryTiming(a, c1h){
   if (price > z.mid + tol)
     return waitAt('⏳ ' + fx(z.long) + ' 눌림 도달 후 1H 마감 확인',
       '롱 지지 존 ' + fx(z.long) + '~' + fx(z.mid) + '까지 ' + fmtPct((z.long - price) / price * 100) + ' — 눌림이 와서 존에 닿은 뒤 1H 마감을 확인합니다. ' + lastTxt + '.');
-  const bullAtZone = !!(last && ic.bull && (inR(last.c, z.long, z.mid) || inR(last.o, z.long, z.mid)));
-  const lowWick = !!(last && ic.longLower && inR(last.l, z.long, z.mid));
+  const bullAtZone = !!(last && ic.bull && last.c > z.warnL && (inR(last.c, z.long, z.mid) || inR(last.o, z.long, z.mid)));
+  const lowWick = !!(last && ic.longLower && cf != null && cf >= 0.5 && last.c > z.warnL && inR(last.l, z.long, z.mid));
   if ((bullAtZone || lowWick) && price > z.warnL)
     return goNow('✅ 지금 진입 가능 (직전 1H 지지 마감 확인)',
       '직전 확정봉 ' + kst(last.t) + '이 ' + (ic.bull ? '양봉' : '긴 아래꼬리') + '(저가 ' + fx(last.l) + ' · 종가 ' + fx(last.c) + ')으로 ' + fx(z.long) + '~' + fx(z.mid) + ' 지지에서 받았고 현재가 ' + fx(price) + '가 손절선 ' + fx(z.warnL) + ' 위 — 지금 들어가도 됩니다.');
@@ -2749,7 +2673,7 @@ function renderChips(keepLeft){
   if (keepLeft) el.scrollLeft = 0;      /* 실시간 재정렬 — 맨 앞으로 올라온 포지션·3/3 종목이 보이도록 처음으로 */
   else centerActiveTab(el, '.chip');
 }
-/* 선택한 종목 버튼이 가로 스크롤 밖에 있으면 가운데로 끌어옵니다 (10종목 대응) */
+/* 선택한 종목 버튼이 가로 스크롤 밖에 있으면 가운데로 끌어옵니다 (6종목 대응) */
 function centerActiveTab(el, sel){
   if (!el) return;
   const on = el.querySelector(sel + '.on');
@@ -2762,7 +2686,7 @@ function centerActiveTab(el, sel){
   const left = on.offsetLeft - (el.clientWidth - on.offsetWidth) / 2;
   try { el.scrollTo({ left:Math.max(0, left), behavior:'smooth' }); } catch (e) { el.scrollLeft = Math.max(0, left); }
 }
-/* 상단 고정 가격 바 — 10종목 미니 탭(가로 스크롤) + 현재가·등락률 */
+/* 상단 고정 가격 바 — 6종목 미니 탭(가로 스크롤) + 현재가·등락률 */
 function renderPbarSyms(keepLeft){
   const el = $('#pbarSyms');
   if (!el) return;
@@ -2795,7 +2719,7 @@ function renderPbarLive(){
   cEl.className = 'pbar-chg num ' + (change >= 0 ? 'up' : 'down');
 }
 
-/* ---------- 10종목 실시간 3중 점검 상태 — 선택 종목 + 나머지 9종목 비동기 평가 ---------- */
+/* ---------- 6종목 실시간 3중 점검 상태 — 선택 종목 + 나머지 5종목 비동기 평가 ---------- */
 /* 나머지 종목 캐시: state(mtf·ticker·sym)를 덮어쓰지 않고 별도 보관 — 값만 넘겨 순수 계산 */
 const symCache = {};
 function cacheFor(id){
@@ -2816,9 +2740,11 @@ function statusOfAnalysis(a){
   if (!a) return null;
   const best = Math.max(a.nS, a.nL);
   const voided = !!(a.zone && a.zone.code === 'void');                /* 가설 폐기 → 관망 */
-  const level = (voided || best < 2) ? 0 : (best >= 3 ? 3 : 2);        /* 3=빨강 · 2=주황 · 0=기본 */
+  const cautious = !!(a.caution && best >= 3);                         /* 3/3이지만 파동·추세 주의 → 빨강 대신 주황 */
+  const level = (voided || best < 2) ? 0 : (best >= 3 && !cautious ? 3 : 2);        /* 3=빨강 · 2=주황 · 0=기본 */
   const sideKr = a.side === 'short' ? '숏' : '롱';
   const label = voided ? '관망 — 가설 폐기 구간 ' + best + '/3'
+    : cautious ? sideKr + ' 3/3 주의 — ' + (a.caution.reasons[0] || '').split(' — ')[0]
     : level === 3 ? sideKr + ' 타점 도달 3/3'
     : level === 2 ? sideKr + ' 2/3 대기'
     : '관망 ' + best + '/3';
@@ -2868,7 +2794,7 @@ async function refreshAltTickers(){
   });
 }
 async function loadAltCandles(force){
-  /* 10종목을 한꺼번에 부르지 않습니다 — 가장 오래된 2종목만 1D/4H/1H을 갱신하고
+  /* 6종목을 한꺼번에 부르지 않습니다 — 가장 오래된 2종목만 1D/4H/1H을 갱신하고
      나머지는 다음 15초 주기로 넘깁니다(선택 종목 캔들은 별도 우선 로드). */
   const cand = SYMBOLS.filter(s => s.id !== state.sym)
     .map(s => ({ s, c: cacheFor(s.id) }))
@@ -3496,8 +3422,11 @@ function renderEvHyp(a){
     return;
   }
   const hp = hypPlan(p.slot);
+  const ag = hypAge();
+  const agBadge = ag && ag.level !== 'fresh'
+    ? '<span class="badge warn" title="수작업 가설 작성 시각 ' + ag.stamp + ' (KST)">가설 작성 후 ' + ag.txt + '</span>' : '';
   el.innerHTML = '<span>3중 점검 기준</span><b>' + p.title + '</b>' +
-    '<span class="dim">진입 ' + fmtPx(hp.entry) + ' / 손절 ' + fmtPx(hp.stop) + '</span>' +
+    '<span class="dim">진입 ' + fmtPx(hp.entry) + ' / 손절 ' + fmtPx(hp.stop) + '</span>' + agBadge +
     '<span class="badge ' + hypKindCls(p) + '" style="margin-left:auto">근거 ' + n + '/3</span>';
 }
 
@@ -3564,7 +3493,7 @@ function renderAnalysis(a){
   const n = a.side === 'short' ? a.nS : a.nL;
   const nm = ['①', '②', '③'];
   $('#evList').innerHTML = evs.map((e, i) =>
-    '<div class="ev-item"><span class="ev-ico ' + (e.ok ? 'y' : 'n') + '">' + (e.ok ? '✓' : '·') + '</span>' +
+    '<div class="ev-item"><span class="ev-ico ' + (e.ok ? 'y' : 'n') + '">' + (e.ok ? '✓' : e.dup ? '≈' : '·') + '</span>' +
     '<span><b>' + nm[i] + ' ' + e.name + '</b> — ' + e.text + '</span></div>').join('');
   const otherName = a.side === 'short' ? '롱' : '숏';
   const otherN = a.side === 'short' ? a.nL : a.nS;
@@ -3574,6 +3503,8 @@ function renderAnalysis(a){
      n === 2 ? '한 개 모자란다 → 보류. 확인 1개(다이버전스·거래량·전환 캔들)를 기다린다.' :
      n === 1 ? '2개는 보류, 1개는 진입이 아니다. 관망.' : '아무 근거도 겹치지 않는다. 지금은 하지 않는 구간.') +
     '<br><span style="color:var(--dim2)">반대(' + otherName + ') 근거는 ' + otherN + '/3.</span>' +
+    ((a.dup && a.dup[a.side]) ? '<br><span style="color:#ffd79a">≈ 자리와 라인이 같은 레벨이라 근거 1개로 셉니다 — 독립 근거는 그만큼 적습니다.</span>' : '') +
+    (a.caution ? '<br><span style="color:#ffd79a">⚠ 주의 — ' + a.caution.reasons.join(' · ') + '</span>' : '') +
     (a.nextHint ? '<br>' + a.nextHint : '');
   renderEvViz(a);
   renderEvHyp(a);
@@ -3596,7 +3527,8 @@ function verdictEasy(a){
     return '<b>가설 폐기 구간</b> · 원래 가설의 손절선을 넘어섰습니다. 되돌림을 기다리지 말고 새 추세가 맞는지 먼저 보세요.';
   }
   let t;
-  if (n >= 3) t = '자리·라인·다이버전스가 모두 겹쳤습니다. 세 조건이 겹칠 때만 진입하고, 손익비 3:1이 안 되면 건너뜁니다.';
+  if (n >= 3 && a.caution) t = '근거는 3개 겹쳤지만 <b>주의 조건</b>이 있습니다 — ' + a.caution.reasons.join(' · ') + '. 타점으로 올리지 않고, 들어가더라도 비중을 줄입니다.';
+  else if (n >= 3) t = '자리·라인·다이버전스가 모두 겹쳤습니다. 세 조건이 겹칠 때만 진입하고, 손익비 3:1이 안 되면 건너뜁니다.';
   else if (n === 2) t = '하나 모자랍니다. 빠진 조건(다이버전스·거래량·전환 캔들)이 채워질 때까지 기다리는 자리입니다.';
   else if (n === 1) t = '한 개만 겹쳤습니다. 진입 신호가 아니라 지켜보는 구간입니다.';
   else t = '겹친 조건이 없습니다. 지금은 아무것도 하지 않는 구간입니다.';
@@ -3787,7 +3719,7 @@ function renderScenarios(){
   const bestN = an ? Math.max(an.nS, an.nL) : 0;
   const liveSide = an && bestN >= 2 && !(an.zone && an.zone.code === 'void') ? an.side : null;
   const prim = an ? hypPrimaryFor(an) : null;
-  host.innerHTML = slots.map(slot => {
+  host.innerHTML = hypAgeBannerHtml() + slots.map(slot => {
     const def = hypOf(slot);
     const p = planFor(slot);
     const c = calcPlan(p);
@@ -3821,6 +3753,176 @@ function renderScenarios(){
   }).join('');
   $$('#scnList [data-load]').forEach(b => b.addEventListener('click', () => loadPlanToForm(b.dataset.load)));
   $('#scnHint').textContent = symOf(state.sym).code + ' 기준 · 가설값에서 수정 가능';
+}
+/* ------------------------- 수작업 가설의 나이 -------------------------
+   HYP_VERSION('YYYY-MM-DD-HHMM')은 가설 숫자를 손으로 써서 배포한 시각(KST)입니다.
+   설명문(why)의 가격·RSI·봉 수치는 그 시각의 값이라, 시간이 지나면 현재형으로 읽히면 안 됩니다. */
+function hypAuthoredAt(){
+  const m = /^(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})$/.exec(HYP_VERSION);
+  if (!m) return NaN;
+  return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4] - 9, +m[5]);   /* KST → UTC */
+}
+function hypAge(now){
+  const at = hypAuthoredAt();
+  if (!isNum(at)) return null;
+  const hrs = Math.max(0, ((now || Date.now()) - at) / 3600000);
+  const txt = hrs < 1 ? Math.round(hrs * 60) + '분'
+    : hrs < 48 ? (Math.round(hrs * 10) / 10) + '시간'
+    : Math.floor(hrs / 24) + '일 ' + Math.round(hrs % 24) + '시간';
+  return { at, hrs, txt, level: hrs >= 36 ? 'old' : hrs >= 12 ? 'aging' : 'fresh', stamp: kst(at, true) };
+}
+function hypAgeBannerHtml(){
+  const g = hypAge();
+  if (!g) return '';
+  const warn = g.level !== 'fresh';
+  const msg = g.level === 'old'
+    ? '오래된 가설입니다 — 진입·손절·목표 숫자가 지금 시장과 맞는지 먼저 확인하세요. 아래 «자동 후보»는 지금 4H 캔들로 다시 계산한 값입니다.'
+    : g.level === 'aging'
+    ? '시간이 지났습니다 — 설명문의 가격·RSI·봉 수치는 작성 당시 값입니다.'
+    : '설명문의 가격·RSI·봉 수치는 작성 당시 값입니다.';
+  return '<div style="margin:0 3px 9px; font-size:10.5px; line-height:1.55; color:' + (warn ? '#ffd79a' : 'var(--dim2)') + '">' +
+    '<span class="badge ' + (warn ? 'warn' : 'neutral') + '">수작업 가설 · ' + g.stamp + ' 작성 · 경과 ' + g.txt + '</span> ' + msg + '</div>';
+}
+
+/* ------------------------- 자동 가설 후보 — 4H 모노웨이브 피벗 기반 -------------------------
+   수작업 가설(HYP)은 그대로 두고, 지금 4H 캔들에서 모노웨이브를 다시 뽑아 후보를 계산합니다.
+   · 판정(3중 점검)·진입 타이밍에는 반영하지 않는 참고용 후보입니다.
+   · 구간 비율(0.5·0.618·0.786, 1.618 확장 등)은 학습용 가정이며 닐리 원서 표와 대조하지 않았습니다. */
+function autoHypotheses(c){
+  c = c || state;
+  const cs = (c.mtf && c.mtf['4H']) || [];
+  if (cs.length < 60) return { ok:false, why:'4H 캔들이 아직 부족합니다' };
+  const atr = mwAtr(cs);
+  const waves = extractMonowaves(cs, atr);
+  if (waves.length < 3) return { ok:false, why:'4H 모노웨이브가 3개 미만 — 아직 읽을 구조가 없습니다', waves, atr };
+  const price = currentPrice(c);
+  if (!isNum(price) || price <= 0) return { ok:false, why:'현재가를 기다리는 중입니다', waves, atr };
+
+  const m1 = waves[waves.length - 2];            /* 직전에 완성된 모노웨이브 */
+  const d1 = m1.dir;
+  const nw = analyzeNeowave(waves);
+  const f = n => fmtPx(n);
+  const lvl = r => m1.endPrice - d1 * m1.len * r;   /* m1을 r만큼 되돌린 가격 */
+  const ana = (state.ana && state.ana.sym === c.sym) ? state.ana : null;
+  const t1d = ana ? ana.tfs['1Dutc'].trend : null, t4 = ana ? ana.tfs['4H'].trend : null;
+  const bias = (t1d && t1d === t4 && t1d !== 'mixed') ? (t1d === 'up' ? 'long' : 'short') : null;
+  const biasTag = side => !bias ? { t:'상위 TF 혼조', cls:'neutral' }
+    : bias === side ? { t:'상위 TF 일치', cls:'long' } : { t:'상위 TF 역방향', cls:'warn' };
+  const out = [];
+
+  /* 후보 1 — m1 방향 추세 재개: 되돌림 0.5 → 0.618 → 0.786 중 아직 닿지 않은 가장 얕은 자리 */
+  {
+    const side = d1 > 0 ? 'long' : 'short';
+    const margin = 0.15 * atr;
+    const pick = [0.5, 0.618, 0.786].find(r => (price - lvl(r)) * d1 > margin);
+    const r = pick || 0.786;
+    const entry = lvl(r);
+    const stop = (r === 0.786 ? m1.startPrice : lvl(0.786)) - d1 * 0.2 * atr;
+    const voided = (price - m1.startPrice) * d1 <= 0;
+    const tags = [];
+    if (voided) tags.push({ t:'폐기 (되돌림 100% 초과)', cls:'short' });
+    else if (!pick) tags.push({ t:'되돌림 78.6% 초과 — 재개 근거 약함', cls:'warn' });
+    else if (Math.abs(price - entry) <= 0.5 * atr) tags.push({ t:'현재가 근접', cls:'long' });
+    tags.push(biasTag(side));
+    out.push({
+      id:'a1', side, kind:side, title:'자동 1 · 추세 재개 ' + (side === 'long' ? '롱' : '숏') + ' (' + m1.id + ' 방향)',
+      entry, stop, t1:m1.endPrice, t2:m1.startPrice + d1 * m1.len * 1.618, tags, voided,
+      why:'4H ' + m1.id + '(' + f(m1.startPrice) + ' → ' + f(m1.endPrice) + ')을 ' + r + ' 되돌린 ' + f(entry) + '에서 재개를 노리는 자리. ' +
+        '손절은 ' + (r === 0.786 ? m1.id + ' 시작점' : '0.786 되돌림(' + f(lvl(0.786)) + ')') + ' 너머 0.2ATR, 1차는 직전 극값, 2차는 ' + m1.id + ' 길이의 1.618배 확장. ' +
+        '파동 무효선은 ' + m1.id + ' 시작점 ' + f(m1.startPrice) + '(되돌림 100%) 입니다.'
+    });
+  }
+
+  /* 후보 2 — m1 시작점 돌파 시 반전 (조건부) */
+  {
+    const d2 = -d1, side = d2 > 0 ? 'long' : 'short';
+    const trigger = m1.startPrice + d2 * 0.1 * atr;
+    const broken = (price - trigger) * d2 >= 0;
+    const entry = trigger;
+    const stop = m1.startPrice - d2 * m1.len * 0.236;
+    const tags = [];
+    if (broken) tags.push(nw.retracePct > 100 ? { t:'돌파 확인 구간', cls:'long' } : { t:'돌파 진행 — 추격 주의', cls:'warn' });
+    else tags.push({ t:'조건부 — 돌파 확인 후', cls:'warn' });
+    tags.push(biasTag(side));
+    out.push({
+      id:'a2', side, kind:side, title:'자동 2 · 반전 ' + (side === 'long' ? '롱' : '숏') + ' (' + m1.id + ' 시작점 돌파)',
+      entry, stop, t1:entry + d2 * m1.len * 0.618, t2:entry + d2 * m1.len * 1.0, tags,
+      why:m1.id + ' 시작점 ' + f(m1.startPrice) + '을 0.1ATR 넘어서면 반전으로 보는 조건부 후보. 손절은 ' + m1.id + ' 안쪽 23.6% 재진입(' + f(stop) + '), ' +
+        '목표는 ' + m1.id + ' 길이의 0.618 / 1.0배 투영(학습용 가정).'
+    });
+  }
+
+  /* 후보 3 — 최근 5개 모노웨이브 범위의 극단 반전 */
+  {
+    const pts = waves.slice(-5).flatMap(w => [w.startPrice, w.endPrice]);
+    const hi = Math.max.apply(null, pts), lo = Math.min.apply(null, pts), mid = (hi + lo) / 2, R = hi - lo;
+    const side = price >= mid ? 'short' : 'long';
+    const entry = side === 'short' ? hi - 0.1 * R : lo + 0.1 * R;
+    const tags = [];
+    if (R < 3 * atr) tags.push({ t:'범위 협소 — 참고용', cls:'warn' });
+    else if (nw.ruleGroup === 'complex' || nw.timeRatioPct > 150) tags.push({ t:'복합조정 정황', cls:'long' });
+    else tags.push({ t:'박스권 가정', cls:'neutral' });
+    tags.push(biasTag(side));
+    out.push({
+      id:'a3', side, kind:side, title:'자동 3 · 범위 ' + (side === 'short' ? '상단' : '하단') + ' 반전 ' + (side === 'long' ? '롱' : '숏'),
+      entry, stop:side === 'short' ? hi + 0.5 * atr : lo - 0.5 * atr, t1:mid, t2:side === 'short' ? lo : hi, tags,
+      why:'최근 5개 모노웨이브 범위 ' + f(lo) + ' ~ ' + f(hi) + '의 ' + (side === 'short' ? '상단' : '하단') + ' 10% 지점 대기. 목표는 범위 중앙 → 반대편 끝. 범위를 0.5ATR 벗어나면 폐기.'
+    });
+  }
+
+  const last = cs[cs.length - 1];
+  return { ok:true, list:out, waves, atr, nw, m1, at:last ? last.t : 0 };
+}
+function renderAutoScenarios(){
+  const host = $('#autoScnList');
+  if (!host) return;
+  const head = '<div class="sec-title" style="margin-top:16px"><h2><i></i>자동 후보 · 4H 모노웨이브</h2>' +
+    '<span class="hint">지금 캔들로 계산 · 판정엔 반영 안 됨</span></div>';
+  const r = autoHypotheses();
+  if (!r.ok){
+    host.innerHTML = head + '<div class="card"><div style="font-size:12px; color:var(--dim); line-height:1.55">' + r.why + '.</div></div>';
+    return;
+  }
+  const price = currentPrice();
+  const dpn = symOf(state.sym).dp;
+  const rd = v => +(+v).toFixed(dpn);
+  host.innerHTML = head +
+    '<div style="margin:0 3px 9px; font-size:10.5px; line-height:1.55; color:var(--dim2)">4H ATR(14) ' + fmtPx(r.atr) + ' · 전환 기준 ×2.5 = ' + fmtPx(r.atr * 2.5) +
+    ' · 모노웨이브 ' + r.waves.length + '개 · 마지막 4H 봉 ' + kst(r.at, true) + ' 기준. ' +
+    '비율은 학습용 가정이며, 숫자는 매 갱신마다 새로 계산됩니다.</div>' +
+    r.list.map(h => {
+      const p = { side:h.side, entry:h.entry, stop:h.stop, t1:h.t1, t2:h.t2, lev:5, margin:0 };
+      const c = calcPlan(p);
+      const d = (h.entry - price) / price * 100;
+      const stCls = h.voided ? 'short' : c.status.cls === 'ok' ? 'long' : c.status.cls === 'warn' ? 'warn' : 'short';
+      const stTxt = h.voided ? '폐기 — 진입 아님' : c.status.big;
+      return '<div class="scn ' + (h.kind === 'long' ? 'long' : '') + (h.voided ? '" style="opacity:.6' : '') + '" data-auto="' + h.id + '">' +
+        '<div class="scn-top"><div class="scn-title">' + h.title + ' <span class="badge ' + h.kind + '">' + (h.kind === 'short' ? '숏' : '롱') + '</span>' +
+          h.tags.map(t => '<span class="badge ' + t.cls + '">' + t.t + '</span>').join('') + '</div>' +
+          '<div class="scn-dist">진입까지 <b style="color:' + (d >= 0 ? 'var(--up)' : 'var(--down)') + '">' + fmtPct(d) + '</b></div></div>' +
+        '<div class="scn-grid">' +
+          '<div class="scn-cell"><label>진입</label><b>' + fmtPx(h.entry) + '</b></div>' +
+          '<div class="scn-cell"><label>손절 · 근거 무효화</label><b>' + fmtPx(h.stop) + '</b></div>' +
+          '<div class="scn-cell"><label>1차 목표</label><b>' + fmtPx(h.t1) + '</b></div>' +
+          '<div class="scn-cell"><label>2차 목표</label><b>' + fmtPx(h.t2) + '</b></div>' +
+        '</div>' +
+        '<div class="scn-foot"><div class="rr"><span>손익비</span><b class="num">' + (isNum(c.r1) ? c.r1.toFixed(2) : '—') + ':1</b><span>/</span><b class="num">' +
+          (isNum(c.r2) ? c.r2.toFixed(2) : '—') + ':1</b> <span class="badge ' + stCls + '">' + stTxt + '</span></div>' +
+          '<button class="btn" data-autoload="' + h.id + '">이 값으로 계산</button></div>' +
+        '<div class="why">' + h.why + '</div>' +
+      '</div>';
+    }).join('');
+  $$('#autoScnList [data-autoload]').forEach(b => b.addEventListener('click', () => {
+    const h = r.list.find(x => x.id === b.dataset.autoload);
+    if (!h) return;
+    /* 저장된 «내 타점»을 덮어쓰지 않도록 폼에만 채웁니다 — 값을 고치면 그때부터 내 타점으로 자동 저장됩니다 */
+    state.activeSlot = 'custom';
+    fillPlanForm({ side:h.side, entry:rd(h.entry), stop:rd(h.stop), t1:rd(h.t1), t2:rd(h.t2), lev:5, margin:0 });
+    renderPlanner(true);
+    $('#planSaved').textContent = '자동 후보 «' + h.title + '» 값 불러옴 — 수정하면 내 타점으로 저장됩니다';
+    $('#planSec').scrollIntoView({ behavior:'smooth', block:'start' });
+    drawChart();
+  }));
 }
 /* 타점을 저장·수정·초기화했을 때 판정 카드·가설 카드·차트의 수치를 같은 값으로 즉시 맞춥니다 */
 function refreshPlanViews(){
@@ -5143,7 +5245,7 @@ const SEED_TRADES = [{
     },
     nw: { pattern: '터미널 충격파 (Terminal)', retrace: 34.03, ruleId: 'Rule 1~2',
           time: 3.03, timeId: '시간 부족', slope: 11.23, slopeId: '가속',
-          integ: '1·4파 결침 감지', tags: { w2: 'pass', overlap: 'fail', w3: 'half' },
+          integ: '1·4파 겹침 감지', tags: { w2: 'pass', overlap: 'fail', w3: 'half' },
           n: 7, bar: '1H' },
     rsi: { '1D': 32.5, '4H': 59.6, '1H': 64.8 }
   }
@@ -6366,7 +6468,7 @@ function fireAlert(items){
   }
   showBanner(items);
 }
-/* 15초 갱신마다 10종목 상태 비교 — 새로 3/3 이나 '지금 진입'으로 바뀐 시점만, 종목+상태당 15분 쿨다운 */
+/* 15초 갱신마다 6종목 상태 비교 — 새로 3/3 이나 '지금 진입'으로 바뀐 시점만, 종목+상태당 15분 쿨다운 */
 async function toggleAlerts(){
   state.alertOn = !state.alertOn;
   store(ALERT_ON_KEY, state.alertOn);
@@ -6444,13 +6546,14 @@ function renderAll(){
   }
   renderPosition();
   renderScenarios();
+  renderAutoScenarios();
   computeMw();
   renderNeowave();
   renderPlanner(false);
   if (state.page !== 'journal') drawChart();
   if (state.page === 'journal') renderJournal();
   updateAutoBar();
-  applySymStatus();                  /* 10종목 버튼 색 — 선택 종목 분석 결과 + 캐시된 나머지 종목 */
+  applySymStatus();                  /* 6종목 버튼 색 — 선택 종목 분석 결과 + 캐시된 나머지 종목 */
 }
 /* 스크롤하면 상단 바를 슬림 가격 바(종목·현재가·등락률)로 전환 */
 function bindStickyPrice(){
