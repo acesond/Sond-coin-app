@@ -101,6 +101,11 @@ body{
 .psym.st2 .st{background:#f59e0b}
 .psym.st3 .st{background:#f43f5e; animation:stDot 1.4s infinite}
 .psym.on.st2, .psym.on.st3{color:#fff; box-shadow:0 0 0 1.5px rgba(255,255,255,.5)}
+/* 매매 중 종목 — 맨 앞 정렬 + 하늘색 포인트 */
+.psym .tr{width:5px; height:5px; border-radius:50%; display:none; flex:none; background:#38bdf8; box-shadow:0 0 5px rgba(56,189,248,.9)}
+.psym.trd{border-color:rgba(56,189,248,.85); color:#d6efff}
+.psym.trd .tr{display:block}
+.psym.on.trd{box-shadow:0 0 0 1.5px rgba(125,211,252,.7)}
 .pbar-quote{margin-left:auto; flex:none; display:flex; align-items:baseline; gap:6px; min-width:0}
 .pbar-dot{width:6px;height:6px;border-radius:50%;background:var(--up); flex:none; align-self:center; animation:pulse 2s infinite}
 .pbar-price{font-size:15.5px; font-weight:800; letter-spacing:-.4px; white-space:nowrap; line-height:1.1}
@@ -170,6 +175,15 @@ body{
 .chip.on{color:#fff}
 .chip.on.st2, .chip.on.st3{color:#fff; box-shadow:0 0 0 1.5px rgba(255,255,255,.45), 0 6px 18px -12px #000}
 .chip.on.st2 small, .chip.on.st3 small{color:rgba(255,255,255,.78)}
+/* 매매 중(진행 중 포지션) 종목 — 맨 앞 정렬 + '진입중' 배지 */
+.chip .tr{display:none; align-items:center; gap:3px; margin-top:2px; font-size:9px; font-weight:800; letter-spacing:.01em; line-height:1; color:#a7f3d0; background:rgba(16,185,129,.18); border:1px solid rgba(16,185,129,.55); border-radius:6px; padding:2px 5px}
+.chip .tr i{width:4px; height:4px; border-radius:50%; background:#34d399; display:inline-block; animation:stDot 1.4s infinite}
+.chip.trd{display:flex; border-color:rgba(56,189,248,.8); background:linear-gradient(160deg,rgba(56,189,248,.2),rgba(56,189,248,.05)); color:#dcf1ff; box-shadow:0 0 16px -8px rgba(56,189,248,.85)}
+.chip.trd small{color:#8cc9ea}
+.chip.trd .tr{display:inline-flex}
+.chip.trd.on{color:#fff; border-color:rgba(125,211,252,.95); box-shadow:0 0 0 1.5px rgba(125,211,252,.6), 0 6px 18px -12px #000}
+.chip.trd.on small{color:rgba(255,255,255,.82)}
+.chip.trd.on.st2, .chip.trd.on.st3{box-shadow:0 0 0 1.5px rgba(125,211,252,.6), 0 0 16px -7px rgba(56,189,248,.9)}
 .chip-legend{display:flex; align-items:center; gap:10px; margin:7px 3px 0; font-size:10px; color:var(--dim2); letter-spacing:-.1px}
 .chip-legend span{display:inline-flex; align-items:center; gap:4px}
 .chip-legend i{width:6px; height:6px; border-radius:50%; display:inline-block; flex:none}
@@ -1568,6 +1582,36 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const isNum = v => typeof v === 'number' && isFinite(v);
 
 function symOf(id){ return SYMBOLS.find(s => s.id === id) || SYMBOLS[0]; }
+
+/* ------------------------- 종목 탭 정렬 — 매매 중 종목 우선 -------------------------
+   평소: 바이낸스 24시간 거래대금 1~10위(SYMBOLS 배열 순서 그대로).
+   매매 중(매매기록의 진행 중 포지션 status === 'open' 또는 state.pos)이 있으면
+   그 종목을 최근 진입 순으로 맨 앞에 두고, 나머지는 거래대금 순서를 유지합니다.
+   · 진입 기록· 청산· 삭제 때만 renderChips/renderPbarSyms가 다시 불리고,
+     15초 자동 갱신은 순서를 건드리지 않아 사용자가 고른 종목(state.sym)이 되돌아가지 않습니다. */
+function openTradesByRecency(){
+  const seen = {}, list = [];
+  const push = (sym, at) => {
+    if (!sym || seen[sym] || !SYMBOLS.some(s => s.id === sym)) return;
+    seen[sym] = true;
+    list.push({ sym: sym, at: isNum(at) ? at : 0 });
+  };
+  (tradeLog || []).forEach(e => { if (e && e.status === 'open') push(e.sym, e.at); });
+  const pos = state.pos || {};
+  Object.keys(pos).forEach(id => { const p = pos[id]; if (p && isNum(p.entry)) push(id, p.at); });
+  return list.sort((a, b) => b.at - a.at).map(x => x.sym);
+}
+function tradingSyms(){
+  const m = {};
+  openTradesByRecency().forEach(id => { m[id] = true; });
+  return m;
+}
+function getOrderedSymbols(){
+  const openIds = openTradesByRecency();
+  const head = openIds.map(id => symOf(id));
+  const tail = SYMBOLS.filter(s => openIds.indexOf(s.id) < 0);
+  return head.concat(tail);
+}
 function dp(){ return symOf(state.sym).dp; }
 function fmtN(n, d){
   if (!isNum(n)) return '—';
@@ -2679,10 +2723,13 @@ function selectSymbol(id){
 }
 function renderChips(){
   const el = $('#symChips');
-  el.innerHTML = SYMBOLS.map(s =>
-    '<button class="chip' + (s.id === state.sym ? ' on' : '') + '" data-sym="' + s.id + '" data-rank="' + s.rank +
-      '" title="' + s.rank + '위 · 24시간 거래대금 ' + s.vol + '">' +
-      s.code + '<small>' + s.name + '</small><i class="st" aria-hidden="true"></i></button>').join('');
+  const trd = tradingSyms();
+  el.innerHTML = getOrderedSymbols().map(s =>
+    '<button class="chip' + (s.id === state.sym ? ' on' : '') + (trd[s.id] ? ' trd' : '') + '" data-sym="' + s.id + '" data-rank="' + s.rank +
+      '" title="' + (trd[s.id] ? '진입중 · ' : '') + s.rank + '위 · 24시간 거래대금 ' + s.vol + '">' +
+      s.code + '<small>' + s.name + '</small>' +
+      (trd[s.id] ? '<span class="tr" aria-hidden="true"><i></i>진입중</span>' : '') +
+      '<i class="st" aria-hidden="true"></i></button>').join('');
   $$('.chip', el).forEach(b => {
     b.addEventListener('click', () => selectSymbol(b.dataset.sym));
   });
@@ -2702,9 +2749,11 @@ function centerActiveTab(el, sel){
 function renderPbarSyms(){
   const el = $('#pbarSyms');
   if (!el) return;
-  el.innerHTML = SYMBOLS.map(s =>
-    '<button class="psym' + (s.id === state.sym ? ' on' : '') + '" type="button" data-sym="' + s.id +
-    '" data-rank="' + s.rank + '" aria-pressed="' + (s.id === state.sym) + '"><i class="st" aria-hidden="true"></i>' + s.code + '</button>').join('');
+  const trd = tradingSyms();
+  el.innerHTML = getOrderedSymbols().map(s =>
+    '<button class="psym' + (s.id === state.sym ? ' on' : '') + (trd[s.id] ? ' trd' : '') + '" type="button" data-sym="' + s.id +
+    '" data-rank="' + s.rank + '" aria-pressed="' + (s.id === state.sym) + '"><i class="st" aria-hidden="true"></i>' + s.code +
+    '<i class="tr" aria-hidden="true"></i></button>').join('');
   $$('.psym', el).forEach(b => b.addEventListener('click', () => selectSymbol(b.dataset.sym)));
   paintSymStatus();
   centerActiveTab(el, '.psym');
@@ -2775,14 +2824,16 @@ function applySymStatus(){
 }
 function paintSymStatus(){
   const map = state.statusMap || {};
+  const trd = tradingSyms();
   $$('.chip[data-sym], .psym[data-sym]').forEach(b => {
     const id = b.dataset.sym, st = map[id] || null, lvl = st ? st.level : 0;
     b.classList.toggle('st3', lvl === 3);
     b.classList.toggle('st2', lvl === 2);
+    b.classList.toggle('trd', !!trd[id]);
     const s = symOf(id);
     const txt = st ? st.label + (st.timing ? ' · ' + st.timing : '') : '상태 계산 중';
-    b.setAttribute('aria-label', s.code + ' ' + s.name + ' (' + s.rank + '위) — ' + txt);
-    b.title = s.rank + '위 ' + s.code + ' (24h ' + s.vol + ') — ' + txt + (st && isNum(st.price) ? ' · ' + fmtN(st.price, s.dp) : '');
+    b.setAttribute('aria-label', s.code + ' ' + s.name + (trd[id] ? ' (진입중)' : '') + ' (' + s.rank + '위) — ' + txt);
+    b.title = (trd[id] ? '진입중 · ' : '') + s.rank + '위 ' + s.code + ' (24h ' + s.vol + ') — ' + txt + (st && isNum(st.price) ? ' · ' + fmtN(st.price, s.dp) : '');
   });
   const upd = $('#stUpd');
   if (upd) upd.textContent = state.statusAt ? SYMBOLS.length + '종목 · ' + kst(state.statusAt) + ' 계산' : SYMBOLS.length + '종목 점검 중';
@@ -5323,6 +5374,8 @@ function doOpenPosition(plan, memo, snap, margin){
     margin: Math.round(mg * 100) / 100,
     at: at, status: 'open', memo: memo || '', snap: snap || entrySnapshot(plan) });
   saveTradeLog();
+  renderChips();                       /* 매매 중 종목을 탭 맨 앞으로 — 진입 즉시 재정렬 */
+  renderPbarSyms();
   renderPosition();
   renderJournal();
   refreshAutoMargin();
@@ -5406,6 +5459,8 @@ function closePositionRecord(id, reason){
   const p = state.pos && state.pos[e.sym];
   if (p && (!p.logId || p.logId === e.id)){ delete state.pos[e.sym]; savePos(); }
   saveTradeLog();
+  renderChips();                       /* 청산 즉시 탭 순서·진입중 배지 재정렬 */
+  renderPbarSyms();
   renderPosition();
   renderJournal();
   refreshAutoMargin();
@@ -5714,6 +5769,8 @@ function deleteRecord(id){
   }
   tradeLog.splice(i, 1);
   saveTradeLog();
+  renderChips();                       /* 삭제 즉시 탭 순서·진입중 배지 재정렬 */
+  renderPbarSyms();
   renderPosition();
   renderJournal();
   toast('기록 삭제됨', '이 기기의 매매기록에서 지웠습니다.');
@@ -6524,6 +6581,9 @@ function init(){
   loadAssetState();
   loadTradeLog();
   loadJournalPeriod();
+  /* 첫 화면 — 매매 중 종목이 있으면 가장 최근 진입한 그 종목을 기본 선택 (없으면 BTC 그대로) */
+  const firstOpen = openTradesByRecency()[0];
+  if (firstOpen) state.sym = firstOpen;
   bindJournal();
   renderJournal();
   state.fibOn = store(FIB_ON_KEY) === true;
