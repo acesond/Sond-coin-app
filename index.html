@@ -5968,7 +5968,7 @@ function saveAt(id, row){
 /* ========================= 패배 원인 자동 분석 =========================
    · 손절로 끝난 매매 카드에 '🔍 왜 패했을까?' 박스를 붙입니다.
    · 저장된 진입 근거 스냅샷 + 진입~청산 1H 캔들 + 진입 전 1D 캔들(추세) + 1H ATR을 대조합니다. */
-const lossRev = { running:{}, failed:{} };
+const lossRev = { running:{}, queued:{}, failed:{} };
 function isLossRecord(e){ return !!e && e.status === 'closed' && isNum(e.roe) && e.roe < 0; }
 function lossBoxHtml(e){
   const r = e.review;
@@ -5989,9 +5989,9 @@ function lossBoxHtml(e){
 }
 function autoLossReview(){
   tradeLog.forEach(e => {
-    if (!isLossRecord(e) || e.review || lossRev.running[e.id] || lossRev.failed[e.id]) return;
-    lossRev.running[e.id] = 1;
-    setTimeout(() => runLossReview(e), 60);
+    if (!isLossRecord(e) || e.review || lossRev.running[e.id] || lossRev.queued[e.id] || lossRev.failed[e.id]) return;
+    lossRev.queued[e.id] = 1;
+    setTimeout(() => { delete lossRev.queued[e.id]; runLossReview(e); }, 60);
   });
 }
 function revLossNow(id){
