@@ -2786,7 +2786,7 @@ function addCustomSymbol(id, ticker){
   const old = SYMBOLS.findIndex(s => s.custom || s.id === state.customSym);
   if (old >= 0 && SYMBOLS[old].id !== id){ delete symCache[SYMBOLS[old].id]; SYMBOLS.splice(old, 1); }
   if (!SYMBOLS.some(s => s.id === id)){
-    SYMBOLS.push({ id: id, code: id.replace(/USDT$/, ''), name: '조회 종목',
+    SYMBOLS.push({ id: id, code: id.replace(/USDT$/, ''), name: '직접 조회',
       dp: dpForPrice(ticker && +ticker.last), rank: 0, vol: '조회', custom: true });
   }
   state.customSym = id;
@@ -3878,12 +3878,14 @@ function renderScenarios(){
     const lv = levelsFor();
     host.innerHTML = '<div class="card"><div style="font-size:12px; color:var(--dim); line-height:1.55">' +
       '<b style="color:#dbe6f5">' + symOf(state.sym).code + '</b> — 수작업 가설 없음 · 4H 모노웨이브 자동 기준으로 분석 중입니다. ' +
-      '아래는 4H 스윙에서 뽑은 현재 지지·저항입니다.</div>' + +
+      '아래는 4H 스윙에서 뽑은 현재 지지·저항입니다.</div>' +
       '<div class="scn-grid" style="margin-top:9px">' + (lv.length ? lv.map(l =>
         '<div class="scn-cell"><label>' + (l.side === 'short' ? '저항' : '지지') + ' · 4H 스윙</label><b>' + fmtPx(l.p) +
         ' <span style="font-size:10px;color:var(--dim2)">' + fmtPct((l.p - currentPrice()) / currentPrice() * 100) + '</span></b></div>').join('')
         : '<div class="scn-cell"><label>스윙</label><b>—</b></div>') + '</div>' +
       '<div class="why">가설 대신 아래 “내 타점”이 ' + symOf(state.sym).code + '의 4H 스윙(저항 진입 / 지지 목표)으로 채워집니다. 직접 고쳐 저장하세요.</div></div>';
+    const hintEl = $('#scnHint');
+    if (hintEl) hintEl.textContent = symOf(state.sym).code + ' · 4H 스윙 기준 (자동)';
     return;
   }
   const price = currentPrice();
