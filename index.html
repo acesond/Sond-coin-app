@@ -2678,9 +2678,10 @@ function renderChips(){
 }
 /* 선택한 종목 버튼이 가로 스크롤 밖에 있으면 가운데로 끌어옵니다 (10종목 대응) */
 function centerActiveTab(el, sel){
-  if (!el || !el.scrollTo) return;
+  if (!el) return;
   const on = el.querySelector(sel + '.on');
   if (!on) return;
+  if (el.clientWidth < 40) return;                 /* 미니 바가 접혀 있으면(stuck 전) 나중에 다시 */
   const left = on.offsetLeft - (el.clientWidth - on.offsetWidth) / 2;
   try { el.scrollTo({ left:Math.max(0, left), behavior:'smooth' }); } catch (e) { el.scrollLeft = Math.max(0, left); }
 }
@@ -6371,11 +6372,19 @@ function bindStickyPrice(){
   const hH = () => hdr.offsetHeight || 52;
   if ('IntersectionObserver' in window){
     const io = new IntersectionObserver(entries => {
-      entries.forEach(en => hdr.classList.toggle('stuck', !en.isIntersecting));
+      entries.forEach(en => {
+        const on = !en.isIntersecting;
+        hdr.classList.toggle('stuck', on);
+        if (on) centerActiveTab($('#pbarSyms'), '.psym');
+      });
     }, { rootMargin: '-' + hH() + 'px 0px 0px 0px', threshold: 0 });
     io.observe(card);
   } else {
-    const upd = () => hdr.classList.toggle('stuck', window.scrollY + hH() >= card.offsetTop + card.offsetHeight);
+    const upd = () => {
+      const on = window.scrollY + hH() >= card.offsetTop + card.offsetHeight;
+      hdr.classList.toggle('stuck', on);
+      if (on) centerActiveTab($('#pbarSyms'), '.psym');
+    };
     window.addEventListener('scroll', upd, { passive:true });
     upd();
   }
