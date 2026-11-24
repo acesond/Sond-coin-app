@@ -372,6 +372,20 @@ button.toggle b{font-variant-numeric:tabular-nums; color:#67e8f9; font-weight:80
 .v-easy b{color:#cfe0ff}
 .legend-easy{flex:0 0 100%; font-size:9.5px; color:var(--dim2); line-height:1.4; margin-top:1px; border-top:1px dashed rgba(30,42,60,.7); padding-top:5px}
 .chip-easy{margin:5px 3px 0; font-size:9.5px; color:var(--dim2); line-height:1.45}
+/* 커스텀 코인 조회 */
+.symsearch{display:flex; gap:6px; margin:10px 3px 0}
+.symsearch input{flex:1; min-width:0; border:1px solid var(--line2); background:#0a1220; color:#e6eefb; font-family:inherit; font-size:12px; padding:8px 10px; border-radius:10px; outline:none}
+.symsearch input::placeholder{color:#5d6d84; font-size:11px}
+.symsearch input:focus{border-color:rgba(91,140,255,.55); background:#0b1526}
+.symsearch .btn{flex:none; padding:8px 13px; font-size:12px; white-space:nowrap}
+.symsearch .btn:disabled{opacity:.55}
+.symnow{display:flex; align-items:center; gap:7px; margin:7px 3px 0; padding:6px 9px; font-size:10.5px; font-weight:700; color:#cfe0ff; background:rgba(91,140,255,.12); border:1px solid rgba(91,140,255,.34); border-radius:9px}
+.symnow b{color:#fff; font-weight:800}
+.symnow button{margin-left:auto}
+.symsearch-msg{margin:7px 3px 0; font-size:10.5px; line-height:1.5; border-radius:9px; padding:6px 9px; word-break:keep-all}
+.symsearch-msg.ok{color:#bfe9cf; background:rgba(34,197,94,.10); border:1px solid rgba(34,197,94,.30)}
+.symsearch-msg.bad{color:#ffc2cc; background:rgba(244,63,94,.10); border:1px solid rgba(244,63,94,.30)}
+.symsearch-msg.info{color:#cfe0ff; background:rgba(91,140,255,.10); border:1px solid rgba(91,140,255,.28)}
 
 /* ---------- 매매기록 페이지 ---------- */
 .jstat-card{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:11px 10px}
@@ -972,6 +986,12 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
   </div>
 
   <div class="chips" id="symChips"></div>
+  <div class="symsearch" id="symSearchWrap">
+    <input id="symSearch" type="search" inputmode="text" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="다른 코인 조회 (예: SUI, AVAX, PEPE)" aria-label="코인 이름이나 심볼로 조회">
+    <button class="btn primary" id="symSearchBtn" type="button">분석</button>
+  </div>
+  <div class="symnow" id="symNow" hidden></div>
+  <div class="symsearch-msg" id="symSearchMsg" hidden></div>
   <div class="chip-legend" id="chipLegend">
     <span><i class="d3"></i>타점 도달 3/3</span>
     <span><i class="d2"></i>2/3 대기</span>
@@ -2691,6 +2711,124 @@ function selectSymbol(id){
   loadAll(true);
   renderEvents();
 }
+/* ===== 커스텀 코인 조회 — 6종목 아래 입력창에서 심볼을 찾아 그 종목으로 분석합니다 ===== */
+const SYM_NAME_MAP = {
+  '비트코인':'BTC', '비트':'BTC', '이더리움':'ETH', '이더':'ETH', '솔라나':'SOL', '리플':'XRP',
+  '바이낸스코인':'BNB', '도지코인':'DOGE', '도지':'DOGE', '수이':'SUI', '아발란체':'AVAX', '페페':'PEPE',
+  '에이다':'ADA', '체인링크':'LINK', '링크':'LINK', '트론':'TRX', '톤':'TON', '톤코인':'TON',
+  '폴카닷':'DOT', '라이트코인':'LTC', '시바이누':'SHIB', '니어':'NEAR', '앱토스':'APT',
+  '아비트럼':'ARB', '옵티미즘':'OP', '세이':'SEI', '스텔라':'XLM', '코스모스':'ATOM', '이오스':'EOS'
+};
+function normSymInput(v){
+  let raw = String(v || '').trim();
+  if (!raw) return '';
+  if (SYM_NAME_MAP[raw]) raw = SYM_NAME_MAP[raw];
+  raw = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!raw || /^\d/.test(raw)) return '';
+  return /USDT$/.test(raw) ? raw : raw + 'USDT';
+}
+function dpForPrice(p){
+  if (!isNum(p) || p <= 0) return 2;
+  if (p >= 1000) return 1;
+  if (p >= 100) return 2;
+  if (p >= 1) return 3;
+  if (p >= 0.1) return 4;
+  if (p >= 0.01) return 5;
+  if (p >= 0.001) return 6;
+  return 8;
+}
+function symMsg(text, cls){
+  const el = $('#symSearchMsg');
+  if (!el) return;
+  if (!text){ el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.className = 'symsearch-msg ' + (cls || 'info');
+  el.innerHTML = text;
+}
+function customSymOf(){ return state.customSym ? (SYMBOLS.find(s => s.id === state.customSym) || null) : null; }
+function renderSymNow(){
+  const el = $('#symNow');
+  if (!el) return;
+  const c = customSymOf();
+  if (!c){ el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.className = 'symnow';
+  el.innerHTML = '<span>조회중 <b>' + escHtml(c.code) + '</b> · ' + escHtml(c.id) + ' 분석 기준</span>' +
+    '<button class="j-mini" data-symclose="1" type="button">× 6종목으로</button>';
+}
+async function lookupSymbol(){
+  const inp = $('#symSearch'), btn = $('#symSearchBtn');
+  const id = normSymInput(inp && inp.value);
+  if (!id){ symMsg('코인 이름이나 심볼을 입력하세요. 예: SUI · AVAX · PEPE', 'bad'); return; }
+  const code = id.replace(/USDT$/, '');
+  if (btn){ btn.disabled = true; btn.textContent = '조회 중'; }
+  symMsg('<b>' + escHtml(code) + '</b> 바이낸스 USDT 선물 시세를 확인하고 있습니다…', 'info');
+  try {
+    const t = await fetchTicker(id);
+    const cs = await fetchCandles(id, '1H', 60);
+    if (!cs || !cs.length) throw new Error('캔들 없음');
+    const fixed = SYMBOLS.find(s => s.id === id && !s.custom);
+    if (fixed){
+      selectSymbol(id);
+      symMsg('✅ <b>' + escHtml(fixed.code) + '</b>은(는) 이미 위 6종목에 있습니다 — 그 종목으로 전환했습니다.', 'ok');
+    } else {
+      addCustomSymbol(id, t);
+      symMsg('✅ <b>' + escHtml(code) + '</b> 조회 완료 — 차트·RSI·NEoWave·자동 후보·3중 점검이 이 종목 기준으로 계산됩니다. 위 <b>× 6종목으로</b>를 누르면 돌아갑니다.', 'ok');
+    }
+    if (inp) inp.value = '';
+  } catch (err) {
+    symMsg('⚠ <b>바이낸스 USDT 선물에서 찾을 수 없는 종목입니다.</b> 심볼을 확인해 주세요 — 예: SUI · AVAX · PEPE · DOGE. (6종목 화면은 그대로입니다)', 'bad');
+  } finally {
+    if (btn){ btn.disabled = false; btn.textContent = '분석'; }
+  }
+}
+function addCustomSymbol(id, ticker){
+  const old = SYMBOLS.findIndex(s => s.custom || s.id === state.customSym);
+  if (old >= 0 && SYMBOLS[old].id !== id){ delete symCache[SYMBOLS[old].id]; SYMBOLS.splice(old, 1); }
+  if (!SYMBOLS.some(s => s.id === id)){
+    SYMBOLS.push({ id: id, code: id.replace(/USDT$/, ''), name: '조회 종목',
+      dp: dpForPrice(ticker && +ticker.last), rank: 0, vol: '조회', custom: true });
+  }
+  state.customSym = id;
+  if (state.sym !== id) selectSymbol(id);
+  else { renderChips(true); renderPbarSyms(true); refreshTick(true); }
+  renderSymNow();
+}
+function closeCustomSymbol(){
+  const id = state.customSym;
+  const c = customSymOf();
+  if (!id || !c) return;
+  const i = SYMBOLS.findIndex(s => s.id === id);
+  if (i >= 0) SYMBOLS.splice(i, 1);
+  delete symCache[id];
+  state.customSym = null;
+  renderSymNow();
+  if (state.sym === id){
+    state.ana = null; state.ticker = null; state.candles = [];
+    state.mtf = { '1Dutc':[], '4H':[], '1H':[] };
+    state.sym = SYMBOLS[0].id;
+    state.activeSlot = 'h1';
+    renderChips(true); renderPbarSyms(true);
+    loadAll();
+  }
+  symMsg('6종목 화면으로 돌아왔습니다.', 'info');
+}
+function bindSymSearch(){
+  const inp = $('#symSearch'), btn = $('#symSearchBtn');
+  if (!inp || !btn || inp.dataset.bound === '1') return;
+  inp.dataset.bound = '1';
+  btn.addEventListener('click', lookupSymbol);
+  inp.addEventListener('keydown', ev => {
+    if (ev.key !== 'Enter') return;
+    ev.preventDefault();
+    lookupSymbol();
+  });
+  document.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-symclose]');
+    if (b) closeCustomSymbol();
+  });
+}
+
 function renderChips(keepLeft){
   const el = $('#symChips');
   const trd = tradingSyms();
@@ -2698,7 +2836,7 @@ function renderChips(keepLeft){
   tabOrderKey = orderKeyOf(order);
   el.innerHTML = order.map(s =>
     '<button class="chip' + (s.id === state.sym ? ' on' : '') + (trd[s.id] ? ' trd' : '') + '" data-sym="' + s.id + '" data-rank="' + s.rank +
-      '" title="' + (trd[s.id] ? '진입중 · ' : '') + s.rank + '위 · 24시간 거래대금 ' + s.vol + '">' +
+      '" title="' + (trd[s.id] ? '진입중 · ' : '') + (s.custom ? '조회 종목' : s.rank + '위 · 24시간 거래대금 ' + s.vol) + '">' +
       s.code + '<small>' + s.name + '</small>' +
       (trd[s.id] ? '<span class="tr" aria-hidden="true"><i></i>진입중</span>' : '') +
       '<i class="st" aria-hidden="true"></i></button>').join('');
@@ -2816,8 +2954,8 @@ function paintSymStatus(){
     b.classList.toggle('trd', !!trd[id]);
     const s = symOf(id);
     const txt = st ? st.label + (st.timing ? ' · ' + st.timing : '') : '상태 계산 중';
-    b.setAttribute('aria-label', s.code + ' ' + s.name + (trd[id] ? ' (진입중)' : '') + ' (' + s.rank + '위) — ' + txt);
-    b.title = (trd[id] ? '진입중 · ' : '') + s.rank + '위 ' + s.code + ' (24h ' + s.vol + ') — ' + txt + (st && isNum(st.price) ? ' · ' + fmtN(st.price, s.dp) : '');
+    b.setAttribute('aria-label', s.code + ' ' + s.name + (trd[id] ? ' (진입중)' : '') + (s.custom ? ' (조회 종목)' : ' (' + s.rank + '위)') + ' — ' + txt);
+    b.title = (trd[id] ? '진입중 · ' : '') + (s.custom ? '조회 종목 · ' + s.code : s.rank + '위 ' + s.code + ' (24h ' + s.vol + ')') + ' — ' + txt + (st && isNum(st.price) ? ' · ' + fmtN(st.price, s.dp) : '');
   });
   const upd = $('#stUpd');
   if (upd) upd.textContent = state.statusAt ? SYMBOLS.length + '종목 · ' + kst(state.statusAt) + ' 계산' : SYMBOLS.length + '종목 점검 중';
@@ -3739,8 +3877,8 @@ function renderScenarios(){
   if (!HYP[state.sym]){
     const lv = levelsFor();
     host.innerHTML = '<div class="card"><div style="font-size:12px; color:var(--dim); line-height:1.55">' +
-      '<b style="color:#dbe6f5">' + symOf(state.sym).code + '</b>은(는) 아직 가설 세트가 없습니다. ' +
-      '아래는 4H 스윙에서 뽑은 현재 지지·저항입니다.</div>' +
+      '<b style="color:#dbe6f5">' + symOf(state.sym).code + '</b> — 수작업 가설 없음 · 4H 모노웨이브 자동 기준으로 분석 중입니다. ' +
+      '아래는 4H 스윙에서 뽑은 현재 지지·저항입니다.</div>' + +
       '<div class="scn-grid" style="margin-top:9px">' + (lv.length ? lv.map(l =>
         '<div class="scn-cell"><label>' + (l.side === 'short' ? '저항' : '지지') + ' · 4H 스윙</label><b>' + fmtPx(l.p) +
         ' <span style="font-size:10px;color:var(--dim2)">' + fmtPct((l.p - currentPrice()) / currentPrice() * 100) + '</span></b></div>').join('')
@@ -6885,6 +7023,7 @@ function bindStickyPrice(){
   }
 }
 function bindMisc(){
+  bindSymSearch();
   $('#refreshBtn').addEventListener('click', () => { state.countdown = 15; refreshTick(true); });
   $('#zoomIn').addEventListener('click', () => { state.zoom = clamp((state.zoom || 90) + 20, 20, (state.candles || []).length || 200); drawChart(); });
   $('#zoomOut').addEventListener('click', () => { state.zoom = clamp((state.zoom || 90) - 20, 20, (state.candles || []).length || 200); drawChart(); });
