@@ -410,6 +410,41 @@ button.toggle b{font-variant-numeric:tabular-nums; color:#67e8f9; font-weight:80
 .j-empty strong{color:#cfe0ff; font-weight:700}
 .jnote{font-size:9.5px; color:var(--dim2); line-height:1.55; margin:10px 3px 0}
 .jnote b{color:#b9c9df; font-weight:700}
+/* ---------- 자산현황 카드 (매매기록 2페이지 상단) ---------- */
+.ass-card{border:1px solid rgba(91,140,255,.28); background:linear-gradient(160deg,rgba(91,140,255,.13),var(--card) 62%); border-radius:14px; padding:11px 11px 12px; margin-bottom:9px}
+.ass-h{display:flex; align-items:center; gap:6px; margin-bottom:7px}
+.ass-h b{font-size:12.5px; font-weight:800; letter-spacing:-.2px}
+.ass-h .ass-sub{font-size:8.5px; color:var(--dim2); margin-left:auto}
+.ass-eq{display:flex; align-items:baseline; gap:4px; flex-wrap:wrap; font-size:9.5px; color:var(--dim2); font-variant-numeric:tabular-nums; line-height:1.5}
+.ass-eq b{color:#dbe6f5; font-weight:800; font-size:10px}
+.ass-eq b.up{color:var(--up)} .ass-eq b.down{color:var(--down)}
+.ass-main{display:flex; align-items:baseline; gap:6px; margin:4px 0 8px}
+.ass-main .ass-l{font-size:9.5px; color:var(--dim2); font-weight:700}
+.ass-main .ass-v{font-size:23px; font-weight:800; letter-spacing:-.7px; font-variant-numeric:tabular-nums; line-height:1}
+.ass-main .ass-u{font-size:9.5px; font-weight:700; color:var(--dim2)}
+.ass-main .ass-open{margin-left:auto; font-size:9.5px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--dim2)}
+.ass-main .ass-open.up{color:var(--up)} .ass-main .ass-open.down{color:var(--down)}
+.ass-row{display:flex; gap:5px; align-items:center; flex-wrap:nowrap; margin-top:6px}
+.ass-f{display:flex; align-items:center; gap:4px; flex:1 1 auto; min-width:0}
+.ass-f label{font-size:8.5px; color:var(--dim2); font-weight:700; white-space:nowrap}
+.ass-inp{flex:1 1 0; min-width:0; border:1px solid var(--line2); background:#0a1220; color:#e6eefb; font-family:inherit; font-size:11px; font-weight:700; padding:5px 7px; border-radius:8px; outline:none; font-variant-numeric:tabular-nums}
+.ass-inp::placeholder{font-weight:600; color:#5c6b80}
+.ass-inp:focus{border-color:rgba(91,140,255,.55)}
+.ass-btn{border:1px solid rgba(91,140,255,.45); background:rgba(91,140,255,.17); color:#cfe0ff; font-family:inherit; font-size:9.5px; font-weight:800; padding:6px 9px; border-radius:8px; cursor:pointer; flex:none; white-space:nowrap}
+.ass-btn.wd{border-color:rgba(34,197,94,.42); background:rgba(34,197,94,.13); color:#a7f3c4}
+.ass-wd{margin-top:8px; border-top:1px dashed var(--line); padding-top:7px}
+.ass-wd-h{display:flex; align-items:baseline; gap:5px; font-size:9px; color:var(--dim2); font-weight:700}
+.ass-wd-h b{color:#ffb3c0; font-weight:800; font-variant-numeric:tabular-nums; margin-left:auto; font-size:10px}
+.ass-wd-i{display:flex; align-items:center; gap:6px; font-size:9px; color:var(--dim); margin-top:5px; font-variant-numeric:tabular-nums}
+.ass-wd-i .ass-wd-t{flex:1; min-width:0; line-height:1.4; color:#9fb0c8}
+.ass-wd-i .ass-wd-t span{color:var(--dim2)}
+.ass-wd-i .ass-wd-n{font-weight:800; color:#ffb3c0; white-space:nowrap}
+.ass-note{font-size:8.5px; color:var(--dim2); line-height:1.5; margin-top:7px}
+.jpy{display:flex; align-items:center; gap:5px; font-size:9px; color:var(--dim2); margin-top:6px; border-top:1px dashed var(--line); padding-top:6px; font-variant-numeric:tabular-nums; flex-wrap:wrap}
+.jpy b{color:#dbe6f5; font-weight:800; font-size:9.5px}
+.jpy .jpy-v{margin-left:auto; font-weight:800; font-size:10px; color:var(--dim)}
+.jpy .jpy-v.up{color:var(--up)} .jpy .jpy-v.down{color:var(--down)}
+.jpy .j-memo-inp{flex:1 1 80px}
 
 /* ---------- 바텀 시트 (진입/청산 기록) ---------- */
 .sheet-wrap{position:fixed; inset:0; z-index:70; display:flex; align-items:flex-end; justify-content:center}
@@ -1029,6 +1064,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
   <div class="page" id="page-journal" hidden>
     <section id="journalSec">
       <div class="sec-title"><h2><i></i>📒 매매기록</h2><span class="hint" id="jHint">이 기기에 저장</span></div>
+      <div class="ass-card" id="jAsset"></div>
       <div class="card jstat-card" id="jStats"></div>
       <div class="jfilter">
         <div class="jtabs jperiod" id="jPeriod" role="group" aria-label="기간 보기"></div>
@@ -4306,6 +4342,147 @@ function renderPosition(){
    · 청산할 때는 지우지 않고 실현 ROE를 계산해 '종료됨'으로 보존
    · 저장 위치: localStorage 'maeyo.tradeLog.v1' (이 기기에만) */
 const LOG_KEY = 'maeyo.tradeLog.v1';
+/* ---------- 자산현황 (초기 금액 · 출금 · 실현 손익) ----------
+   초기 금액(첫 시드) + 매매 실현 손익(USDT) − 총 출금액 = 현재 자산
+   · 초기 금액/출금 내역: localStorage 'maeyo.assetState.v1' (이 기기에만)
+   · 실현 손익(USDT) = 각 기록의 투입 증거금 × 실현 ROE / 100 */
+const ASSET_KEY = 'maeyo.assetState.v1';
+const SEED_DEL_KEY = 'maeyo.seedDeleted.v1';
+const ASSET_DEFAULT = 730;
+let assetState = { initial: ASSET_DEFAULT, withdrawals: [] };
+
+function loadAssetState(){
+  const v = store(ASSET_KEY);
+  const init = v && isNum(parseFloat(v.initial)) && parseFloat(v.initial) > 0 ? parseFloat(v.initial) : ASSET_DEFAULT;
+  const ws = v && Array.isArray(v.withdrawals) ? v.withdrawals : [];
+  assetState = {
+    initial: Math.round(init * 100) / 100,
+    withdrawals: ws.filter(w => w && isNum(parseFloat(w.usd)) && parseFloat(w.usd) > 0).map(w => ({
+      id: w.id || ('wd' + Math.random().toString(36).slice(2, 8)),
+      at: isNum(w.at) ? w.at : Date.now(),
+      usd: Math.round(parseFloat(w.usd) * 100) / 100,
+      memo: String(w.memo || '').slice(0, 40)
+    }))
+  };
+}
+function saveAssetState(){ store(ASSET_KEY, assetState); }
+function totalWithdrawals(){ return assetState.withdrawals.reduce((a, w) => a + (+w.usd || 0), 0); }
+function marginOf(e){ return e && isNum(parseFloat(e.margin)) && parseFloat(e.margin) > 0 ? Math.round(parseFloat(e.margin) * 100) / 100 : NaN; }
+function pnlUsd(e, roe){ const m = marginOf(e); return isNum(m) && isNum(roe) ? m * roe / 100 : NaN; }
+function realizedPnlUsd(){
+  return tradeLog.filter(e => e.status === 'closed').reduce((a, e) => {
+    const v = isNum(e.pnl) ? e.pnl : pnlUsd(e, e.roe);
+    return a + (isNum(v) ? v : 0);
+  }, 0);
+}
+function openPnlUsd(){
+  return tradeLog.filter(e => e.status === 'open').reduce((a, e) => {
+    const v = pnlUsd(e, roeOf(e.entry, livePriceOf(e.sym), e.side, e.lev || 5));
+    return a + (isNum(v) ? v : 0);
+  }, 0);
+}
+function currentAsset(){ return assetState.initial + realizedPnlUsd() - totalWithdrawals(); }
+function defaultMargin(){
+  const a = currentAsset();
+  return isNum(a) && a > 0 ? Math.round(a * 100) / 100 : ASSET_DEFAULT;
+}
+function usd2(v){ return (v >= 0 ? '+' : '') + (Math.round(v * 100) / 100).toFixed(2); }
+function setInitialAmount(v){
+  const n = parseFloat(v);
+  if (!isNum(n) || n <= 0){ toast('초기 금액 확인', '0보다 큰 USDT 금액을 입력하세요.'); return; }
+  assetState.initial = Math.round(n * 100) / 100;
+  saveAssetState();
+  renderJournal();
+  toast('초기 금액 저장', assetState.initial.toFixed(2) + ' USDT 기준으로 자산현황을 다시 계산했습니다.');
+}
+function addWithdrawal(inp, memoEl){
+  const n = parseFloat(inp && inp.value);
+  if (!isNum(n) || n <= 0){ toast('출금액 확인', '0보다 큰 USDT 금액을 입력하세요.'); return; }
+  const usd = Math.round(n * 100) / 100;
+  assetState.withdrawals.push({ id: 'wd' + Date.now().toString(36), at: Date.now(), usd: usd,
+                                memo: String((memoEl && memoEl.value) || '').trim().slice(0, 40) });
+  saveAssetState();
+  renderJournal();
+  toast('출금 기록', usd.toFixed(2) + ' USDT · 총 출금 ' + totalWithdrawals().toFixed(2) + ' USDT');
+}
+function delWithdrawal(id){
+  const i = assetState.withdrawals.findIndex(w => w.id === id);
+  if (i < 0) return;
+  const w = assetState.withdrawals[i];
+  assetState.withdrawals.splice(i, 1);
+  saveAssetState();
+  renderJournal();
+  toast('출금 내역 삭제', (+w.usd).toFixed(2) + ' USDT 기록을 지웠습니다.');
+}
+function renderAssetCard(){
+  const el = $('#jAsset');
+  if (!el) return;
+  const init = assetState.initial, wd = totalWithdrawals(), real = realizedPnlUsd();
+  const cur = currentAsset(), hasOpen = tradeLog.some(e => e.status === 'open'), op = hasOpen ? openPnlUsd() : NaN;
+  const cls = v => !isNum(v) ? '' : v > 0 ? 'up' : v < 0 ? 'down' : '';
+  const ws = assetState.withdrawals.slice().sort((a, b) => b.at - a.at);
+  el.innerHTML =
+    '<div class="ass-h"><b>💰 현재 자산현황</b><span class="ass-sub">이 기기 기록 기준</span></div>' +
+    '<div class="ass-eq">초기 <b class="num">' + init.toFixed(2) + '</b> + 실현 손익 <b class="num ' + cls(real) + '">' + usd2(real) + '</b> − 총 출금 <b class="num">' + wd.toFixed(2) + '</b> =</div>' +
+    '<div class="ass-main"><span class="ass-l">현재 자산</span><span class="ass-v num">' + cur.toFixed(2) + '</span><span class="ass-u">USDT</span>' +
+      (hasOpen ? '<span class="ass-open ' + cls(op) + '">미실현 참고 ' + usd2(op) + '</span>' : '') + '</div>' +
+    '<div class="ass-row">' +
+      '<div class="ass-f"><label>초기 금액</label><input class="ass-inp" id="assInit" type="number" inputmode="decimal" step="any" min="0" value="' + init + '"><span class="ass-u">USDT</span></div>' +
+      '<button class="ass-btn" id="assSave" type="button">저장</button>' +
+    '</div>' +
+    '<div class="ass-row">' +
+      '<div class="ass-f"><label>출금</label><input class="ass-inp" id="assWd" type="number" inputmode="decimal" step="any" min="0" placeholder="출금액"><input class="ass-inp" id="assWdMemo" maxlength="40" placeholder="메모(선택)"></div>' +
+      '<button class="ass-btn wd" id="assWdAdd" type="button">출금 기록</button>' +
+    '</div>' +
+    (ws.length ? '<div class="ass-wd"><div class="ass-wd-h">출금 내역 ' + ws.length + '건<b>-' + wd.toFixed(2) + ' USDT</b></div>' +
+      ws.map(w => '<div class="ass-wd-i"><span class="ass-wd-t">' + kst(w.at, true) + ' · <span>' + escHtml(w.memo || '메모 없음') + '</span></span>' +
+        '<span class="ass-wd-n">-' + (+w.usd).toFixed(2) + '</span>' +
+        '<button class="j-mini warn" data-wdel="' + w.id + '" type="button">삭제</button></div>').join('') + '</div>' : '') +
+    '<div class="ass-note">초기 금액·출금 내역은 이 기기에만 저장됩니다. 실현 손익은 기록마다 입력한 <b>투입 증거금 × 실현 ROE</b>로 계산하며, 진행 중 포지션의 미실현 손익은 현재가 기준 참고값입니다.</div>';
+  const initEl = $('#assInit'), saveEl = $('#assSave'), wdEl = $('#assWd'), wmEl = $('#assWdMemo'), addEl = $('#assWdAdd');
+  if (saveEl) saveEl.addEventListener('click', () => setInitialAmount(initEl && initEl.value));
+  if (initEl) initEl.addEventListener('keydown', ev => { if (ev.key === 'Enter'){ ev.preventDefault(); setInitialAmount(initEl.value); } });
+  if (addEl) addEl.addEventListener('click', () => addWithdrawal(wdEl, wmEl));
+  if (wdEl) wdEl.addEventListener('keydown', ev => { if (ev.key === 'Enter'){ ev.preventDefault(); addWithdrawal(wdEl, wmEl); } });
+}
+
+/* ---------- 새벽 BTC 숏 시드 (최초 1회 자동 등록) ----------
+   · 이미 기록이 있거나 사용자가 직접 지운 흔적('maeyo.seedDeleted.v1')이 있으면 다시 만들지 않습니다. */
+const SEED_TRADES = [{
+  id: 'seed-btc-20261124-62000',
+  sym: 'BTC-USDT-SWAP', code: 'BTC', side: 'short', lev: 5, margin: 730,
+  entry: 62000, stop: 63700, t1: 60770, t2: 59800,
+  at: new Date('2026-11-24T01:00:00+09:00').getTime(),
+  status: 'closed', exitReason: 'tp2',
+  exitAt: new Date('2026-11-24T12:00:00+09:00').getTime(),
+  exitPrice: 59800,
+  roe: 13.83, pnl: 100.96, seed: true,
+  exitNote: '2차 익절 완료 (1차 60,770 + 2차 59,800 · 각 50% 비중)',
+  memo: '새벽 진입 → 1차 60,770 · 2차 59,800 전량 익절 완료',
+  snap: {
+    price: 62000, bar: '1H', at: new Date('2026-11-24T01:00:00+09:00').getTime(),
+    hyp: { title: '가설 1 · 상위 저항 숏', kind: 'short',
+           why: '11/23 밤 64,570 급등 스윕 후 62,000대 저항 반락 · 1D 하락 추세 + 1H 저항 확인 진입' },
+    plan: { side: 'short', entry: 62000, stop: 63700, t1: 60770, t2: 59800, lev: 5 },
+    check: null, nw: null, rsi: null
+  }
+}];
+function seedTrades(){
+  const del = store(SEED_DEL_KEY);
+  const delSet = new Set(Array.isArray(del) ? del : []);
+  let added = 0;
+  SEED_TRADES.forEach(sd => {
+    if (delSet.has(sd.id)) return;                                  /* 사용자가 지운 기록 */
+    if (tradeLog.some(e => e.id === sd.id)) return;                  /* 이미 있음 */
+    tradeLog.push(JSON.parse(JSON.stringify(sd)));
+    added++;
+  });
+  if (added){
+    tradeLog.sort((a, b) => (b.at || 0) - (a.at || 0));
+    store(LOG_KEY, tradeLog);
+  }
+}
+
 const EXIT_REASON = {
   tp1be:  { kr:'1차 익절 · 본절 종료', desc:'절반은 1차 목표에서 익절, 남은 절반은 본절(진입가)에 정리' },
   tp2:    { kr:'2차 익절', desc:'1차 50% 익절 후 2차 목표에서 나머지 50% 정리' },
@@ -4365,6 +4542,11 @@ function loadTradeLog(){
     changed = true;
   });
   if (changed){ store(LOG_KEY, tradeLog); store(POS_KEY, pos); }
+  /* 투입 증거금이 비어 있는 기록은 초기 금액으로 한 번 채워 자산현황이 끊기지 않게 합니다 */
+  let mchanged = false;
+  tradeLog.forEach(e => { if (!isNum(marginOf(e))){ e.margin = assetState.initial; mchanged = true; } });
+  if (mchanged) store(LOG_KEY, tradeLog);
+  seedTrades();
 }
 function saveTradeLog(){ store(LOG_KEY, tradeLog); updateJournalBadges(); }
 function updateJournalBadges(){
@@ -4468,6 +4650,8 @@ function openEntrySheet(){
     '<div class="sh-t">🎯 ' + symOf(state.sym).code + ' ' + sideKr + ' ' + lev + '배 진입 기록</div>' +
     '<div class="sh-sub">아래 근거를 <b>지금 이 시점 그대로</b> 저장합니다. 청산하면 실현 ROE와 함께 2페이지에 남습니다.</div>' +
     '<div class="sh-list">' + rows.map(r => '<div class="sh-row"><span class="sh-k">' + r[0] + '</span><span class="sh-v">' + r[1] + '</span></div>').join('') + '</div>' +
+    '<label class="sh-lbl" for="shMargin">투입 증거금 (USDT — 실현 손익 계산에 쓰입니다)</label>' +
+    '<input class="sh-inp" id="shMargin" type="number" inputmode="decimal" step="any" min="0" value="' + defaultMargin() + '">' +
     '<label class="sh-lbl" for="shMemo">한 줄 메모 (선택 — 나중에 수정할 수 있습니다)</label>' +
     '<input class="sh-inp" id="shMemo" maxlength="140" placeholder="예: 4H 0.618 되돌림 + 1H 하락 다이버전스">' +
     '<div class="sh-acts"><button class="btn ghost" id="shCancel" type="button">취소</button><button class="btn primary" id="shOk" type="button">이 근거로 기록</button></div>'
@@ -4476,11 +4660,12 @@ function openEntrySheet(){
   $('#shCancel').addEventListener('click', closeSheet);
   $('#shOk').addEventListener('click', () => {
     const memo = ((($('#shMemo') || {}).value) || '').trim().slice(0, 140);
+    const mg = parseFloat(($('#shMargin') || {}).value);
     closeSheet();
-    doOpenPosition(memo, snap);
+    doOpenPosition(memo, snap, mg);
   });
 }
-function doOpenPosition(memo, snap){
+function doOpenPosition(memo, snap, margin){
   const plan = planFor(state.activeSlot);
   if (!plan || !isNum(plan.entry) || plan.entry <= 0) return;
   const levNow = parseLev();
@@ -4493,6 +4678,7 @@ function doOpenPosition(memo, snap){
   savePos();
   tradeLog.unshift({ id: id, sym: state.sym, code: symOf(state.sym).code, side: side,
     lev: levNow, entry: plan.entry, stop: plan.stop, t1: plan.t1, t2: plan.t2, slot: state.activeSlot,
+    margin: isNum(margin) && margin > 0 ? Math.round(margin * 100) / 100 : defaultMargin(),
     at: at, status: 'open', memo: memo || '', snap: snap || entrySnapshot() });
   saveTradeLog();
   renderPosition();
@@ -4741,6 +4927,8 @@ function jCard(e){
   const pxLab = e.exitReason === 'tp1be' ? '본절' : e.exitReason === 'tp2' ? '2차' : e.exitReason === 'stop' ? '손절' : '현재가';
   const reason = open
     ? '진행 중 · 보유 ' + heldTime(e.at) + (isNum(cur) ? '' : ' · 현재가 확인 대기')
+    : e.exitNote
+    ? '사유 ' + e.exitNote + ' · ' + kst(e.exitAt, true) + ' KST'
     : '사유 ' + (rr ? rr.kr : '청산') + (e.exitReason === 'tp2' ? ' (1차 50% + 2차 50% 가중)' : e.exitReason === 'tp1be' ? ' (절반 1차 익절 + 절반 본절 가중)' : '') +
       ' · ' + pxLab + ' ' + pxOf(e.exitPrice, e.sym) + ' · ' + kst(e.exitAt, true) + ' KST';
   const memoHtml = e.memo
@@ -4761,12 +4949,49 @@ function jCard(e){
       '<span class="jroe ' + rc + '">' + roeTxt(roe) + '</span>' +
     '</div>' +
     '<div class="jreason">' + escHtml(reason) + '</div>' +
+    jMoneyHtml(e, roe) +
     jSnapHtml(e) + memoHtml +
     '<div class="j-acts">' +
       (open ? '<button class="btn primary" data-jexit="' + e.sym + '" type="button">청산 기록</button>' : '') +
       '<button class="btn ghost" data-jdel="' + e.id + '" type="button">삭제</button>' +
     '</div>' +
   '</div>';
+}
+function jMoneyHtml(e, roe){
+  const mg = marginOf(e);
+  const live = e.status === 'open';
+  const pnl = live ? pnlUsd(e, roe) : (isNum(e.pnl) ? e.pnl : pnlUsd(e, e.roe));
+  const cls = !isNum(pnl) ? 'flat' : pnl > 0 ? 'up' : pnl < 0 ? 'down' : 'flat';
+  return '<div class="jpy">' +
+    '<span>투입 증거금</span>' +
+    '<b class="num">' + (isNum(mg) ? mg.toFixed(2) + ' USDT' : '미지정') + '</b>' +
+    '<button class="j-mini" data-jmargin="' + e.id + '" type="button">' + (isNum(mg) ? '수정' : '입력') + '</button>' +
+    '<span class="jpy-v ' + cls + '">' + (live ? '미실현 ' : '실현 ') + (isNum(pnl) ? (pnl > 0 ? '+' : '') + pnl.toFixed(2) : '—') + ' USDT</span>' +
+  '</div>';
+}
+function startMarginEdit(btn){
+  const id = btn.dataset.jmargin;
+  const e = tradeLog.find(x => x.id === id);
+  const row = btn.closest('.jpy');
+  if (!e || !row) return;
+  row.innerHTML = '<span>투입 증거금</span>' +
+    '<input class="j-memo-inp" type="number" inputmode="decimal" step="any" min="0" value="' + (isNum(marginOf(e)) ? marginOf(e) : defaultMargin()) + '">' +
+    '<button class="j-mini ok" data-jmarginsave="' + id + '" type="button">저장</button>' +
+    '<button class="j-mini" data-jmemocancel="1" type="button">취소</button>';
+  const inp = row.querySelector('input');
+  if (inp && inp.focus) inp.focus({ preventScroll: true });
+}
+function saveMargin(id, row){
+  const e = tradeLog.find(x => x.id === id);
+  if (!e) return;
+  const inp = row ? row.querySelector('input') : null;
+  const n = parseFloat(inp && inp.value);
+  if (!isNum(n) || n <= 0){ toast('증거금 확인', '0보다 큰 USDT 금액을 입력하세요.'); return; }
+  e.margin = Math.round(n * 100) / 100;
+  if (e.status === 'closed' && isNum(e.roe)) e.pnl = pnlUsd(e, e.roe);
+  saveTradeLog();
+  renderJournal();
+  toast('투입 증거금 저장', e.margin.toFixed(2) + ' USDT 기준으로 손익을 다시 계산했습니다.');
 }
 function slotLabel(slot, sym){
   const h = (HYP[sym || state.sym] || {})[slot];
@@ -4777,6 +5002,8 @@ function renderJournal(){
   if (!list) return;
   const ae = document.activeElement;
   if (ae && ae.classList && ae.classList.contains('j-memo-inp')) return;  /* 메모 입력 중에는 다시 그리지 않음 */
+  if (ae && ae.tagName === 'INPUT' && ae.closest && ae.closest('#jAsset')) return;   /* 자산현황 입력 중에만 다시 그리지 않음 */
+  renderAssetCard();
   renderJournalStats();
   renderJournalFilters();
   const cards = journalCards();
@@ -4834,6 +5061,11 @@ function deleteRecord(id){
     const p = state.pos && state.pos[e.sym];
     if (p && (!p.logId || p.logId === e.id)){ delete state.pos[e.sym]; savePos(); }
   }
+  if (e.seed){
+    const d = store(SEED_DEL_KEY);
+    const arr = Array.isArray(d) ? d : [];
+    if (!arr.includes(e.id)){ arr.push(e.id); store(SEED_DEL_KEY, arr); }
+  }
   tradeLog.splice(i, 1);
   saveTradeLog();
   renderPosition();
@@ -4845,7 +5077,7 @@ function bindJournal(){
   if (!page || page.dataset.bound === '1') return;
   page.dataset.bound = '1';
   page.addEventListener('click', ev => {
-    const t = ev.target.closest('[data-jperiod],[data-jstatus],[data-jsym],[data-jexit],[data-jdel],[data-jmemo],[data-jmemosave],[data-jmemocancel]');
+    const t = ev.target.closest('[data-jperiod],[data-jstatus],[data-jsym],[data-jexit],[data-jdel],[data-jmemo],[data-jmemosave],[data-jmemocancel],[data-jmargin],[data-jmarginsave],[data-wdel]');
     if (!t) return;
     if (t.hasAttribute('data-jperiod')){ jFilter.period = t.dataset.jperiod; store(JPERIOD_KEY, jFilter.period); renderJournal(); return; }
     if (t.hasAttribute('data-jstatus')){ jFilter.status = t.dataset.jstatus; renderJournal(); return; }
@@ -4855,6 +5087,9 @@ function bindJournal(){
     if (t.hasAttribute('data-jmemosave')){ saveMemo(t.dataset.jmemosave, t.closest('.j-memo')); return; }
     if (t.hasAttribute('data-jmemocancel')){ renderJournal(); return; }
     if (t.hasAttribute('data-jdel')){ armDelete(t); return; }
+    if (t.hasAttribute('data-jmargin')){ startMarginEdit(t); return; }
+    if (t.hasAttribute('data-jmarginsave')){ saveMargin(t.dataset.jmarginsave, t.closest('.jpy')); return; }
+    if (t.hasAttribute('data-wdel')){ delWithdrawal(t.dataset.wdel); return; }
   });
 }
 /* 1페이지 ↔ 2페이지 전환 */
@@ -5137,6 +5372,7 @@ function init(){
   loadChecklist();
   state.plans = loadPlans();
   state.pos = store(POS_KEY) || {};
+  loadAssetState();
   loadTradeLog();
   loadJournalPeriod();
   bindJournal();
