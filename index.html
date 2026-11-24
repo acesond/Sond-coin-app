@@ -347,6 +347,23 @@ button.toggle b{font-variant-numeric:tabular-nums; color:#67e8f9; font-weight:80
 .jtab.on b{color:#cfe0ff}
 .jsym{white-space:nowrap; border:1px solid var(--line2); background:transparent; color:var(--dim2); font-family:inherit; font-size:10.5px; font-weight:800; padding:4px 10px; border-radius:999px; cursor:pointer}
 .jsym.on{color:#cfe0ff; border-color:rgba(91,140,255,.5); background:rgba(91,140,255,.14)}
+/* 기간 보기(전체·주별·월별) — 주/월 헤더 요약 */
+.jtabs.jperiod .jtab{font-size:11px; font-weight:800; padding:6px 6px}
+.jtabs.jperiod .jtab.on{color:#e9f1ff; border-color:rgba(91,140,255,.62); background:linear-gradient(160deg,rgba(91,140,255,.26),rgba(47,107,255,.10))}
+.jgrp{margin-top:2px}
+.jgrp+.jgrp{margin-top:13px}
+.jgrp-h{display:flex; flex-direction:column; gap:4px; border:1px solid rgba(91,140,255,.24); background:linear-gradient(160deg,rgba(91,140,255,.12),rgba(12,21,34,.94) 70%); border-radius:11px; padding:7px 9px 8px; margin:0 0 8px}
+.jgrp-t{display:flex; align-items:baseline; gap:5px; flex-wrap:wrap; font-size:11.5px; font-weight:800; color:#e6eefb; letter-spacing:-.2px}
+.jgrp-t span{font-size:9.5px; font-weight:700; color:#9fb6d8; font-variant-numeric:tabular-nums}
+.jgrp-sum{display:flex; align-items:center; gap:4px; flex-wrap:wrap}
+.jchip{font-size:9px; font-weight:800; padding:1px 5px; border-radius:5px; white-space:nowrap; font-variant-numeric:tabular-nums; line-height:1.55; color:#c8d6e8; background:rgba(147,162,182,.12); border:1px solid rgba(147,162,182,.24)}
+.jchip.o{color:#cfe0ff; background:rgba(91,140,255,.16); border-color:rgba(91,140,255,.36)}
+.jchip.w{color:#a7f3c4; background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.28)}
+.jchip.l{color:#ffb3c0; background:rgba(244,63,94,.11); border-color:rgba(244,63,94,.26)}
+.jchip.a{margin-left:auto}
+.jchip.a.up{color:#a7f3c4; background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.28)}
+.jchip.a.down{color:#ffb3c0; background:rgba(244,63,94,.11); border-color:rgba(244,63,94,.26)}
+.jchip.a.flat{color:#b3c2d6}
 .jcard{border:1px solid var(--line); background:var(--card); border-radius:14px; padding:10px 11px 11px; margin-bottom:9px; position:relative; overflow:hidden}
 .jcard::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--down)}
 .jcard.long::before{background:var(--up)}
@@ -1014,6 +1031,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
       <div class="sec-title"><h2><i></i>📒 매매기록</h2><span class="hint" id="jHint">이 기기에 저장</span></div>
       <div class="card jstat-card" id="jStats"></div>
       <div class="jfilter">
+        <div class="jtabs jperiod" id="jPeriod" role="group" aria-label="기간 보기"></div>
         <div class="jtabs" id="jStatus" role="group" aria-label="상태 필터"></div>
         <div class="jsyms" id="jSyms" role="group" aria-label="종목 필터"></div>
       </div>
@@ -4297,7 +4315,13 @@ const EXIT_REASON = {
 };
 const EXIT_ORDER = ['tp1be', 'tp2', 'stop', 'manual'];
 let tradeLog = [];
-const jFilter = { status:'all', sym:'ALL' };
+const jFilter = { period:'all', status:'all', sym:'ALL' };
+const JPERIOD_KEY = 'maeyo.journal.period.v1';
+const JPERIOD = [['all', '전체'], ['week', '주별'], ['month', '월별']];
+function loadJournalPeriod(){
+  const v = store(JPERIOD_KEY);
+  jFilter.period = (v === 'week' || v === 'month') ? v : 'all';
+}
 
 function parseLev(){ return clamp(parseInt(($('#fLev') || {}).value, 10) || 5, 1, 50); }
 function escHtml(s){
@@ -4578,6 +4602,16 @@ function renderJournalStats(){
     cell('평균 ROE', isNum(avg) ? roeTxt(avg) : '—', roes.length ? roes.length + '건 기준' : '종료 기록 없음', avgCls);
 }
 function renderJournalFilters(){
+  const pEl = $('#jPeriod');
+  if (pEl){
+    const pc = periodCounts();
+    pEl.innerHTML = JPERIOD.map(p => {
+      const k = p[0], l = p[1];
+      const n = k === 'all' ? tradeLog.length + '건' : k === 'week' ? pc.week + '주' : pc.month + '개월';
+      const on = jFilter.period === k;
+      return '<button class="jtab' + (on ? ' on' : '') + '" data-jperiod="' + k + '" type="button" aria-pressed="' + on + '">' + l + ' <b>' + n + '</b></button>';
+    }).join('');
+  }
   const st = [['all', '전체'], ['open', '진행중'], ['closed', '종료']];
   const sEl = $('#jStatus');
   if (sEl) sEl.innerHTML = st.map(p => {
@@ -4591,6 +4625,72 @@ function renderJournalFilters(){
     if (!syms.some(s => s[0] === jFilter.sym)) jFilter.sym = 'ALL';
     yEl.innerHTML = syms.map(s => '<button class="jsym' + (jFilter.sym === s[0] ? ' on' : '') + '" data-jsym="' + s[0] + '" type="button">' + s[1] + '</button>').join('');
   }
+}
+/* ---------- 기간 보기: KST 기준 주(월~일)·월 묶음 ---------- */
+const jp2 = n => (n < 10 ? '0' : '') + n;
+function kstYmd(ts){
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Seoul', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date(ts));
+  const g = t => parseInt((parts.find(p => p.type === t) || {}).value, 10);
+  return { y: g('year'), m: g('month'), d: g('day') };
+}
+function weekBucket(ts){
+  const { y, m, d } = kstYmd(ts);
+  const base = Date.UTC(y, m - 1, d);                    /* 달력 날짜만 비교하기 위한 UTC 자정 */
+  const back = (new Date(base).getUTCDay() + 6) % 7;     /* 월요일까지 되돌릴 일수 */
+  const s = new Date(base - back * 86400000);
+  const e = new Date(base + (6 - back) * 86400000);
+  const sd = s.getUTCDate(), sm = s.getUTCMonth() + 1, sy = s.getUTCFullYear();
+  const ed = e.getUTCDate(), em = e.getUTCMonth() + 1;
+  const nth = Math.floor((sd - 1) / 7) + 1;              /* 그 달 월요일 기준 주차 */
+  return {
+    key: sy + '-' + jp2(sm) + '-' + jp2(sd),
+    label: sy + '년 ' + sm + '월 ' + nth + '주차',
+    sub: '(' + jp2(sm) + '/' + jp2(sd) + '~' + jp2(em) + '/' + jp2(ed) + ')'
+  };
+}
+function monthBucket(ts){
+  const { y, m } = kstYmd(ts);
+  return { key: y + '-' + jp2(m), label: y + '년 ' + m + '월', sub: '' };
+}
+function periodGroups(cards){
+  const p = jFilter.period;
+  const map = new Map();
+  cards.forEach(e => {
+    const b = p === 'month' ? monthBucket(e.at) : weekBucket(e.at);
+    let g = map.get(b.key);
+    if (!g){ g = { key: b.key, label: b.label, sub: b.sub, items: [] }; map.set(b.key, g); }
+    g.items.push(e);
+  });
+  const groups = Array.from(map.values()).sort((a, b) => a.key < b.key ? 1 : a.key > b.key ? -1 : 0);
+  groups.forEach(g => {
+    const closed = g.items.filter(e => e.status === 'closed');
+    const roes = closed.map(e => e.roe).filter(isNum);
+    g.n = g.items.length;
+    g.open = g.items.filter(e => e.status === 'open').length;
+    g.win = roes.filter(v => v > 0).length;
+    g.loss = roes.filter(v => v <= 0).length;
+    g.closedN = roes.length;
+    g.avg = roes.length ? roes.reduce((a, b) => a + b, 0) / roes.length : NaN;
+  });
+  return groups;
+}
+function periodCounts(){
+  const ws = new Set(), ms = new Set();
+  tradeLog.forEach(e => { ws.add(weekBucket(e.at).key); ms.add(monthBucket(e.at).key); });
+  return { week: ws.size, month: ms.size };
+}
+function jGroupHead(g){
+  const avg = g.avg;
+  const avgCls = !isNum(avg) ? 'flat' : avg > 0 ? 'up' : avg < 0 ? 'down' : 'flat';
+  return '<div class="jgrp-h">' +
+    '<div class="jgrp-t">' + escHtml(g.label) + (g.sub ? '<span>' + escHtml(g.sub) + '</span>' : '') + '</div>' +
+    '<div class="jgrp-sum">' +
+      '<span class="jchip">' + g.n + '건</span>' +
+      (g.open ? '<span class="jchip o">진행 중 ' + g.open + '</span>' : '') +
+      '<span class="jchip w">승 ' + g.win + '</span>' +
+      '<span class="jchip l">패 ' + g.loss + '</span>' +
+      '<span class="jchip a ' + avgCls + '">평균 ROE ' + (isNum(avg) ? roeTxt(avg) : '—') + '</span>' +
+    '</div></div>';
 }
 function journalCards(){
   const list = tradeLog.filter(e => {
@@ -4681,8 +4781,17 @@ function renderJournal(){
   renderJournalStats();
   renderJournalFilters();
   const cards = journalCards();
-  list.innerHTML = cards.length ? cards.map(jCard).join('')
-    : '<div class="j-empty"><b>아직 기록이 없습니다</b>1페이지에서 <strong>🎯 이 타점 진입 기록</strong>을 누르면 그 시점의 근거 스냅샷과 함께 여기에 남습니다.</div>';
+  if (!cards.length){
+    list.innerHTML = tradeLog.length
+      ? '<div class="j-empty"><b>이 조건에 맞는 기록이 없습니다</b>기간·상태·종목 필터를 바꾸면 다른 기록이 보입니다.</div>'
+      : '<div class="j-empty"><b>아직 기록이 없습니다</b>1페이지에서 <strong>🎯 이 타점 진입 기록</strong>을 누르면 그 시점의 근거 스냅샷과 함께 여기에 남습니다.</div>';
+  } else if (jFilter.period === 'all'){
+    list.innerHTML = cards.map(jCard).join('');
+  } else {
+    list.innerHTML = periodGroups(cards).map(g =>
+      '<section class="jgrp" aria-label="' + escHtml(g.label + ' ' + g.sub) + '">' + jGroupHead(g) + g.items.map(jCard).join('') + '</section>'
+    ).join('');
+  }
   updateJournalBadges();
 }
 function startMemoEdit(btn){
@@ -4737,8 +4846,9 @@ function bindJournal(){
   if (!page || page.dataset.bound === '1') return;
   page.dataset.bound = '1';
   page.addEventListener('click', ev => {
-    const t = ev.target.closest('[data-jstatus],[data-jsym],[data-jexit],[data-jdel],[data-jmemo],[data-jmemosave],[data-jmemocancel]');
+    const t = ev.target.closest('[data-jperiod],[data-jstatus],[data-jsym],[data-jexit],[data-jdel],[data-jmemo],[data-jmemosave],[data-jmemocancel]');
     if (!t) return;
+    if (t.hasAttribute('data-jperiod')){ jFilter.period = t.dataset.jperiod; store(JPERIOD_KEY, jFilter.period); renderJournal(); return; }
     if (t.hasAttribute('data-jstatus')){ jFilter.status = t.dataset.jstatus; renderJournal(); return; }
     if (t.hasAttribute('data-jsym')){ jFilter.sym = t.dataset.jsym; renderJournal(); return; }
     if (t.hasAttribute('data-jexit')){ openExitSheet(t.dataset.jexit); return; }
@@ -5029,6 +5139,7 @@ function init(){
   state.plans = loadPlans();
   state.pos = store(POS_KEY) || {};
   loadTradeLog();
+  loadJournalPeriod();
   bindJournal();
   renderJournal();
   state.alertOn = !!store(ALERT_ON_KEY);
