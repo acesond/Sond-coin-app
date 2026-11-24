@@ -660,6 +660,9 @@ body.sheet-open{overflow:hidden}
 .vtiming.go .vt-d{color:#8fd3a8}
 .vtiming.wait{border-color:rgba(245,158,11,.48); background:linear-gradient(180deg,rgba(245,158,11,.14),rgba(11,19,32,.94)); color:#ffd79a}
 .vtiming.wait .vt-d{color:#dfbd8a}
+.vtiming .vt-rr{font-weight:700; padding-top:4px; border-top:1px dashed rgba(255,255,255,.14)}
+.vtiming .vt-rr.ok{color:#86efac}
+.vtiming .vt-rr.bad{color:#fca5a5}
 .v-main{min-width:0}
 .v-main h3{margin:0 0 3px; font-size:16.5px; letter-spacing:-.4px}
 .v-main p{margin:0; font-size:11.5px; color:var(--dim); line-height:1.5}
@@ -2633,6 +2636,27 @@ function entryTiming(a, c1h){
   const goNow = (label, detail, compact) => Object.assign(base, { state:'go', cls:'go', branch, branchKr,
     short:'지금 진입', compact:compact || '✅ 지금 진입 가능', label:label, detail:detail });
 
+  /* ── 현재가 기준 손익비 — 가설의 진입·손절·목표를 쓰되 ‘진입가’ 대신 지금 가격으로 다시 계산 ── */
+  const rr = (function(){
+    const hs = HYP[a.sym]; if (!hs) return null;
+    const slot = branch === 'br' ? hs.br : [hs.h1, hs.h2].find(h => h && h.kind === (a.side === 'short' ? 'short' : 'long'));
+    if (!slot || !isNum(slot.stop) || !isNum(slot.t1)) return null;
+    const sg = slot.kind === 'short' ? -1 : 1;
+    const risk = sg > 0 ? price - slot.stop : slot.stop - price;
+    const f = (t, e) => { const rw = sg > 0 ? t - e : e - t; const rk = sg > 0 ? e - slot.stop : slot.stop - e; return rk > 0 ? rw / rk : null; };
+    const r1 = risk > 0 ? (sg > 0 ? slot.t1 - price : price - slot.t1) / risk : null;
+    const r2 = (risk > 0 && isNum(slot.t2)) ? (sg > 0 ? slot.t2 - price : price - slot.t2) / risk : null;
+    const re = f(slot.t1, slot.entry), re2 = isNum(slot.t2) ? f(slot.t2, slot.entry) : null;
+    return { risk: Math.abs(risk), rew1: Math.abs(slot.t1 - price), entry: slot.entry, r1, r2,
+      best: Math.max(r1 == null ? -9 : r1, r2 == null ? -9 : r2),
+      rrEntry: (Math.max(re || 0, re2 || 0)).toFixed(1) };
+  })();
+  const rrBlocked = () => !!(rr && rr.best < 3);
+  const rrTxt = () => rr ? '1차 ' + (rr.r1 == null ? '–' : rr.r1.toFixed(1)) + ':1 · 2차 ' + (rr.r2 == null ? '–' : rr.r2.toFixed(1)) + ':1' : '';
+  base.rrTxt = rr ? rrTxt() : '';
+  base.rrOk = rr ? !rrBlocked() : null;
+  base.rrNow = rr ? '현재가 ' + fx(price) + ' 기준 손익비 ' + rrTxt() + (rrBlocked() ? ' — 3:1 미달' : ' — 3:1 이상') + ' · 진입가 ' + fx(rr.entry) + '에서는 ' + rr.rrEntry + ':1' : '';
+
   /* ── 근거 3/3이어도 주의 조건(파동 겹침·조정 구간 / 1D 역추세)이 있으면 ‘지금 진입 가능’으로 올리지 않습니다 ── */
   if (best >= 3 && a.caution){
     return Object.assign(base, { state:'wait', cls:'wait', branch, branchKr, short:'주의', compact:'⚠ 주의 — 진입 보류',
@@ -2673,6 +2697,12 @@ function entryTiming(a, c1h){
         '숏 진입 존 ' + fx(z.short) + '~' + fx(z.shortTop) + '까지 ' + fmtPct((z.short - price) / price * 100) + ' — 반등이 와서 존에 닿은 뒤 1H 마감을 확인합니다. ' + lastTxt + '.');
     const bearAtZone = !!(last && ic.bear && last.c < z.stop && (inR(last.c, z.short, z.shortTop) || inR(last.o, z.short, z.shortTop)));
     const wickAtZone = !!(last && ic.longUpper && cf != null && cf <= 0.5 && last.c < z.stop && inR(last.h, z.short, z.shortTop));
+    if ((bearAtZone || wickAtZone) && last && price > last.h)
+      return waitAt('⛔ 확인 무효 — 확인봉 고가 ' + fx(last.h) + ' 위로 올라갔습니다',
+        '직전 확정봉 ' + kst(last.t) + '의 고가 ' + fx(last.h) + '를 현재가 ' + fx(price) + '가 넘었습니다 — 그 음봉·윗꼬리는 더 이상 확인이 아닙니다. 다음 1H 봉이 다시 밀려 마감하는지 기다리세요 (' + nh.at + ' 마감까지 ' + nh.mins + '분).', '⛔ 확인 무효');
+    if ((bearAtZone || wickAtZone) && rrBlocked())
+      return waitAt('📉 손익비 미달 — 현재가 기준 ' + rrTxt() + ' (최소 3:1)',
+        '확인 캔들은 있지만 지금 가격(' + fx(price) + ')으로 들어가면 손절까지 ' + fx(rr.risk) + ' · 1차까지 ' + fx(rr.rew1) + '뿐입니다. 진입가 ' + fx(rr.entry) + '까지 되돌려 주거나(그 자리 손익비 ' + rr.rrEntry + ':1) 건너뛰세요.', '📉 손익비 미달');
     if (bearAtZone || wickAtZone)
       return goNow('✅ 지금 진입 가능 (직전 1H 저항 마감 확인)',
         '직전 확정봉 ' + kst(last.t) + '이 ' + (ic.bear ? '음봉' : '긴 윗꼬리') + '(고가 ' + fx(last.h) + ' · 종가 ' + fx(last.c) + ')으로 ' + fx(z.short) + '~' + fx(z.shortTop) + ' 저항에서 밀렸고 현재가 ' + fx(price) + '가 손절선 ' + fx(z.stop) + ' 아래 — 지금 들어가도 됩니다.');
@@ -2686,6 +2716,12 @@ function entryTiming(a, c1h){
       '롱 지지 존 ' + fx(z.long) + '~' + fx(z.mid) + '까지 ' + fmtPct((z.long - price) / price * 100) + ' — 눌림이 와서 존에 닿은 뒤 1H 마감을 확인합니다. ' + lastTxt + '.');
   const bullAtZone = !!(last && ic.bull && last.c > z.warnL && (inR(last.c, z.long, z.mid) || inR(last.o, z.long, z.mid)));
   const lowWick = !!(last && ic.longLower && cf != null && cf >= 0.5 && last.c > z.warnL && inR(last.l, z.long, z.mid));
+  if ((bullAtZone || lowWick) && price > z.warnL && last && price < last.l)
+    return waitAt('⛔ 확인 무효 — 확인봉 저가 ' + fx(last.l) + ' 아래로 내려갔습니다',
+      '직전 확정봉 ' + kst(last.t) + '의 저가 ' + fx(last.l) + '를 현재가 ' + fx(price) + '가 깼습니다 — 그 양봉·아래꼬리는 더 이상 확인이 아닙니다. 다음 1H 봉이 다시 받쳐 마감하는지 기다리세요 (' + nh.at + ' 마감까지 ' + nh.mins + '분).', '⛔ 확인 무효');
+  if ((bullAtZone || lowWick) && price > z.warnL && rrBlocked())
+    return waitAt('📉 손익비 미달 — 현재가 기준 ' + rrTxt() + ' (최소 3:1)',
+      '확인 캔들은 있지만 지금 가격(' + fx(price) + ')으로 들어가면 손절까지 ' + fx(rr.risk) + ' · 1차까지 ' + fx(rr.rew1) + '뿐입니다. 진입가 ' + fx(rr.entry) + '까지 되돌려 주거나(그 자리 손익비 ' + rr.rrEntry + ':1) 건너뛰세요.', '📉 손익비 미달');
   if ((bullAtZone || lowWick) && price > z.warnL)
     return goNow('✅ 지금 진입 가능 (직전 1H 지지 마감 확인)',
       '직전 확정봉 ' + kst(last.t) + '이 ' + (ic.bull ? '양봉' : '긴 아래꼬리') + '(저가 ' + fx(last.l) + ' · 종가 ' + fx(last.c) + ')으로 ' + fx(z.long) + '~' + fx(z.mid) + ' 지지에서 받았고 현재가 ' + fx(price) + '가 손절선 ' + fx(z.warnL) + ' 위 — 지금 들어가도 됩니다.');
@@ -3615,6 +3651,7 @@ function renderVTiming(tm){
     '<span class="vt-k">진입 타이밍 · ' + (tm.branchKr || '관망') + (tm.cls && tm.cls !== 'hold' && tm.at ? ' · 다음 1H 마감 ' + tm.at : '') + '</span>' +
     tm.label +
     '<span class="vt-d">' + (tm.detail || '') + '</span>' +
+    (tm.rrNow ? '<span class="vt-d vt-rr ' + (tm.rrOk ? 'ok' : 'bad') + '">' + (tm.rrOk ? '✓ ' : '✗ ') + tm.rrNow + '</span>' : '') +
   '</span>';
 }
 /* ------------------------- render: analysis ------------------------- */
