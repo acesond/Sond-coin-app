@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>매억남 코인 분석 · BTC/ETH/XRP/SOL 실시간</title>
-<meta name="description" content="매억남·박경철 실전 1장 기준으로 BTC·ETH·XRP·SOL 무기한 선물을 실시간 분석하는 모바일 웹앱. 멀티 타임프레임 RSI·거래량·다이버전스 자동 판정, 가설 타점, 손익비 계산기, 매매 전 체크리스트.">
+<title>매억남 코인 분석 · OKX 거래량 상위 10종목 실시간</title>
+<meta name="description" content="매억남·박경철 실전 1장 기준으로 OKX USDT 무기한 선물 24시간 거래대금 상위 10종목(BTC·ETH·SOL·ZEC·XRP·DOGE·HYPE·PIEVERSE·PEPE·NEAR)을 실시간 분석하는 모바일 웹앱. 멀티 타임프레임 RSI·거래량·다이버전스 자동 판정, 가설 타점, 손익비 계산기, 매매 전 체크리스트.">
 <meta name="theme-color" content="#070b12">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -82,7 +82,9 @@ body{
   display:grid;place-items:center;
 }
 .pbar-mark svg{display:block}
-.pbar-syms{display:flex; gap:4px; flex:none}
+.pbar-syms{display:flex; gap:4px; flex:1 1 auto; min-width:0; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; padding:1px 0}
+.pbar-syms::-webkit-scrollbar{display:none}
+.psym{flex:none}
 .psym{
   border:1px solid var(--line); background:rgba(16,24,38,.10); color:var(--dim);
   font-family:inherit; font-size:10px; font-weight:800; letter-spacing:.02em; line-height:1;
@@ -99,7 +101,7 @@ body{
 .psym.st2 .st{background:#f59e0b}
 .psym.st3 .st{background:#f43f5e; animation:stDot 1.4s infinite}
 .psym.on.st2, .psym.on.st3{color:#fff; box-shadow:0 0 0 1.5px rgba(255,255,255,.5)}
-.pbar-quote{margin-left:auto; display:flex; align-items:baseline; gap:6px; min-width:0}
+.pbar-quote{margin-left:auto; flex:none; display:flex; align-items:baseline; gap:6px; min-width:0}
 .pbar-dot{width:6px;height:6px;border-radius:50%;background:var(--up); flex:none; align-self:center; animation:pulse 2s infinite}
 .pbar-price{font-size:15.5px; font-weight:800; letter-spacing:-.4px; white-space:nowrap; line-height:1.1}
 .pbar-chg{font-size:11.5px; font-weight:700; white-space:nowrap; letter-spacing:-.1px}
@@ -142,8 +144,9 @@ body{
 .err.on{display:block}
 
 /* ---------- chips / tabs ---------- */
-.chips{display:flex; gap:8px; margin-top:12px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none}
+.chips{display:flex; gap:8px; margin-top:12px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch}
 .chips::-webkit-scrollbar{display:none}
+.chips .chip{scroll-snap-align:start}
 .chip{
   flex:none; display:flex; flex-direction:column; align-items:flex-start; gap:1px;
   padding:8px 13px; border-radius:13px; border:1px solid var(--line); background:var(--card);
@@ -937,7 +940,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
   <div class="chip-legend" id="chipLegend">
     <span><i class="d3"></i>타점 도달 3/3</span>
     <span><i class="d2"></i>2/3 대기</span>
-    <span class="st-upd" id="stUpd">4종목 점검 중</span>
+    <span class="st-upd" id="stUpd">10종목 점검 중</span>
   </div>
   <div class="chip-easy" id="chipEasy">빨간 점 = 자리·라인·다이버전스가 <b>모두</b> 겹침(3/3, 타점) · 주황 점 = 하나 모자람(2/3, 대기). 3/3이어도 손익비 3:1이 안 되면 진입하지 않습니다.</div>
 
@@ -1126,7 +1129,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
   </section>
 
   <div class="foot">
-    <p><b>데이터</b> OKX 무기한 선물(BTC-USDT-SWAP · ETH · XRP · SOL) 퍼블릭 API · 15초 자동 갱신. 일봉은 UTC 기준(한국 09:00 시작)입니다.</p>
+    <p><b>데이터</b> OKX 무기한 선물 USDT 24시간 거래대금 상위 10종목(BTC · ETH · SOL · ZEC · XRP · DOGE · HYPE · PIEVERSE · PEPE · NEAR) 퍼블릭 API · 15초 자동 갱신. 일봉은 UTC 기준(한국 09:00 시작)입니다.</p>
     <p><b>기준</b> 매억남 요약(Ep1~Ep8) · 박경철 기법 강의 · <b>실전 매매 1장 체크리스트</b>. 자동 판정은 계산 보조일 뿐이며, 근거 3개가 겹치지 않으면 진입이 아닙니다.</p>
     <p><b>주의</b> 이 앱은 학습·분석 참고용입니다. 주문을 실행하지 않고, 어떤 경우에도 투자 손실에 대한 책임을 지지 않습니다. 가격은 참고값이니 실제 주문 화면에서 다시 확인하세요.</p>
   </div>
@@ -1192,11 +1195,22 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
    ========================================================= */
 
 const OKX = 'https://www.okx.com';
+/* OKX USDT 무기한(SWAP) 24시간 거래대금(volCcy24h×last) 상위 10종목
+   — 2026-11-24 16:2x KST /api/v5/market/tickers?instType=SWAP 실측
+   코인(instCategory=1)만 집계: 토큰화 주식(SOXL·NVDA·SNDK 등 cat=3)·금은(XAU·XAG cat=4) 제외
+   1 BTC 111.7억$ · 2 ETH 81.4억$ · 3 SOL 12.3억$ · 4 ZEC 12.1억$ · 5 XRP 3.51억$
+   6 DOGE 2.78억$ · 7 HYPE 2.53억$ · 8 PIEVERSE 2.33억$ · 9 PEPE 1.91억$ · 10 NEAR 1.27억$ */
 const SYMBOLS = [
   { id:'BTC-USDT-SWAP', code:'BTC', name:'비트코인', dp:1 },
   { id:'ETH-USDT-SWAP', code:'ETH', name:'이더리움', dp:2 },
-  { id:'XRP-USDT-SWAP', code:'XRP', name:'리플',   dp:4 },
-  { id:'SOL-USDT-SWAP', code:'SOL', name:'솔라나', dp:2 }
+  { id:'SOL-USDT-SWAP', code:'SOL', name:'솔라나',   dp:2 },
+  { id:'ZEC-USDT-SWAP', code:'ZEC', name:'지캐시',   dp:2 },
+  { id:'XRP-USDT-SWAP', code:'XRP', name:'리플',     dp:4 },
+  { id:'DOGE-USDT-SWAP',code:'DOGE',name:'도지코인', dp:5 },
+  { id:'HYPE-USDT-SWAP',code:'HYPE',name:'하이퍼리퀴드', dp:2 },
+  { id:'PIEVERSE-USDT-SWAP', code:'PIEVERSE', name:'파이버스', dp:4 },
+  { id:'PEPE-USDT-SWAP',code:'PEPE',name:'페페',     dp:8 },
+  { id:'NEAR-USDT-SWAP',code:'NEAR',name:'니어',     dp:3 }
 ];
 const BARS = [
   { k:'15m',  label:'15분', dp:'15m' },
@@ -1268,6 +1282,81 @@ const LEVELS = {
     { p:70.00, side:'long',  role:'entry', tag:'눌림 롱 진입', label:'눌림 롱 진입 · 4H 64.79→78.46의 0.618(70.01)·70 라운드' },
     { p:68.80, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림 롱 손절 · 11/22 4H 저점 68.68 위' },
     { p:68.00, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 1H 종가 68.00 이하' }
+  ],
+  /* ───── 이하 2026-11-24 16:2x KST OKX 실측 신규 6종목 ───── */
+  'ZEC-USDT-SWAP': [
+    { p:903.00, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 · 야간 스윕 고점 902.98 위 확장' },
+    { p:850.00, side:'long',  role:'break', tag:'롱 1차 목표', label:'돌파 롱 1차 · 4H 0.236 되돌림 850.1 (01시 고점 861.99 아래)' },
+    { p:808.00, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 05시 4H 고점 807.12 위·11/22 고점 809.85 아래 · 1H 종가면 폐기' },
+    { p:791.00, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 4H 0.5 되돌림 791.0·1H EMA50 789.3·10시 고점 791.25' },
+    { p:781.00, side:'short', role:'entry', tag:'숏 감시선', label:'숏 감시선 · 현재가/1H 고가 781 도달 (1H EMA20 780.98)' },
+    { p:770.00, side:'long',  role:'break', tag:'눌림 롱 2차 목표', label:'눌림 롱 2차 · 14시 1H 고점 771.64 아래 라운드' },
+    { p:745.00, side:'short', role:'break', tag:'숏 1차 목표', label:'숏 1차 · 오늘 저점 741.59 위 745 라운드' },
+    { p:735.00, side:'long',  role:'entry', tag:'눌림 롱 감시선', label:'눌림 롱 감시선 · 현재가 735 이하 (0.786 726.95 위)' },
+    { p:720.00, side:'long',  role:'entry', tag:'눌림 롱 진입', label:'눌림 롱 진입 · 4H 0.786 되돌림 726.95 아래·720 라운드' },
+    { p:698.00, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림 롱 손절 · 0.786 726.95와 700 라운드를 모두 내주는 자리' },
+    { p:679.00, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 1H 종가 679 이하 (11/21 저점 679.02)' }
+  ],
+  'DOGE-USDT-SWAP': [
+    { p:0.06950, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 · 11/12 4H 고점 0.06952' },
+    { p:0.06290, side:'long',  role:'break', tag:'롱 1차 목표', label:'돌파 롱 1차 · 11/13 4H 고점 0.06293 (1D EMA20 0.06211 위)' },
+    { p:0.06060, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 야간 고점 0.06022·11/18 고점 0.06042 위 · 1H 종가면 폐기' },
+    { p:0.05880, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 01시 고점 0.0589 아래·하락 0.382 되돌림 0.05833 위' },
+    { p:0.05720, side:'short', role:'entry', tag:'숏 감시선', label:'숏 감시선 · 현재가/1H 고가 0.0572 도달 (0.618 되돌림 0.05715·4H EMA50 0.05760)' },
+    { p:0.05530, side:'short', role:'break', tag:'숏 1차 목표', label:'숏 1차 · 오늘 저점 0.05526·상승 레그 0.5 되돌림 0.05548' },
+    { p:0.05430, side:'long',  role:'entry', tag:'눌림 롱 진입', label:'눌림 롱 진입 · 11/21 저점 0.05073→0.06022의 0.618 되돌림 0.05436' },
+    { p:0.05370, side:'short', role:'break', tag:'숏 2차 목표', label:'숏 2차 · 11/22 저점 0.05373 (눌림 롱 1차 목표 겸)' },
+    { p:0.05300, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림 롱 손절 · 11/21 이후 저점 0.05073·0.05373·0.05432 클러스터 아래' },
+    { p:0.05070, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 1H 종가 0.0507 이하 (11/21 저점 0.05073)' }
+  ],
+  'HYPE-USDT-SWAP': [
+    { p:75.32, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 · 11/13 4H 고점 75.32' },
+    { p:74.38, side:'long',  role:'break', tag:'롱 1차 목표', label:'돌파 롱 1차 · 11/12 4H 고점 74.376' },
+    { p:70.60, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 야간 고점 69.749·11/20 고점 70.232 위 · 1H 종가면 폐기' },
+    { p:69.30, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 야간 스윕 고점 69.749 리테스트 (1D EMA20 69.21 / 눌림 롱 2차 목표)' },
+    { p:66.85, side:'short', role:'entry', tag:'숏 감시선', label:'숏 감시선 · 현재가/1H 고가 66.85 도달 (01시 고점 66.847 / 눌림 롱 1차 목표)' },
+    { p:65.00, side:'long',  role:'break', tag:'눌림 롱 1차 목표', label:'눌림 롱 1차 · 4H EMA50 65.03·하락 0.618 되돌림 65.009' },
+    { p:63.40, side:'long',  role:'entry', tag:'눌림 롱 감시선', label:'눌림 롱 감시선 · 현재가 63.40 이하 (4H EMA20 63.43)' },
+    { p:62.80, side:'long',  role:'entry', tag:'눌림 롱 진입', label:'눌림 롱 진입 · 4H 55.779→69.749의 0.5 되돌림 62.764' },
+    { p:61.00, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림 롱 손절 · 11/23 4H 저점 61.426·0.618 되돌림 61.116 아래' },
+    { p:59.50, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 1H 종가 59.50 이하 (11/22 저점 59.532)' }
+  ],
+  'PIEVERSE-USDT-SWAP': [
+    { p:4.3490, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 · 11/22 21시 4H 고점 4.3492' },
+    { p:4.0670, side:'long',  role:'break', tag:'롱 1차 목표', label:'돌파 롱 1차 · 11/23 13시 4H 고점 4.0666·하락 0.5 되돌림 4.065' },
+    { p:3.6700, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 08시 1H 고점 3.6198·05시 4H 고점 3.661 위 · 1H 종가면 폐기' },
+    { p:3.5000, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 09~11시 1H 봉이 막힌 3.50~3.53 공급 구간 (4H EMA20 3.355 위)' },
+    { p:3.3600, side:'short', role:'entry', tag:'숏 감시선', label:'숏 감시선 · 현재가/1H 고가 3.36 도달 (2.7303→5.3996의 0.236 되돌림 3.360)' },
+    { p:3.4600, side:'long',  role:'break', tag:'눌림 롱 2차 목표', label:'눌림 롱 2차 · 1H EMA50 3.457' },
+    { p:3.1600, side:'short', role:'break', tag:'숏 1차 목표', label:'숏 1차 · 11/23 저점 3.1634·1.7748→5.3996의 0.618 되돌림 3.1595' },
+    { p:3.1000, side:'long',  role:'entry', tag:'눌림 롱 진입', label:'눌림 롱 진입 · 0.618 3.1595·11/23 저점 3.1634 아래 3.10 라운드' },
+    { p:2.9500, side:'short', role:'break', tag:'숏 2차 목표', label:'숏 2차 · 4H EMA50 2.9478' },
+    { p:2.8800, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림 롱 손절 · 4H EMA50 2.9478 아래·2.88 라운드' },
+    { p:2.7300, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 1H 종가 2.73 이하 (11/22 스파이크 저점 2.7303)' }
+  ],
+  'PEPE-USDT-SWAP': [
+    { p:0.00000434, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 · 4H 60봉 최고 0.00000434' },
+    { p:0.00000405, side:'long',  role:'break', tag:'롱 1차 목표', label:'돌파 롱 1차 · 11/19 4H 고점 0.00000405' },
+    { p:0.00000379, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 야간 스윕 고점 0.00000376 위 · 1H 종가면 폐기' },
+    { p:0.00000366, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 4H EMA50 0.00000366·스파이크 0.236 되돌림 0.00000367' },
+    { p:0.00000358, side:'short', role:'entry', tag:'숏 감시선', label:'숏 감시선 · 현재가/1H 고가 0.00000358 도달 (하락 0.5 되돌림 0.00000356)' },
+    { p:0.00000337, side:'short', role:'break', tag:'숏 1차 목표', label:'숏 1차 · 오늘 저점 0.00000337 (11/24 12시)' },
+    { p:0.00000336, side:'long',  role:'entry', tag:'눌림 롱 진입', label:'눌림 롱 진입 · 11/24 저점 0.00000337·0.618 되돌림 0.00000339 아래' },
+    { p:0.00000324, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림 롱 손절 · 11/23 저점 0.00000331 아래 0.00000324 라운드' },
+    { p:0.00000317, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 1H 종가 0.00000317 이하 (11/21 저점 0.00000317)' }
+  ],
+  'NEAR-USDT-SWAP': [
+    { p:3.640, side:'long',  role:'break', tag:'롱 2차 목표', label:'돌파 롱 2차 · 11/13 4H 고점 3.636' },
+    { p:3.480, side:'long',  role:'break', tag:'롱 1차 목표', label:'돌파 롱 1차 · 11/19 4H 고점 3.475' },
+    { p:3.320, side:'short', role:'stop',  tag:'숏 손절', label:'숏 손절 · 야간 스윕 고점 3.287 위 · 1H 종가면 폐기' },
+    { p:3.200, side:'short', role:'entry', tag:'숏 진입', label:'숏 진입 · 반등 0.236 되돌림 3.191·01시 4H 고점 3.148 위' },
+    { p:3.090, side:'short', role:'entry', tag:'숏 감시선', label:'숏 감시선 · 현재가/1H 고가 3.09 도달 (반등 0.5 되돌림 3.083·4H EMA50 3.092)' },
+    { p:3.150, side:'long',  role:'break', tag:'눌림 롱 2차 목표', label:'눌림 롱 2차 · 01시 4H 고점 3.148' },
+    { p:2.990, side:'long',  role:'entry', tag:'눌림 롱 감시선', label:'눌림 롱 감시선 · 현재가 2.99 이하 (4H EMA20 2.998)' },
+    { p:2.950, side:'short', role:'break', tag:'숏 1차 목표', label:'숏 1차 · 05시 저점 2.932·08시 저점 2.946 위' },
+    { p:2.920, side:'long',  role:'entry', tag:'눌림 롱 진입', label:'눌림 롱 진입 · 2.547→3.287의 0.5 되돌림 2.917·11/23 저점 2.937 아래' },
+    { p:2.820, side:'long',  role:'stop',  tag:'눌림 롱 손절', label:'눌림 롱 손절 · 0.618 되돌림 2.830·11/22 저점 2.843 아래' },
+    { p:2.790, side:'short', role:'break', tag:'이탈 경계', label:'하방 이탈 · 1H 종가 2.79 이하' }
   ]
 };
 
@@ -1315,6 +1404,73 @@ const HYP = {
     br: { id:'br', cls:'break', kind:'long', title:'가설 3 · 돌파 롱', tag:'추세',
           entry:75.50, stop:74.00, t1:78.45, t2:80.00,
           why:'1H 확정 종가 75.50 위 — 00시 저점 75.25와 01시 고점 75.87 사이를 넘겨 11:00 이탈이 스윕이었음을 확인하는 자리다. 진입 75.50, 손절 74.00은 숏 진입 기준선 — 내주면 돌파 근거가 깨진다. 1차 78.45는 야간 스윕 고점 78.46, 2차 80.00은 1D EMA20 78.42 위 확장 라운드. 손익비 1.97:1 · 3.00:1 — 종가 안착 확인 뒤 분할.' }
+  },
+  /* ───── 2026-11-24 16:2x KST OKX 실측 캔들로 작성한 신규 6종목 가설 ───── */
+  'ZEC-USDT-SWAP': {
+    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 반등 저항 숏', tag:'메인',
+          entry:791, stop:808, t1:745, t2:727,
+          why:'11/23 21시 4H 봉이 794.74에서 902.98까지 3.32배 거래량으로 찍고 859.11에 마감했지만, 01시 봉이 803.74로 되돌리고 05시 776.50·09시 759.30으로 고점을 계속 낮췄다 — 11/23 일봉도 902.98 고점에서 776.50 마감(-14.0%)으로 윗꼬리만 남긴 실패 스파이크다. 11/24 12시 1H 봉은 741.59까지 1.87배 거래량으로 밀었고 지금은 763.1로 4H 679.02→902.98 상승 레그의 0.618(764.57)에 걸쳐 있다. 1D RSI 31.4로 과매도지만 1D EMA20 937.4·EMA50 1,059.9 아래 하락 배열이고 4H도 EMA20 796.6·EMA50 847.0 아래다. 791은 4H 0.5 되돌림 791.0·1H EMA50 789.3·10시 고점 791.25가 겹치는 자리 — 이탈한 783~791 구간을 아래에서 다시 두드리는 곳이다. 진입 791(위험 17), 1차 745는 오늘 저점 741.59 위 라운드, 2차 727은 0.786 되돌림 726.95. 손익비 2.71:1 · 3.76:1 — 1H 종가 808 위면 근거 무효.' },
+    h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 하단 눌림목 롱', tag:'서브',
+          entry:720, stop:698, t1:770, t2:791,
+          why:'0.618(764.57)을 내주면 다음 자리는 0.786 되돌림 726.95다. 720은 그 바로 아래 라운드이자 11/21 저점 679.02에서 올라온 첫 지지 구간이고, 12:00 1H 봉이 741.59에서 759.30으로 반등하며 1.87배 거래량의 아래꼬리를 남긴 자리도 이 위다. 다만 1D EMA20 937.4·EMA50 1,059.9 아래 하락 배열이라 추세 매수가 아니라 첫 지지 확인용 정찰병 비중으로만 본다. 손절 698(위험 22)은 0.786과 700 라운드를 모두 내주는 자리 — 1H 종가 698이면 0.618 지지 시나리오 폐기, 11/21 저점 679.02 재시험이다. 1차 770은 14시 1H 고점 771.64, 2차 791은 4H 0.5 되돌림이자 숏 진입 기준선. 손익비 2.27:1 · 3.23:1 — 735 이하에서 1H 양봉(아래꼬리) 확인 후 진입, 추격 금지.' },
+    br: { id:'br', cls:'break', kind:'long', title:'가설 3 · 돌파 롱', tag:'추세',
+          entry:808, stop:781, t1:850, t2:903,
+          why:'1H 확정 종가 808 위 — 4H 05:00 고점 807.12와 11/22 17:00 고점 809.85를 넘겨 11/24 하락이 유동성 사냥이었음을 확인하는 자리다. 진입 808, 손절 781은 숏 진입 기준선 겸 1H EMA20 780.98 아래 — 내주면 돌파 근거가 깨진다. 1차 850은 4H 0.236 되돌림 850.1, 2차 903은 야간 스윕 고점 902.98. 손익비 1.56:1 · 3.52:1 — 1차 손익비가 낮으니 종가 안착 확인 후 분할.' }
+  },
+  'DOGE-USDT-SWAP': {
+    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 반등 저항 숏', tag:'메인',
+          entry:0.0588, stop:0.0606, t1:0.0553, t2:0.0537,
+          why:'11/23 21시 4H 봉이 0.05572에서 0.06022까지 4.08배 거래량으로 쏘고 0.05875에 마감했지만, 01시 0.05682·05시 0.05636·09시 0.05606으로 되돌려 스파이크 상승분의 3분의 2를 반납했다. 1D는 EMA20 0.06211·EMA50 0.07053 아래 하락 배열에 RSI 29.2로 과매도지만, 4H RSI 50.8·1H RSI 49.9로 반등 열기는 이미 식었다. 0.0588은 4H 01:00 고점 0.0589를 아래에서 되받는 자리이자 0.06022→0.05526 하락의 0.382 되돌림 0.05833 위 — 실패한 반등의 되돌림 매물대다. 진입 0.0588(위험 0.0018), 1차 0.0553은 오늘 저점 0.05526, 2차 0.0537은 11/22 저점 0.05373. 손익비 1.94:1 · 2.83:1 — 1H 종가 0.0606 위면 무효.' },
+    h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 눌림목 롱', tag:'서브',
+          entry:0.0543, stop:0.0530, t1:0.0572, t2:0.0602,
+          why:'0.06022→0.05526 하락이 0.5 되돌림 0.05548 아래로 내려가면 다음 자리는 11/21 저점 0.05073→0.06022 상승 레그의 0.618 되돌림 0.05436이다. 0.0543은 그 0.618과 11/22 저점 0.05373 위가 겹치는 자리로, 11/21 이후 저점이 0.05073→0.05373→0.05432로 올라온 상승 구조의 마지막 방어선이다. 손절 0.0530(위험 0.0013)은 그 저점 클러스터를 모두 내주는 자리 — 1H 종가 0.0530이면 반등 구조 폐기, 0.05073 재시험이다. 1차 0.0572는 0.618 되돌림 0.05715·4H EMA50 0.05760, 2차 0.0602는 야간 스윕 고점. 손익비 2.23:1 · 4.54:1 — 1H 양봉(아래꼬리) 확인 후 정찰병 비중, 추격 금지.' },
+    br: { id:'br', cls:'break', kind:'long', title:'가설 3 · 돌파 롱', tag:'추세',
+          entry:0.0606, stop:0.0588, t1:0.0629, t2:0.0695,
+          why:'1H 확정 종가 0.0606 위 — 11/23 21시 고점 0.06022와 11/18 고점 0.06042를 함께 넘겨 1D 하락 배열 안에서 첫 고점 돌파가 나오는 자리다. 진입 0.0606, 손절 0.0588은 숏 진입 기준선 — 내주면 돌파 근거가 깨진다. 1차 0.0629는 11/13 4H 고점 0.06293이자 1D EMA20 0.06211 위, 2차 0.0695는 11/12 4H 고점 0.06952. 손익비 1.28:1 · 4.94:1 — 1차가 얇으니 0.0629 위 1H 종가 안착 확인 후 2차까지 들고 간다.' }
+  },
+  'HYPE-USDT-SWAP': {
+    h1: { id:'h1', cls:'long', kind:'long', title:'가설 1 · 눌림목 롱', tag:'메인',
+          entry:62.80, stop:61.00, t1:66.85, t2:69.75,
+          why:'11/21 저점 55.779 이후 4H 저점이 59.532(11/22)·61.426(11/23)·62.079(11/24)로 계속 올라온 상승 구조다. 11/23 21시 봉이 64.079에서 69.749까지 3.81배 거래량으로 쏘고 66.784에 마감한 뒤 62.079까지 되밀렸지만, 11/24 12시 1H 봉이 62.079에서 63.345로 1.87배 거래량의 아래꼬리를 남기고 14시 64.456·15시 64.333으로 다시 올라 1H EMA20 64.07 위에 서 있다. 62.80은 4H 55.779→69.749 상승 레그의 0.5 되돌림 62.764이자 12시 저점 62.079 바로 위 — 상승 구조가 살아 있는 한 첫 매수 자리다. 1D는 EMA20 69.21·EMA50 74.90 아래라 추세 추종이 아니라 반등 파동 매매이고, 1D RSI 36.4로 과매도 탈출 초입이다. 진입 62.80(위험 1.80), 1차 66.85는 01시 고점 66.847·하락 0.382 되돌림 66.819, 2차 69.75는 야간 스윕 고점. 손익비 2.25:1 · 3.86:1 — 1H 종가 61.00 아래면 상승 구조 폐기.' },
+    h2: { id:'h2', cls:'short', kind:'short', title:'가설 2 · 반등 저항 숏', tag:'서브',
+          entry:69.30, stop:70.60, t1:65.00, t2:62.10,
+          why:'69.30은 11/23 21시 스윕 고점 69.749를 다시 두드리는 자리이자 11/20 4H 고점 70.232 아래 — 1D EMA20 69.21과 겹쳐 위쪽은 전부 공급대다. 스파이크 뒤 4H 고점이 69.749→66.847→64.503으로 낮아졌으므로 69.30 리테스트에서 윗꼬리 음봉이 나오면 숏이다. 손절 70.60(위험 1.30)은 스윕 고점 69.749와 11/20 고점 70.232를 모두 넘는 자리 — 1H 종가 70.60이면 숏 근거 폐기. 1차 65.00은 4H EMA50 65.03·하락 0.618 되돌림 65.009, 2차 62.10은 오늘 저점 62.079. 손익비 3.31:1 · 5.54:1 — 69.30 터치 후 1H 윗꼬리 확인 전 진입 금지.' },
+    br: { id:'br', cls:'break', kind:'long', title:'가설 3 · 돌파 롱', tag:'추세',
+          entry:70.60, stop:68.50, t1:74.38, t2:75.32,
+          why:'1H 확정 종가 70.60 위 — 69.749와 70.232 두 고점을 한 번에 넘겨 11/21 저점 55.779 이후 반등이 추세 전환임을 확인하는 자리다. 진입 70.60, 손절 68.50은 스윕 고점 아래 — 내주면 돌파 근거가 깨진다. 1차 74.38은 11/12 4H 고점 74.376, 2차 75.32는 11/13 4H 고점 75.321. 손익비 1.79:1 · 2.24:1 — 1D EMA20 69.21을 종가로 회복하는 첫 신호라도 1차 손익비가 낮으니 분할로 대응.' }
+  },
+  'PIEVERSE-USDT-SWAP': {
+    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 반등 저항 숏', tag:'메인',
+          entry:3.50, stop:3.67, t1:3.16, t2:2.95,
+          why:'11/22 상장 스파이크가 5.3996까지 4H 11.43배·16.70배 거래량으로 터진 뒤 4H 고점이 4.0666(11/23 13시)→3.8188(17시)→3.7221(11/24 02시)→3.6198(08시)로 계속 낮아지는 분산 구조다. 지금 3.18은 2.7303→5.3996 상승 레그의 0.786(3.3015)도 내준 자리로, 1H EMA20 3.417·EMA50 3.457 아래에서 1H RSI 38.0까지 밀렸다. 3.50은 09~11시 1H 봉이 3.52~3.53에서 막힌 공급 구간이자 4H EMA20 3.3553 위 — 반등이 나오면 여기서 꺾인다. 진입 3.50(위험 0.17), 1차 3.16은 11/23 저점 3.1634·1.7748→5.3996의 0.618 되돌림 3.1595, 2차 2.95는 4H EMA50 2.9478. 손익비 2.00:1 · 3.24:1 — 1H 종가 3.67 위면 무효.' },
+    h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 되돌림 롱', tag:'서브',
+          entry:3.10, stop:2.88, t1:3.46, t2:3.72,
+          why:'1D는 EMA20 2.473·EMA50 1.863 위 상승 배열이고 RSI 66.0이라 큰 추세는 아직 위다. 3.10은 11/17 저점 1.7748→5.3996 상승의 0.618 되돌림 3.1595와 11/23 저점 3.1634 아래 라운드 — 4H EMA50 2.9478 위에서 지지가 확인되는 자리다. 다만 상장 사흘째 급등 종목이라 되돌림 폭이 크고(5.3996→2.7303, -49.4%) 손절이 멀다. 손절 2.88(위험 0.22)은 4H EMA50 2.9478과 2.88 라운드를 모두 내주는 자리 — 여기서 1H 종가면 되돌림 롱 근거 폐기, 2.7303 재시험이다. 1차 3.46은 1H EMA50 3.457, 2차 3.72는 02시 고점 3.7221. 손익비 1.64:1 · 2.82:1 — 3.16 이하에서 1H 양봉 확인 후 정찰병 비중, 추격 금지.' },
+    br: { id:'br', cls:'break', kind:'long', title:'가설 3 · 돌파 롱', tag:'추세',
+          entry:3.67, stop:3.50, t1:4.07, t2:4.35,
+          why:'1H 확정 종가 3.67 위 — 08시 고점 3.6198과 4H 05:00 고점 3.661을 넘겨 11/23 이후 낮아지던 고점 사슬을 끊는 자리다. 진입 3.67, 손절 3.50은 숏 진입 기준선 — 내주면 돌파 근거가 깨진다. 1차 4.07은 11/23 13시 4H 고점 4.0666·하락 0.5 되돌림 4.065, 2차 4.35는 11/22 21시 4H 고점 4.3492. 손익비 2.35:1 · 4.00:1 — 거래량이 붙은 1H 종가만 인정하고 꼬리 돌파는 무시한다.' }
+  },
+  'PEPE-USDT-SWAP': {
+    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 반등 저항 숏', tag:'메인',
+          entry:0.00000366, stop:0.00000379, t1:0.00000337, t2:0.00000317,
+          why:'11/23 21시 4H 봉이 0.00000346에서 0.00000376까지 3.43배 거래량으로 쏘고 0.00000363에 마감했지만, 01시 0.00000347·05시 0.00000343으로 되돌려 스파이크를 다 반납했다. 1D는 EMA20 0.00000397·EMA50 0.00000416 아래 하락 배열, 4H도 EMA50 0.00000366 아래다. 지금 0.00000354는 0.00000337→0.00000376 반등의 0.5(0.00000356)과 0.618(0.00000361) 사이 — 반등이 이미 절반 넘게 되돌려진 자리다. 0.00000366은 4H EMA50 0.00000366과 스파이크 0.236 되돌림 0.00000367이 겹치는 저항. 진입 0.00000366(위험 0.00000013), 1차 0.00000337은 오늘 저점, 2차 0.00000317은 11/21 저점. 손익비 2.23:1 · 3.77:1 — 1H 종가 0.00000379 위면 무효.' },
+    h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 눌림목 롱', tag:'서브',
+          entry:0.00000336, stop:0.00000324, t1:0.00000366, t2:0.00000376,
+          why:'11/21 저점 0.00000317 이후 4H 저점이 0.00000331(11/22 13시)·0.00000331(11/23 09시)·0.00000337(11/24 12시)로 올라온 구조다. 0.00000336은 그 마지막 저점이자 0.618 되돌림 0.00000339 바로 아래 — 상승 구조가 살아 있는 한 지지가 나올 자리다. 손절 0.00000324(위험 0.00000012)는 11/23 저점 0.00000331을 내주는 자리 — 1H 종가 0.00000324면 반등 구조 폐기, 0.00000317 재시험이다. 1차 0.00000366은 4H EMA50·스파이크 0.236, 2차 0.00000376은 야간 스윕 고점. 손익비 2.50:1 · 3.33:1 — 1H 양봉(아래꼬리) 확인 후 진입.' },
+    br: { id:'br', cls:'break', kind:'long', title:'가설 3 · 돌파 롱', tag:'추세',
+          entry:0.00000379, stop:0.00000358, t1:0.00000405, t2:0.00000434,
+          why:'1H 확정 종가 0.00000379 위 — 11/23 21시 고점 0.00000376을 넘겨 1D 하락 배열 안에서 첫 고점 돌파가 나오는 자리다. 진입 0.00000379, 손절 0.00000358은 숏 감시선 — 내주면 돌파 근거가 깨진다. 1차 0.00000405는 11/19 4H 고점, 2차 0.00000434는 4H 60봉 최고. 손익비 1.24:1 · 2.62:1 — 1차가 얇으니 0.00000405 위 종가 안착 확인 후 분할.' }
+  },
+  'NEAR-USDT-SWAP': {
+    h1: { id:'h1', cls:'short', kind:'short', title:'가설 1 · 반등 저항 숏', tag:'메인',
+          entry:3.20, stop:3.32, t1:2.95, t2:2.83,
+          why:'11/23 21시 4H 봉이 3.005에서 3.287까지 3.94배 거래량으로 쏘고 3.141에 마감했지만, 01시 3.031·05시 2.986·09시 2.968으로 되돌려 스파이크 전 3.024 아래로 내려왔다. 지금 3.038은 2.879→3.287 반등의 0.618(3.0349)에 걸쳐 있고, 1D는 EMA20 3.3530·EMA50 3.7146 아래 하락 배열이다. 3.20은 반등 0.236 되돌림 3.191 위이자 4H 01:00 고점 3.148 위 — 박스 상단 3.287을 두드리러 갈 때 꺾이는 자리다. 진입 3.20(위험 0.12), 1차 2.95는 05시 저점 2.932·08시 저점 2.946 위 라운드, 2차 2.83은 2.547→3.287 상승의 0.618 되돌림 2.830. 손익비 2.08:1 · 3.08:1 — 1H 종가 3.32 위면 무효.' },
+    h2: { id:'h2', cls:'long', kind:'long', title:'가설 2 · 박스 하단 롱', tag:'서브',
+          entry:2.92, stop:2.82, t1:3.15, t2:3.29,
+          why:'2.92는 2.547→3.287 상승 레그의 0.5 되돌림 2.917이자 11/23 09시 저점 2.937 바로 아래 — 11/21 저점 2.547 이후 박스 하단 2.879~2.937의 아래 경계다. 1D RSI 37.7·4H RSI 51.9로 과매도는 아니지만, 4H EMA20 2.998 위에서 버티던 가격이 여기까지 밀리면 첫 지지 테스트가 된다. 손절 2.82(위험 0.10)는 0.618 되돌림 2.830과 11/22 저점 2.843을 모두 내주는 자리 — 1H 종가 2.82면 박스 붕괴, 2.547 재시험이다. 1차 3.15는 01시 4H 고점 3.148, 2차 3.29는 야간 스윕 고점 3.287. 손익비 2.30:1 · 3.70:1 — 1H 양봉(아래꼬리) 확인 후 정찰병 비중.' },
+    br: { id:'br', cls:'break', kind:'long', title:'가설 3 · 돌파 롱', tag:'추세',
+          entry:3.32, stop:3.20, t1:3.48, t2:3.64,
+          why:'1H 확정 종가 3.32 위 — 11/23 21시 고점 3.287과 11/22 고점 3.057을 넘어 11/21 저점 2.547 이후 첫 고점 돌파가 나오는 자리다. 진입 3.32, 손절 3.20은 숏 진입 기준선 — 내주면 돌파 근거가 깨진다. 1차 3.48은 11/19 4H 고점 3.475, 2차 3.64는 11/13 4H 고점 3.636. 손익비 1.33:1 · 2.67:1 — 1차가 얇으니 3.48 위 종가 안착 확인 후 분할.' }
   }
 };
 
@@ -1323,7 +1479,13 @@ const ZONE_DEF = {
   'BTC-USDT-SWAP': { stop:63100, brkup:63100, brkupTop:64570, ext:64570, short:61800, shortTop:63100, mid:59200, long:58800, warnL:57800, brk1:56700, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 58,800 지지 감시' },
   'ETH-USDT-SWAP': { stop:1795,  brkup:1795,  brkupTop:1845,  ext:1845,  short:1750,  shortTop:1795,  mid:1665,  long:1655,  warnL:1625,  brk1:1600,  midLabel:'눌림 롱 대기 · 반등 숏 대기 · 1,655 지지 감시' },
   'XRP-USDT-SWAP': { stop:0.9950,brkup:0.9950,brkupTop:1.0250,ext:1.0250,short:0.9700,shortTop:0.9950,mid:0.9400,long:0.9350,warnL:0.9200,brk1:0.9000, midLabel:'눌림 롱 대기 · 상위 숏 대기 · 0.9350 지지 감시' },
-  'SOL-USDT-SWAP': { stop:75.50, brkup:75.50, brkupTop:78.45, ext:78.45, short:73.60, shortTop:75.50, mid:70.30, long:70.00, warnL:68.80, brk1:68.00, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 70.00 지지 감시' }
+  'SOL-USDT-SWAP': { stop:75.50, brkup:75.50, brkupTop:78.45, ext:78.45, short:73.60, shortTop:75.50, mid:70.30, long:70.00, warnL:68.80, brk1:68.00, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 70.00 지지 감시' },
+  'ZEC-USDT-SWAP': { stop:808, brkup:808, brkupTop:850, ext:903, short:781, shortTop:808, mid:745, long:720, warnL:698, brk1:679, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 720 지지 감시' },
+  'DOGE-USDT-SWAP': { stop:0.0606, brkup:0.0606, brkupTop:0.0629, ext:0.0695, short:0.0572, shortTop:0.0606, mid:0.0553, long:0.0543, warnL:0.0530, brk1:0.0507, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 0.0543 지지 감시' },
+  'HYPE-USDT-SWAP': { stop:70.60, brkup:70.60, brkupTop:74.38, ext:75.32, short:66.80, shortTop:70.60, mid:63.40, long:62.80, warnL:61.00, brk1:59.50, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 62.80 지지 감시', shortLabel:'가설 2 숏 리테스트 구간', voidLabel:'돌파 롱 안착 · 반등 숏 폐기 — 70.60 상회' },
+  'PIEVERSE-USDT-SWAP': { stop:3.67, brkup:3.67, brkupTop:4.07, ext:4.35, short:3.36, shortTop:3.67, mid:3.16, long:3.10, warnL:2.88, brk1:2.73, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 3.10 지지 감시' },
+  'PEPE-USDT-SWAP': { stop:0.00000379, brkup:0.00000379, brkupTop:0.00000405, ext:0.00000434, short:0.00000358, shortTop:0.00000379, mid:0.00000340, long:0.00000336, warnL:0.00000324, brk1:0.00000317, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 0.00000336 지지 감시' },
+  'NEAR-USDT-SWAP': { stop:3.32, brkup:3.32, brkupTop:3.48, ext:3.64, short:3.09, shortTop:3.32, mid:2.99, long:2.92, warnL:2.82, brk1:2.79, midLabel:'눌림 롱 대기 · 반등 숏 대기 · 2.92 지지 감시' }
 };
 
 /* 감시선 — scheduled-actions/📊-btcusdt-매억남-타점-감시 check.sh 신호와 같은 수치 */
@@ -1331,20 +1493,32 @@ const WATCH_DEF = {
   'BTC-USDT-SWAP': { stopClose:63100, stopNote:'반등 저항 숏 폐기 · 1H 종가 63,100 이상', longClose:63100, longNote:'돌파 롱 안착 · 1H 종가', shortZone:61800, pullLo:58800, pullHi:59200, pullLabel:'하단 눌림목 롱 58,800 지지 · 58,800~59,200', sup:57800, supNote:'눌림 롱 손절 · 1H 종가 57,800 이하' },
   'ETH-USDT-SWAP': { stopClose:1795, stopNote:'반등 저항 숏 폐기 · 1H 종가 1,795 이상', longClose:1795, longNote:'돌파 롱 안착 · 1H 종가', shortZone:1750, pullLo:1655, pullHi:1665, pullLabel:'하단 눌림목 롱 1,655 지지 · 1,655~1,665', sup:1625, supNote:'눌림 롱 손절 · 1H 종가 1,625 이하' },
   'XRP-USDT-SWAP': { stopClose:0.9950, stopNote:'숏 폐기 · 1H 종가 0.9950 이상', longClose:0.9950, longNote:'돌파 롱 안착 · 1H 종가', shortZone:0.9700, pullLo:0.9350, pullHi:0.9400, pullLabel:'눌림목 롱 0.9350 지지 · 0.935~0.940', sup:0.9200, supNote:'눌림 롱 손절 · 1H 종가 0.9200 이하' },
-  'SOL-USDT-SWAP': { stopClose:75.50, stopNote:'반등 저항 숏 폐기 · 1H 종가 75.50 이상', longClose:75.50, longNote:'돌파 롱 안착 · 1H 종가', shortZone:73.60, pullLo:70.00, pullHi:70.30, pullLabel:'하단 눌림목 롱 70.00 지지 · 70.00~70.30', sup:68.80, supNote:'눌림 롱 손절 · 1H 종가 68.80 이하' }
+  'SOL-USDT-SWAP': { stopClose:75.50, stopNote:'반등 저항 숏 폐기 · 1H 종가 75.50 이상', longClose:75.50, longNote:'돌파 롱 안착 · 1H 종가', shortZone:73.60, pullLo:70.00, pullHi:70.30, pullLabel:'하단 눌림목 롱 70.00 지지 · 70.00~70.30', sup:68.80, supNote:'눌림 롱 손절 · 1H 종가 68.80 이하' },
+  'ZEC-USDT-SWAP': { stopClose:808, stopNote:'반등 저항 숏 폐기 · 1H 종가 808 이상', longClose:808, longNote:'돌파 롱 안착 · 1H 종가', shortZone:781, pullLo:720, pullHi:745, pullLabel:'하단 눌림목 롱 720 지지 · 720~745', sup:698, supNote:'눌림 롱 손절 · 현재가 698 이하' },
+  'DOGE-USDT-SWAP': { stopClose:0.0606, stopNote:'반등 저항 숏 폐기 · 1H 종가 0.0606 이상', longClose:0.0606, longNote:'돌파 롱 안착 · 1H 종가', shortZone:0.0572, pullLo:0.0543, pullHi:0.0553, pullLabel:'눌림목 롱 0.0543 지지 · 0.0543~0.0553', sup:0.0530, supNote:'눌림 롱 손절 · 현재가 0.0530 이하' },
+  'HYPE-USDT-SWAP': { stopClose:70.60, stopNote:'반등 저항 숏(가설 2) 폐기 · 1H 종가 70.60 이상', longClose:70.60, longNote:'돌파 롱 안착 · 1H 종가', shortZone:66.80, pullLo:62.80, pullHi:63.40, pullLabel:'눌림목 롱 62.80 지지 · 62.80~63.40', sup:61.00, supNote:'눌림목 롱 손절 · 현재가 61.00 이하' },
+  'PIEVERSE-USDT-SWAP': { stopClose:3.67, stopNote:'반등 저항 숏 폐기 · 1H 종가 3.67 이상', longClose:3.67, longNote:'돌파 롱 안착 · 1H 종가', shortZone:3.36, pullLo:3.10, pullHi:3.16, pullLabel:'되돌림 롱 3.10 지지 · 3.10~3.16', sup:2.88, supNote:'되돌림 롱 손절 · 현재가 2.88 이하' },
+  'PEPE-USDT-SWAP': { stopClose:0.00000379, stopNote:'반등 저항 숏 폐기 · 1H 종가 0.00000379 이상', longClose:0.00000379, longNote:'돌파 롱 안착 · 1H 종가', shortZone:0.00000358, pullLo:0.00000336, pullHi:0.00000340, pullLabel:'눌림목 롱 0.00000336 지지 · 0.00000336~0.00000340', sup:0.00000324, supNote:'눌림 롱 손절 · 현재가 0.00000324 이하' },
+  'NEAR-USDT-SWAP': { stopClose:3.32, stopNote:'반등 저항 숏 폐기 · 1H 종가 3.32 이상', longClose:3.32, longNote:'돌파 롱 안착 · 1H 종가', shortZone:3.09, pullLo:2.92, pullHi:2.99, pullLabel:'박스 하단 롱 2.92 지지 · 2.92~2.99', sup:2.82, supNote:'박스 하단 롱 손절 · 현재가 2.82 이하' }
 };
 
 const DEFAULT_PLANS = {
   'BTC-USDT-SWAP': { side:'short', entry:62000,  stop:63100, t1:60100, t2:58800, lev:5, margin:0 },
   'ETH-USDT-SWAP': { side:'short', entry:1760,   stop:1795,  t1:1695,  t2:1655,  lev:5, margin:0 },
   'XRP-USDT-SWAP': { side:'short', entry:0.9750, stop:0.9950,t1:0.9450,t2:0.9250,lev:5, margin:0 },
-  'SOL-USDT-SWAP': { side:'short', entry:74.00,  stop:75.50, t1:71.20, t2:70.00, lev:5, margin:0 }
+  'SOL-USDT-SWAP': { side:'short', entry:74.00,  stop:75.50, t1:71.20, t2:70.00, lev:5, margin:0 },
+  'ZEC-USDT-SWAP': { side:'short', entry:791,   stop:808,   t1:745,   t2:727,   lev:5, margin:0 },
+  'DOGE-USDT-SWAP': { side:'short', entry:0.0588, stop:0.0606, t1:0.0553, t2:0.0537, lev:5, margin:0 },
+  'HYPE-USDT-SWAP': { side:'long',  entry:62.80, stop:61.00, t1:66.85, t2:69.75, lev:5, margin:0 },
+  'PIEVERSE-USDT-SWAP': { side:'short', entry:3.50, stop:3.67, t1:3.16, t2:2.95, lev:5, margin:0 },
+  'PEPE-USDT-SWAP': { side:'short', entry:0.00000366, stop:0.00000379, t1:0.00000337, t2:0.00000317, lev:5, margin:0 },
+  'NEAR-USDT-SWAP': { side:'short', entry:3.20, stop:3.32, t1:2.95, t2:2.83, lev:5, margin:0 }
 };
 
 /* 가설값 버전 — 가설 숫자를 새로 배포할 때 이 문자열만 올리면 됩니다.
    이 기기에 저장된 예전 '내 타점' 수정값이 새 가설값을 덮어쓰지 않도록,
    저장된 버전이 다르면 저장값을 비우고 새 가설 기본값으로 시작합니다. */
-const HYP_VERSION = '2026-11-24-1155';
+const HYP_VERSION = '2026-11-24-1630';
 const HYP_VER_KEY = 'maeyo.hypver.v1';
 const PLAN_KEY = 'maeyo.plans.v1';
 let hypResetNotice = '';
@@ -1441,16 +1615,63 @@ function store(key, val){
 }
 
 /* ------------------------- data layer ------------------------- */
-async function apiGet(path){
+/* OKX 요청 스케줄러 — 10종목 캔들·시세를 한꺼번에 부르면 레이트리밋(429)에 걸립니다.
+   · 동시 3개 · 요청 간 최소 70ms 간격(초당 14건 이하)으로 줄을 세웁니다
+   · 429를 받으면 Retry-After(없으면 2.5초)만큼 큐 전체를 멈추고 그 요청만 재시도합니다 */
+const NET = { max:3, gap:70, active:0, last:0, until:0, q:[], timer:null };
+function netPump(){
+  if (NET.active >= NET.max || !NET.q.length) return;
+  const wait = Math.max(NET.last + NET.gap, NET.until) - Date.now();
+  if (wait > 0){
+    if (!NET.timer) NET.timer = setTimeout(() => { NET.timer = null; netPump(); }, wait);
+    return;
+  }
+  const job = NET.q.shift();
+  NET.active++; NET.last = Date.now();
+  job.run().then(job.ok, job.no).finally(() => { NET.active--; netPump(); });
+  netPump();
+}
+function netGet(path){
+  return new Promise((ok, no) => { NET.q.push({ run: () => rawGet(path), ok, no }); netPump(); });
+}
+async function rawGet(path){
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 9000);
   try {
     const res = await fetch(OKX + path, { signal: ctrl.signal, cache:'no-store', mode:'cors' });
+    if (res.status === 429){
+      const ra = Number(res.headers.get('Retry-After'));
+      NET.until = Date.now() + (isFinite(ra) && ra > 0 ? Math.min(ra * 1000, 10000) : 2500);
+      const e = new Error('HTTP 429'); e.retry = true; throw e;
+    }
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const j = await res.json();
     if (String(j.code) !== '0') throw new Error(j.msg || ('OKX code ' + j.code));
     return j.data || [];
   } finally { clearTimeout(timer); }
+}
+/* 같은 요청이 1.2초 안에 두 번 나가지 않게 (선택 종목 1H를 MTF와 차트가 같이 부르는 경우) */
+const netCache = new Map();
+async function apiGet(path){
+  const now = Date.now();
+  const hit = netCache.get(path);
+  if (hit && now - hit.at < 1200) return hit.p;
+  const p = (async () => {
+    let lastErr;
+    for (let i = 0; i < 3; i++){
+      try { return await netGet(path); }
+      catch (e){
+        lastErr = e;
+        if (!e || !e.retry) break;
+        await new Promise(r => setTimeout(r, 500 + i * 800));
+      }
+    }
+    throw lastErr;
+  })();
+  netCache.set(path, { at:now, p });
+  p.catch(() => { const c = netCache.get(path); if (c && c.p === p) netCache.delete(path); });
+  if (netCache.size > 80){ for (const [k, v] of netCache) if (now - v.at > 3000) netCache.delete(k); }
+  return p;
 }
 async function fetchTicker(inst){
   const d = await apiGet('/api/v5/market/ticker?instId=' + encodeURIComponent(inst));
@@ -2136,9 +2357,9 @@ function zoneState(price, c){
   const z = ZONE_DEF[c.sym];
   if (!z) return { code:'other', text:'가설 미적용 — 4H 스윙 라인 기준으로 판단', cls:'neutral' };
   const f = n => fmtLv(n);
-  if (price >= z.stop)  return { code:'void',  text:'가설 1 폐기 구간 — 숏 손절 ' + f(z.stop) + ' 상회', cls:'bad' };
+  if (price >= z.stop)  return { code:'void',  text:z.voidLabel || ('가설 1 폐기 구간 — 숏 손절 ' + f(z.stop) + ' 상회'), cls:'bad' };
   if (price >= z.brkup) return { code:'brkup', text:'돌파 롱 감시 구간 (' + f(z.brkup) + ' ~ ' + f(z.brkupTop) + ') — 1H 확정 종가 · ' + f(z.ext) + ' 확장', cls:'long' };
-  if (price >= z.short) return { code:'short', text:'가설 1 숏 진입 구간 (' + f(z.short) + ' ~ ' + f(z.shortTop) + ')', cls:'short' };
+  if (price >= z.short) return { code:'short', text:(z.shortLabel || '가설 1 숏 진입 구간') + ' (' + f(z.short) + ' ~ ' + f(z.shortTop) + ')', cls:'short' };
   if (price > z.mid)    return { code:'mid',   text:(z.midLabel || '숏 진입 대기 · 눌림목 롱 대기') + ' (' + f(z.mid) + ' ~ ' + f(z.short) + ')', cls:'neutral' };
   if (price > z.long)   return { code:'long',  text:'가설 2 눌림목 롱 구간 (' + f(z.long) + ' ~ ' + f(z.mid) + ')', cls:'long' };
   if (price > z.warnL)  return { code:'warnL', text:'롱 손절 바로 위 (' + f(z.warnL) + ' ~ ' + f(z.long) + ') — 신규 진입 금지', cls:'warn' };
@@ -2453,8 +2674,17 @@ function renderChips(){
     b.addEventListener('click', () => selectSymbol(b.dataset.sym));
   });
   paintSymStatus();
+  centerActiveTab(el, '.chip');
 }
-/* 상단 고정 가격 바 — 4종목 미니 탭 + 현재가·등락률 */
+/* 선택한 종목 버튼이 가로 스크롤 밖에 있으면 가운데로 끌어옵니다 (10종목 대응) */
+function centerActiveTab(el, sel){
+  if (!el || !el.scrollTo) return;
+  const on = el.querySelector(sel + '.on');
+  if (!on) return;
+  const left = on.offsetLeft - (el.clientWidth - on.offsetWidth) / 2;
+  try { el.scrollTo({ left:Math.max(0, left), behavior:'smooth' }); } catch (e) { el.scrollLeft = Math.max(0, left); }
+}
+/* 상단 고정 가격 바 — 10종목 미니 탭(가로 스크롤) + 현재가·등락률 */
 function renderPbarSyms(){
   const el = $('#pbarSyms');
   if (!el) return;
@@ -2463,6 +2693,7 @@ function renderPbarSyms(){
     '" aria-pressed="' + (s.id === state.sym) + '"><i class="st" aria-hidden="true"></i>' + s.code + '</button>').join('');
   $$('.psym', el).forEach(b => b.addEventListener('click', () => selectSymbol(b.dataset.sym)));
   paintSymStatus();
+  centerActiveTab(el, '.psym');
 }
 function renderPbarLive(){
   const pEl = $('#pbarPrice'), cEl = $('#pbarChg');
@@ -2481,7 +2712,7 @@ function renderPbarLive(){
   cEl.className = 'pbar-chg num ' + (change >= 0 ? 'up' : 'down');
 }
 
-/* ---------- 4종목 실시간 3중 점검 상태 — 선택 종목 + 나머지 3종목 동시 평가 ---------- */
+/* ---------- 10종목 실시간 3중 점검 상태 — 선택 종목 + 나머지 9종목 비동기 평가 ---------- */
 /* 나머지 종목 캐시: state(mtf·ticker·sym)를 덮어쓰지 않고 별도 보관 — 값만 넘겨 순수 계산 */
 const symCache = {};
 function cacheFor(id){
@@ -2540,7 +2771,7 @@ function paintSymStatus(){
     b.title = s.code + ' — ' + txt + (st && isNum(st.price) ? ' · ' + fmtN(st.price, s.dp) : '');
   });
   const upd = $('#stUpd');
-  if (upd) upd.textContent = state.statusAt ? '4종목 · ' + kst(state.statusAt) + ' 계산' : '4종목 점검 중';
+  if (upd) upd.textContent = state.statusAt ? SYMBOLS.length + '종목 · ' + kst(state.statusAt) + ' 계산' : SYMBOLS.length + '종목 점검 중';
 }
 async function refreshAltTickers(){
   const alts = SYMBOLS.filter(s => s.id !== state.sym);
@@ -2550,22 +2781,30 @@ async function refreshAltTickers(){
   });
 }
 async function loadAltCandles(force){
-  /* 선택 종목 우선 렌더 후 나머지 3종목을 150ms 간격으로 순차 갱신 — 요청이 한꺼번에 몰리지 않게 */
-  for (const s of SYMBOLS){
-    if (s.id === state.sym) continue;
-    const c = cacheFor(s.id);
-    const fresh = MTF.every(b => (c.mtf[b] || []).length >= 60) && (Date.now() - c.mtfAt < 60000);
-    if (c.busy || (!force && fresh)) continue;
+  /* 10종목을 한꺼번에 부르지 않습니다 — 가장 오래된 2종목만 1D/4H/1H을 갱신하고
+     나머지는 다음 15초 주기로 넘깁니다(선택 종목 캔들은 별도 우선 로드). */
+  const cand = SYMBOLS.filter(s => s.id !== state.sym)
+    .map(s => ({ s, c: cacheFor(s.id) }))
+    .filter(x => !x.c.busy)
+    .sort((a, b) => (a.c.mtfAt || 0) - (b.c.mtfAt || 0));
+  const stale = cand.filter(x => force || Date.now() - (x.c.mtfAt || 0) > 60000);
+  const batch = stale.slice(0, 2);
+  for (const { s, c } of batch){
     c.busy = true;
     try {
       const r = await Promise.allSettled(MTF.map(b => fetchCandles(s.id, b, 200)));
       MTF.forEach((b, i) => { if (r[i].status === 'fulfilled' && r[i].value.length) c.mtf[b] = r[i].value; });
       if (MTF.every(b => (c.mtf[b] || []).length)) c.mtfAt = Date.now();
+      c.failAt = 0;
       applySymStatus();
-    } catch (e) { /* 다음 주기에 재시도 */ }
+    } catch (e) { c.failAt = Date.now(); /* 다음 주기에 재시도 */ }
     finally { c.busy = false; }
-    await new Promise(res => setTimeout(res, 150));
+    await new Promise(res => setTimeout(res, 40));
   }
+  /* 아직 캔들이 한 번도 없는 종목이 남아 있으면(첫 로딩) 짧게 이어서 채웁니다 */
+  const waiting = SYMBOLS.filter(s => s.id !== state.sym).map(s => cacheFor(s.id))
+    .some(c => !MTF.every(b => (c.mtf[b] || []).length) && Date.now() - (c.failAt || 0) > 20000);
+  if (waiting) setTimeout(() => loadAltCandles(false), 450);
 }
 async function refreshAltStatus(force){
   try { await refreshAltTickers(); } catch (e) { /* 티커 실패해도 캔들 상태는 갱신 */ }
@@ -4127,7 +4366,7 @@ function drawChart(){
 
   const cs = state.candles || [];
   const d = dp();
-  const padL = 4, padR = 58, padT = 6, padB = 15;
+  const padL = 4, padR = d >= 7 ? 78 : 58, padT = 6, padB = 15;
   const areaW = Math.max(40, W - padL - padR);
   const totalH = H - padT - padB;
   const hPrice = Math.round(totalH * 0.60);
@@ -4541,7 +4780,7 @@ async function loadAll(){
   updatePlanLabel();
   spin(false);
   renderAll();
-  refreshAltStatus(true);            /* 나머지 3종목도 3중 점검 계산 */
+  refreshAltStatus(true);            /* 나머지 종목도 3중 점검 계산 */
 }
 async function loadBar(){
   spin(true);
@@ -5798,7 +6037,7 @@ function rplDraw(){
     return;
   }
   const d = symOf(e.sym).dp;
-  const padL = 2, padR = 56, padB = 15, gap = 7;
+  const padL = 2, padR = d >= 7 ? 76 : 56, padB = 15, gap = 7;
   const areaW = Math.max(60, W - padL - padR);
   const step = areaW / cs.length;
   const bw = clamp(step * 0.62, 1, 11);
@@ -6039,7 +6278,7 @@ function fireAlert(items){
   }
   showBanner(items);
 }
-/* 15초 갱신마다 4종목 상태 비교 — 새로 3/3 이나 '지금 진입'으로 바뀐 시점만, 종목+상태당 15분 쿨다운 */
+/* 15초 갱신마다 10종목 상태 비교 — 새로 3/3 이나 '지금 진입'으로 바뀐 시점만, 종목+상태당 15분 쿨다운 */
 async function toggleAlerts(){
   state.alertOn = !state.alertOn;
   store(ALERT_ON_KEY, state.alertOn);
@@ -6123,7 +6362,7 @@ function renderAll(){
   if (state.page !== 'journal') drawChart();
   if (state.page === 'journal') renderJournal();
   updateAutoBar();
-  applySymStatus();                  /* 4종목 버튼 색 — 선택 종목 분석 결과 + 캐시된 나머지 3종목 */
+  applySymStatus();                  /* 10종목 버튼 색 — 선택 종목 분석 결과 + 캐시된 나머지 종목 */
 }
 /* 스크롤하면 상단 바를 슬림 가격 바(종목·현재가·등락률)로 전환 */
 function bindStickyPrice(){
