@@ -710,6 +710,11 @@ body.sheet-open{overflow:hidden}
 .scn-top{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px}
 .scn-title{font-size:13.5px; font-weight:800; letter-spacing:-.25px; display:flex; align-items:center; gap:7px}
 .scn-dist{font-size:11px; color:var(--dim2); font-variant-numeric:tabular-nums}
+/* 자동 후보 카드 — 제목/배지가 390px 폭에서 한 글자씩 쪼개지지 않게 줄바꿈 허용 */
+#autoScnList .scn-title{flex-wrap:wrap; align-items:flex-start; row-gap:5px}
+#autoScnList .scn-title .at{flex:1 1 100%; min-width:0; line-height:1.32}
+#autoScnList .scn-title .atags{display:inline-flex; flex-wrap:wrap; gap:4px}
+#autoScnList .scn-dist{white-space:nowrap; flex:0 0 auto}
 .scn-grid{display:grid; grid-template-columns:1fr 1fr; gap:7px 10px}
 .scn-cell{background:#0c1421; border:1px solid rgba(30,42,60,.8); border-radius:9px; padding:6px 8px}
 .scn-cell label{display:block; font-size:9.5px; color:var(--dim2); margin-bottom:1px; letter-spacing:.02em}
@@ -3902,8 +3907,8 @@ function renderAutoScenarios(){
       const stCls = h.voided ? 'short' : c.status.cls === 'ok' ? 'long' : c.status.cls === 'warn' ? 'warn' : 'short';
       const stTxt = h.voided ? '폐기 — 진입 아님' : c.status.big;
       return '<div class="scn ' + (h.kind === 'long' ? 'long' : '') + (h.voided ? '" style="opacity:.6' : '') + '" data-auto="' + h.id + '">' +
-        '<div class="scn-top"><div class="scn-title">' + h.title + ' <span class="badge ' + h.kind + '">' + (h.kind === 'short' ? '숏' : '롱') + '</span>' +
-          h.tags.map(t => '<span class="badge ' + t.cls + '">' + t.t + '</span>').join('') + '</div>' +
+        '<div class="scn-top"><div class="scn-title"><span class="at">' + h.title + '</span><span class="atags"><span class="badge ' + h.kind + '">' + (h.kind === 'short' ? '숏' : '롱') + '</span>' +
+          h.tags.map(t => '<span class="badge ' + t.cls + '">' + t.t + '</span>').join('') + '</span></div>' +
           '<div class="scn-dist">진입까지 <b style="color:' + (d >= 0 ? 'var(--up)' : 'var(--down)') + '">' + fmtPct(d) + '</b></div></div>' +
         '<div class="scn-grid">' +
           '<div class="scn-cell"><label>진입</label><b>' + fmtPx(h.entry) + '</b></div>' +
