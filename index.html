@@ -5517,7 +5517,8 @@ function rplReasonHtml(e){
         (ck.side === 'short' ? '숏' : '롱') + ' ' + ck.n + '/3</b>' +
         (ck.items || []).map(it => '<span class="j-ck ' + (it.ok ? 'y' : 'n') + '">' + (it.ok ? '✓' : '✕') + ' ' + escHtml(it.name) + '</span>').join('') +
         (ck.items || []).map(it => '<span class="rc-rs-line">' + (it.ok ? '✓' : '✕') + ' ' + escHtml(it.name) + ' — ' + escHtml(it.text || '') + '</span>').join('') +
-        (ck.label ? '<span class="rc-rs-line">종합 판정 — ' + escHtml(ck.label) + '</span>' : '') +
+        (ck.label ? '<span class="rc-rs-line">종합 판정 — ' + escHtml(ck.label) +
+          (isNum(ck.otherN) && ck.otherN > 0 ? ' · 반대(' + (ck.side === 'short' ? '롱' : '숏') + ') ' + ck.otherN + '/3' : '') + '</span>' : '') +
         (ck.basis ? '<span class="rc-rs-line">' + escHtml(ck.basis) + '</span>' : '')
       : miss) + '</span></div>';
     h += '<div class="rc-rs-row"><span class="rc-rs-k">NEoWave</span><span class="rc-rs-v">' + (nw
