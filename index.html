@@ -374,7 +374,8 @@ button.toggle b{font-variant-numeric:tabular-nums; color:#67e8f9; font-weight:80
 .chip-easy{margin:5px 3px 0; font-size:9.5px; color:var(--dim2); line-height:1.45}
 
 /* ---------- 매매기록 페이지 ---------- */
-.jstat-card{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; padding:11px 10px}
+.jstat-card{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:11px 10px}
+.jstat.wide{grid-column:span 2}
 .jstat{background:#0b1320; border:1px solid rgba(30,42,60,.9); border-radius:10px; padding:7px 5px; text-align:center; min-width:0}
 .jstat label{display:block; font-size:8.5px; color:var(--dim2); letter-spacing:.01em; white-space:nowrap}
 .jstat b{display:block; margin-top:2px; font-size:15px; font-weight:800; letter-spacing:-.4px; font-variant-numeric:tabular-nums; line-height:1.15}
@@ -402,6 +403,7 @@ button.toggle b{font-variant-numeric:tabular-nums; color:#67e8f9; font-weight:80
 .jchip.o{color:#cfe0ff; background:rgba(91,140,255,.16); border-color:rgba(91,140,255,.36)}
 .jchip.w{color:#a7f3c4; background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.28)}
 .jchip.l{color:#ffb3c0; background:rgba(244,63,94,.11); border-color:rgba(244,63,94,.26)}
+.jchip.r{color:#ffe1a6; background:rgba(234,179,8,.12); border-color:rgba(234,179,8,.30)}
 .jchip.a{margin-left:auto}
 .jchip.a.up{color:#a7f3c4; background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.28)}
 .jchip.a.down{color:#ffb3c0; background:rgba(244,63,94,.11); border-color:rgba(244,63,94,.26)}
@@ -5608,16 +5610,21 @@ function renderJournalStats(){
   const open = tradeLog.filter(e => e.status === 'open');
   const closed = tradeLog.filter(e => e.status === 'closed');
   const roes = closed.map(e => e.roe).filter(isNum);
+  /* 승률은 본전(ROE 0)을 빼고 승/(승+패)로 계산합니다 */
   const wins = roes.filter(v => v > 0).length;
-  const losses = roes.filter(v => v <= 0).length;
+  const losses = roes.filter(v => v < 0).length;
+  const evens = roes.filter(v => v === 0).length;
+  const decided = wins + losses;
+  const rate = decided ? wins / decided * 100 : NaN;
   const avg = roes.length ? roes.reduce((a, b) => a + b, 0) / roes.length : NaN;
   const avgCls = !isNum(avg) ? '' : avg > 0 ? 'up' : avg < 0 ? 'down' : '';
-  const cell = (lab, val, sub, cls) => '<div class="jstat"><label>' + lab + '</label><b class="' + (cls || '') + '">' + val + '</b><small>' + sub + '</small></div>';
+  const cell = (lab, val, sub, cls, wide) => '<div class="jstat' + (wide ? ' wide' : '') + '"><label>' + lab + '</label><b class="' + (cls || '') + '">' + val + '</b><small>' + sub + '</small></div>';
   el.innerHTML =
     cell('총 매매', tradeLog.length + '건', '이 기기 기록', '') +
     cell('진행 중', open.length + '건', open.length ? '최장 ' + heldTime(Math.min.apply(null, open.map(e => e.at))) : '없음', '') +
-    cell('종료(승/패)', closed.length + '건', '승 ' + wins + ' · 패 ' + losses, '') +
-    cell('평균 ROE', isNum(avg) ? roeTxt(avg) : '—', roes.length ? roes.length + '건 기준' : '종료 기록 없음', avgCls);
+    cell('종료(승/패)', closed.length + '건', wins + '승 ' + losses + '패' + (evens ? ' · 본전 ' + evens : ''), '') +
+    cell('승률', isNum(rate) ? rate.toFixed(1) + '%' : '—', decided ? wins + '승 ' + losses + '패 기준' : '종료 기록 없음', '') +
+    cell('평균 ROE', isNum(avg) ? roeTxt(avg) : '—', roes.length ? roes.length + '건 기준' : '종료 기록 없음', avgCls, true);
 }
 function renderJournalFilters(){
   const pEl = $('#jPeriod');
@@ -5686,7 +5693,9 @@ function periodGroups(cards){
     g.n = g.items.length;
     g.open = g.items.filter(e => e.status === 'open').length;
     g.win = roes.filter(v => v > 0).length;
-    g.loss = roes.filter(v => v <= 0).length;
+    g.loss = roes.filter(v => v < 0).length;
+    g.even = roes.filter(v => v === 0).length;
+    g.rate = (g.win + g.loss) ? g.win / (g.win + g.loss) * 100 : NaN;
     g.closedN = roes.length;
     g.avg = roes.length ? roes.reduce((a, b) => a + b, 0) / roes.length : NaN;
   });
@@ -5707,6 +5716,8 @@ function jGroupHead(g){
       (g.open ? '<span class="jchip o">진행 중 ' + g.open + '</span>' : '') +
       '<span class="jchip w">승 ' + g.win + '</span>' +
       '<span class="jchip l">패 ' + g.loss + '</span>' +
+      (g.even ? '<span class="jchip">본전 ' + g.even + '</span>' : '') +
+      '<span class="jchip r">승률 ' + (isNum(g.rate) ? g.rate.toFixed(1) + '%' : '—') + '</span>' +
       '<span class="jchip a ' + avgCls + '">평균 ROE ' + (isNum(avg) ? roeTxt(avg) : '—') + '</span>' +
     '</div></div>';
 }
