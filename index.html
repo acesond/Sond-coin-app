@@ -2755,6 +2755,10 @@ function centerActiveTab(el, sel){
   const on = el.querySelector(sel + '.on');
   if (!on) return;
   if (el.clientWidth < 40) return;                 /* 미니 바가 접혀 있으면(stuck 전) 나중에 다시 */
+  /* 선택 종목이 이미 어느 정도 보이면(40% 이상) 그대로 둡니다 — 재정렬로 맨 앞에 올라온 포지션·3/3 종목을 가리지 않도록 */
+  const visL = el.scrollLeft, visR = visL + el.clientWidth;
+  const overlap = Math.min(on.offsetLeft + on.offsetWidth, visR) - Math.max(on.offsetLeft, visL);
+  if (overlap >= on.offsetWidth * 0.4) return;
   const left = on.offsetLeft - (el.clientWidth - on.offsetWidth) / 2;
   try { el.scrollTo({ left:Math.max(0, left), behavior:'smooth' }); } catch (e) { el.scrollLeft = Math.max(0, left); }
 }
