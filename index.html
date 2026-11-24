@@ -494,6 +494,26 @@ body.sheet-open{overflow:hidden}
 .sh-acts .btn{flex:1; padding:9px 10px; font-size:12px}
 .sh-cancel{width:100%; margin-top:9px; padding:9px 10px}
 
+/* ---------- 매매 복기 차트 (종료 매매 · 📈 차트 보기) ---------- */
+.rc-badges{display:flex; flex-wrap:wrap; gap:4px; margin-top:6px}
+.rc-badge{font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:6px; background:#0b1320; border:1px solid rgba(30,42,60,.9); color:#c8d6e8; letter-spacing:-.1px; font-variant-numeric:tabular-nums}
+.rc-badge.up{color:#a7f3c4; border-color:rgba(34,197,94,.4); background:rgba(34,197,94,.12)}
+.rc-badge.down{color:#ffb3c0; border-color:rgba(244,63,94,.42); background:rgba(244,63,94,.12)}
+.rc-badge.flat{color:#a9b8cc}
+.rc-tabs{display:flex; gap:5px; margin-top:9px}
+.rc-tab{flex:1; border:1px solid var(--line2); background:#0b1320; color:var(--dim); font-family:inherit; font-size:10px; font-weight:800; padding:6px 4px; border-radius:8px; cursor:pointer; transition:.13s}
+.rc-tab.on{color:#cfe0ff; border-color:rgba(91,140,255,.55); background:rgba(91,140,255,.16)}
+.rc-wrap{position:relative; margin-top:8px; height:248px; border:1px solid var(--line); border-radius:12px; background:#080e18; overflow:hidden}
+.rc-wrap canvas{display:block; width:100%; height:100%}
+.rc-leg{display:flex; flex-wrap:wrap; gap:4px 7px; margin-top:7px; font-size:9px; color:var(--dim2)}
+.rc-leg .rc-li{display:inline-flex; align-items:center; gap:3px; background:#0b1320; border:1px solid rgba(30,42,60,.9); border-radius:6px; padding:1.5px 5px; line-height:1.3}
+.rc-leg .rc-li i{width:8px; height:2.5px; border-radius:1px; flex:none}
+.rc-leg .rc-li b{color:#dbe6f5; font-weight:800}
+.rc-leg .rc-li.mk{color:#9fb0c8; font-weight:800}
+.rc-note{margin-top:6px; font-size:8.5px; line-height:1.5; color:var(--dim2); font-variant-numeric:tabular-nums; word-break:keep-all}
+.rc-note b{color:#c8d6e8}
+.j-acts .btn.jchart{border-color:rgba(91,140,255,.45); background:rgba(91,140,255,.12); color:#cfe0ff}
+
 /* ---------- 알림 ---------- */
 .hdr-right{display:flex; align-items:center; gap:5px; flex:none}
 .alert-btn{flex:none; display:inline-flex; align-items:center; gap:2px; border:1px solid var(--line2); background:var(--card2); color:var(--dim); font-family:inherit; font-size:10px; font-weight:800; padding:4px 7px; border-radius:999px; cursor:pointer; letter-spacing:-.1px; white-space:nowrap; line-height:1.2}
@@ -5143,6 +5163,7 @@ function jCard(e){
     jSnapHtml(e) + memoHtml +
     '<div class="j-acts">' +
       (open ? '<button class="btn primary" data-jexit="' + e.sym + '" type="button">청산 기록</button>' : '') +
+      '<button class="btn ghost jchart" data-jchart="' + e.id + '" type="button">📈 차트 보기</button>' +
       '<button class="btn ghost" data-jdel="' + e.id + '" type="button">삭제</button>' +
     '</div>' +
   '</div>';
@@ -5268,12 +5289,13 @@ function bindJournal(){
   if (!page || page.dataset.bound === '1') return;
   page.dataset.bound = '1';
   page.addEventListener('click', ev => {
-    const t = ev.target.closest('[data-jperiod],[data-jstatus],[data-jsym],[data-jexit],[data-jdel],[data-jmemo],[data-jmemosave],[data-jmemocancel],[data-jmargin],[data-jmarginsave],[data-wdel]');
+    const t = ev.target.closest('[data-jperiod],[data-jstatus],[data-jsym],[data-jexit],[data-jchart],[data-jdel],[data-jmemo],[data-jmemosave],[data-jmemocancel],[data-jmargin],[data-jmarginsave],[data-wdel]');
     if (!t) return;
     if (t.hasAttribute('data-jperiod')){ jFilter.period = t.dataset.jperiod; store(JPERIOD_KEY, jFilter.period); renderJournal(); return; }
     if (t.hasAttribute('data-jstatus')){ jFilter.status = t.dataset.jstatus; renderJournal(); return; }
     if (t.hasAttribute('data-jsym')){ jFilter.sym = t.dataset.jsym; renderJournal(); return; }
     if (t.hasAttribute('data-jexit')){ openExitSheet(t.dataset.jexit); return; }
+    if (t.hasAttribute('data-jchart')){ openReplayChart(t.dataset.jchart); return; }
     if (t.hasAttribute('data-jmemo')){ startMemoEdit(t); return; }
     if (t.hasAttribute('data-jmemosave')){ saveMemo(t.dataset.jmemosave, t.closest('.j-memo')); return; }
     if (t.hasAttribute('data-jmemocancel')){ renderJournal(); return; }
@@ -5283,6 +5305,355 @@ function bindJournal(){
     if (t.hasAttribute('data-wdel')){ delWithdrawal(t.dataset.wdel); return; }
   });
 }
+/* ========================= 매매 복기 차트 (종료 매매 · 📈 차트 보기) =========================
+   · 매매기록 카드의 '📈 차트 보기' → 그 매매가 실제로 어떻게 흐러갔는지 캔들로 다시 되짚습니다.
+   · OKX 공개 캔들(history-candles → 필요 시 candles 보백)을 진입 10봉 전 ~ 청산 6봉 후까지 모아 그리고,
+     진입가/손절가/1차/2차 목표가 수평선과 진입·청산 시점 마커를 올립니다. */
+const RPL_BARS = [['15m', '15분'], ['1H', '1시간'], ['4H', '4시간']];
+const RPL_BAR_MS = { '15m': 900000, '1H': 3600000, '4H': 14400000 };
+const RPL_PRE = 10, RPL_POST = 6, RPL_BAR_DEF = '1H';
+const RPL_COL = {
+  entry: { hex:'#6f9cff', line:'rgba(91,140,255,.85)', bg:'rgba(91,140,255,.18)', bd:'rgba(91,140,255,.52)' },
+  stop:  { hex:'#f59e0b', line:'rgba(245,158,11,.75)', bg:'rgba(245,158,11,.16)', bd:'rgba(245,158,11,.5)' },
+  t1:    { hex:'#3ddc84', line:'rgba(34,197,94,.62)', bg:'rgba(34,197,94,.14)', bd:'rgba(34,197,94,.44)' },
+  t2:    { hex:'#22c55e', line:'rgba(34,197,94,.42)', bg:'rgba(34,197,94,.10)', bd:'rgba(34,197,94,.30)' }
+};
+const rpl = { e:null, bar:RPL_BAR_DEF, candles:[], loading:false, err:'', seq:0 };
+
+function rplBarMs(bar){ return RPL_BAR_MS[bar] || RPL_BAR_MS['1H']; }
+function rplBarKr(bar){ const f = RPL_BARS.find(b => b[0] === bar); return f ? f[1] : '1시간'; }
+function rplExitTs(e){ return e && isNum(e.exitAt) ? e.exitAt : Date.now(); }
+function rplDur(a, b){
+  const m = Math.max(0, Math.round((b - a) / 60000));
+  if (m < 60) return m + '분';
+  const h = Math.floor(m / 60), mm = m % 60;
+  if (h < 24) return h + '시간' + (mm ? ' ' + mm + '분' : '');
+  return Math.floor(h / 24) + '일 ' + (h % 24) + '시간';
+}
+/* 진입가 · 손절가 · 1차 · 2차 — 카드와 같은 값을 그대로 올립니다 */
+function rplLevels(e){
+  return [
+    { role:'entry', label:'진입', p:e.entry },
+    { role:'stop',  label:'손절', p:e.stop },
+    { role:'t1',    label:'1차',  p:e.t1 },
+    { role:'t2',    label:'2차',  p:e.t2 }
+  ].filter(l => isNum(l.p) && l.p > 0);
+}
+function rplExitKr(e){
+  if (e.status === 'open') return '현재가';
+  const r = EXIT_REASON[e.exitReason];
+  return r ? r.kr : '청산';
+}
+function rplIdxOf(cs, ts){
+  let idx = -1;
+  for (let i = 0; i < cs.length; i++){ if (cs[i].t <= ts) idx = i; else break; }
+  return idx < 0 && cs.length ? 0 : idx;
+}
+
+/* ---------- 섬머리 · 탭 · 캔버스 ---------- */
+function rplSheetHtml(e){
+  const long = e.side === 'long', lev = e.lev || 5;
+  const open = e.status === 'open';
+  const roe = open ? roeOf(e.entry, livePriceOf(e.sym), e.side, lev) : e.roe;
+  const pnl = open ? pnlUsd(e, roe) : (isNum(e.pnl) ? e.pnl : pnlUsd(e, e.roe));
+  const cls = !isNum(roe) ? 'flat' : roe > 0 ? 'up' : roe < 0 ? 'down' : 'flat';
+  const to = rplExitTs(e);
+  return '<div class="sh-grip"></div>' +
+    '<div class="sh-t">📈 ' + escHtml(e.code || symOf(e.sym).code) + ' ' + (long ? '롱' : '숏') + ' ' + lev + '배 복기</div>' +
+    '<div class="rc-badges">' +
+      '<span class="rc-badge ' + cls + '">' + (open ? '미실현 ROE ' : '실현 ROE ') + roeTxt(roe) + '</span>' +
+      (isNum(pnl) ? '<span class="rc-badge ' + cls + '">' + (pnl > 0 ? '+' : '') + pnl.toFixed(2) + ' USDT</span>' : '') +
+      (isNum(marginOf(e)) ? '<span class="rc-badge">투입 ' + marginOf(e).toFixed(2) + '</span>' : '') +
+    '</div>' +
+    '<div class="sh-sub">진입 <b>' + kst(e.at, true) + '</b> → ' + (open ? '보유 중' : '청산 <b>' + kst(to, true) + '</b>') +
+      ' · ' + rplDur(e.at, to) + (open ? ' 경과' : ' 보유') + ' · ' + escHtml(rplExitKr(e)) +
+      (open ? '' : ' · 청산가 <b>' + pxOf(e.exitPrice, e.sym) + '</b>') + '</div>' +
+    '<div class="rc-tabs" role="tablist" aria-label="봉 주기">' + RPL_BARS.map(b =>
+      '<button class="rc-tab' + (b[0] === rpl.bar ? ' on' : '') + '" data-rplbar="' + b[0] + '" type="button" role="tab" aria-selected="' + (b[0] === rpl.bar ? 'true' : 'false') + '">' + b[1] + '</button>').join('') + '</div>' +
+    '<div class="rc-wrap"><canvas id="rplCanvas" aria-label="매매 복기 캔들 차트"></canvas></div>' +
+    '<div class="rc-leg">' + rplLevels(e).map(l =>
+      '<span class="rc-li"><i style="background:' + (RPL_COL[l.role] || RPL_COL.entry).hex + '"></i>' + l.label +
+      ' <b>' + pxOf(l.p, e.sym) + '</b></span>').join('') +
+      '<span class="rc-li mk">' + (long ? '▲' : '▼') + ' 진입</span><span class="rc-li mk">✓ 청산</span></div>' +
+    '<div class="rc-note" id="rplNote">캔들 불러오는 중…</div>' +
+    '<button class="btn ghost sh-cancel" data-rplclose="1" type="button">닫기</button>';
+}
+function rplBindSheet(){
+  const s = $('#sheet');
+  if (!s || s.dataset.rplBound === '1') return;
+  s.dataset.rplBound = '1';
+  s.addEventListener('click', ev => {
+    const t = ev.target.closest('[data-rplbar],[data-rplclose]');
+    if (!t) return;
+    if (t.hasAttribute('data-rplclose')){ closeReplayChart(); return; }
+    const bar = t.dataset.rplbar;
+    if (!bar || bar === rpl.bar) return;
+    rpl.bar = bar;
+    $$('#sheet [data-rplbar]').forEach(b => {
+      const on = b.dataset.rplbar === bar;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    rplLoad();
+  });
+}
+function openReplayChart(id){
+  const e = tradeLog.find(x => x.id === id);
+  if (!e){ toast('기록을 찾을 수 없습니다', '이 기기의 매매기록에서 다시 열어 주세요.'); return; }
+  rpl.e = e; rpl.bar = RPL_BAR_DEF; rpl.candles = []; rpl.err = ''; rpl.loading = true; rpl.seq++;
+  openSheet(rplSheetHtml(e));
+  const bd = $('#sheetBd'); if (bd) bd.onclick = closeReplayChart;
+  const sh = $('#sheet'); if (sh) sh.scrollTop = 0;
+  rplBindSheet();
+  rplLoad();
+}
+function closeReplayChart(){
+  rpl.seq++; rpl.e = null; rpl.candles = []; rpl.loading = false; rpl.err = '';
+  closeSheet();
+}
+
+/* ---------- 캔들 수집: 진입 10봉 전 ~ 청산 6봉 후 ---------- */
+async function rplPage(inst, bar, afterTs, ep){
+  const d = await apiGet(ep + '?instId=' + encodeURIComponent(inst) + '&bar=' + encodeURIComponent(bar) +
+    '&limit=100' + (afterTs ? '&after=' + afterTs : ''));
+  return d.map(a => ({ t:+a[0], o:+a[1], h:+a[2], l:+a[3], c:+a[4], v:+a[5], conf: String(a[8]) === '1' }))
+    .filter(c => isNum(c.o) && isNum(c.h) && isNum(c.l) && isNum(c.c) && c.t > 0)
+    .sort((a, b) => a.t - b.t);
+}
+async function rplFetchRange(inst, bar, entryTs, exitTs){
+  const ms = rplBarMs(bar), now = Date.now();
+  let start = Math.floor((entryTs - RPL_PRE * ms) / ms) * ms;
+  let end = Math.ceil((Math.min(exitTs, now) + RPL_POST * ms) / ms) * ms;
+  if (end > now + ms) end = Math.floor(now / ms) * ms + ms;
+  if (end - start < 24 * ms) start = end - 24 * ms;
+  let cursor = end + 1, rows = [], pages = 0, ep = '/api/v5/market/history-candles';
+  while (pages < 6){
+    let got;
+    try { got = await rplPage(inst, bar, cursor, ep); }
+    catch (err){
+      /* history-candles가 막하는 구간이면 최근 캔들 API로 바꿔 이어갑니다 */
+      if (ep.indexOf('history') >= 0){ ep = '/api/v5/market/candles'; got = await rplPage(inst, bar, cursor, ep); }
+      else throw err;
+    }
+    pages++;
+    if (!got.length){
+      if (ep.indexOf('history') >= 0){ ep = '/api/v5/market/candles'; continue; }
+      break;
+    }
+    rows = got.concat(rows);
+    if (got[0].t <= start) break;
+    cursor = got[0].t;
+  }
+  const seen = {}, out = [];
+  rows.forEach(c => { if (!seen[c.t]){ seen[c.t] = 1; out.push(c); } });
+  out.sort((a, b) => a.t - b.t);
+  return { start:start, end:end, cs: out.filter(c => c.t >= start) };
+}
+async function rplLoad(){
+  const e = rpl.e; if (!e) return;
+  const seq = ++rpl.seq;
+  rpl.loading = true; rpl.err = ''; rpl.candles = [];
+  const note = $('#rplNote'); if (note) note.textContent = '캔들 불러오는 중…';
+  rplDraw();
+  try {
+    const r = await rplFetchRange(e.sym, rpl.bar, e.at, rplExitTs(e));
+    if (seq !== rpl.seq) return;
+    rpl.candles = r.cs;
+    rpl.loading = false;
+    if (!r.cs.length) rpl.err = '이 구간의 캔들 데이터가 없습니다';
+  } catch (err){
+    if (seq !== rpl.seq) return;
+    rpl.loading = false;
+    rpl.err = (err && err.message) ? ('캔들 연결 실패 (' + err.message + ')') : '캔들 데이터를 불러오지 못했습니다';
+  }
+  if (seq !== rpl.seq) return;
+  rplDraw();
+  rplFoot();
+}
+function rplFoot(){
+  const el = $('#rplNote'); if (!el) return;
+  const e = rpl.e; if (!e) return;
+  if (rpl.err){ el.innerHTML = '⚠ ' + escHtml(rpl.err) + ' · 봉을 바꾸면 다시 시도합니다.'; return; }
+  const cs = rpl.candles; if (!cs.length) return;
+  el.innerHTML = 'OKX ' + escHtml(e.sym) + ' · <b>' + rplBarKr(rpl.bar) + '봉 ' + cs.length + '개</b> · ' +
+    kst(cs[0].t, true) + ' ~ ' + kst(cs[cs.length - 1].t, true) + ' KST · 진입 ' + RPL_PRE + '봉 전 ~ ' +
+    (e.status === 'open' ? '지금' : '청산 ' + RPL_POST + '봉 후') + ' · 한 화면에 전 구간';
+}
+
+/* ---------- 차트 그림 ---------- */
+function rplChip(ctx, W, xc, y, text, col){
+  ctx.font = 'bold 9px -apple-system, sans-serif';
+  const tw = ctx.measureText(text).width;
+  const w = Math.min(W - 6, tw + 10);
+  const x = clamp(xc - w / 2, 3, Math.max(3, W - w - 3));
+  roundRect(ctx, x, y, w, 12, 4);
+  ctx.fillStyle = col.bg; ctx.fill();
+  ctx.strokeStyle = col.bd; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = col.hex; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + 5, y + 6.6);
+}
+function rplDraw(){
+  const cv = $('#rplCanvas'); if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  const W = Math.max(240, cv.clientWidth || 340);
+  const H = Math.max(200, cv.clientHeight || 248);
+  if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)){
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  const e = rpl.e, cs = rpl.candles || [];
+  if (!cs.length){
+    ctx.fillStyle = '#657488'; ctx.font = '11.5px -apple-system, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(rpl.loading ? '캔들 불러오는 중…' : (rpl.err ? '데이터 연결 실패' : '표시할 캔들이 없습니다'), W / 2, H / 2);
+    return;
+  }
+  const d = symOf(e.sym).dp;
+  const padL = 2, padR = 56, padT = 30, padB = 15, gap = 7;
+  const areaW = Math.max(60, W - padL - padR);
+  const totalH = H - padT - padB;
+  const hVol = Math.max(22, Math.round(totalH * 0.20));
+  const hPrice = Math.max(56, totalH - hVol - gap);
+  const yP = padT, yV = padT + hPrice + gap;
+  const step = areaW / cs.length;
+  const bw = clamp(step * 0.62, 1, 11);
+  const X = i => padL + (i + 0.5) * step;
+
+  let min = Infinity, max = -Infinity, maxVol = 0;
+  cs.forEach(c => { if (c.l < min) min = c.l; if (c.h > max) max = c.h; if (c.v > maxVol) maxVol = c.v; });
+  const span0 = Math.max(max - min, max * 0.002);
+  const levels = rplLevels(e).filter(l => l.p >= min - span0 * 1.6 && l.p <= max + span0 * 1.6);
+  levels.forEach(l => { if (l.p < min) min = l.p; if (l.p > max) max = l.p; });
+  const padY = (max - min) * 0.08 || max * 0.002;
+  min -= padY; max += padY;
+  const Y = p => yP + (max - p) / (max - min) * hPrice;
+
+  /* 그리드 + 오른쪽 가격축 (가격선 라벨과 겹치면 숫자 생략) */
+  const levelYs = levels.map(l => Y(l.p));
+  const gs = niceStep((max - min) / 4);
+  ctx.font = '9px ui-monospace, SFMono-Regular, Menlo, sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  for (let p = Math.ceil(min / gs) * gs; p <= max; p += gs){
+    const y = Y(p);
+    ctx.strokeStyle = 'rgba(30,42,60,.55)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(padL, y + .5); ctx.lineTo(padL + areaW, y + .5); ctx.stroke();
+    if (!levelYs.some(ly => Math.abs(ly - y) < 9)){
+      ctx.fillStyle = '#4f5d72';
+      ctx.fillText(fmtN(p, d), padL + areaW + 5, y);
+    }
+  }
+
+  /* 보유 구간(진입 → 청산) 음영 */
+  const iE = rplIdxOf(cs, e.at), iX = rplIdxOf(cs, rplExitTs(e));
+  if (iE >= 0 && iX > iE){
+    ctx.fillStyle = 'rgba(91,140,255,.055)';
+    ctx.fillRect(X(iE), yP, X(iX) - X(iE), hPrice);
+  }
+
+  /* 가격선 — 진입·손절·1차·2차 */
+  levels.forEach(l => {
+    const y = Y(l.p), col = RPL_COL[l.role] || RPL_COL.entry;
+    ctx.save();
+    ctx.strokeStyle = col.line;
+    ctx.lineWidth = l.role === 'entry' ? 1.4 : 1;
+    ctx.setLineDash(l.role === 'entry' ? [5, 3] : [3, 3]);
+    ctx.beginPath(); ctx.moveTo(padL, y + .5); ctx.lineTo(padL + areaW, y + .5); ctx.stroke();
+    ctx.restore();
+  });
+
+  /* 캔들 */
+  cs.forEach((c, i) => {
+    const up = c.c >= c.o, col = up ? UP : DOWN, x = X(i);
+    ctx.strokeStyle = col;
+    ctx.lineWidth = Math.min(1.5, Math.max(1, step * 0.14));
+    ctx.beginPath(); ctx.moveTo(x, Y(c.h)); ctx.lineTo(x, Y(c.l)); ctx.stroke();
+    const yo = Y(c.o), yc = Y(c.c);
+    ctx.fillStyle = col;
+    ctx.fillRect(x - bw / 2, Math.min(yo, yc), bw, Math.max(1, Math.abs(yc - yo)));
+  });
+
+  /* 거래량 */
+  const volTop = yV + 4, volH = Math.max(6, hVol - 8);
+  cs.forEach((c, i) => {
+    const up = c.c >= c.o, h = maxVol ? (c.v / maxVol) * volH : 0;
+    ctx.fillStyle = up ? 'rgba(34,197,94,.30)' : 'rgba(244,63,94,.30)';
+    ctx.fillRect(X(i) - bw / 2, volTop + volH - h, Math.max(1, bw), h);
+  });
+  ctx.fillStyle = '#3f4c5e'; ctx.font = '8px -apple-system, sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('거래량', padL + 2, yV + 1);
+
+  /* 진입 · 청산 시점 세로선 */
+  if (iE >= 0){
+    ctx.save(); ctx.strokeStyle = 'rgba(91,140,255,.5)'; ctx.setLineDash([2, 3]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(X(iE) + .5, yP); ctx.lineTo(X(iE) + .5, yP + hPrice); ctx.stroke(); ctx.restore();
+  }
+  if (iX >= 0){
+    ctx.save(); ctx.strokeStyle = 'rgba(230,238,251,.30)'; ctx.setLineDash([2, 3]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(X(iX) + .5, yP); ctx.lineTo(X(iX) + .5, yP + hPrice); ctx.stroke(); ctx.restore();
+  }
+
+  /* 진입 · 청산 가격 점 */
+  if (iE >= 0){
+    ctx.fillStyle = RPL_COL.entry.hex;
+    ctx.beginPath(); ctx.arc(X(iE), clamp(Y(e.entry), yP + 2, yP + hPrice - 2), 2.8, 0, Math.PI * 2); ctx.fill();
+  }
+  if (iX >= 0){
+    const ep = e.status === 'open' ? livePriceOf(e.sym) : e.exitPrice;
+    if (isNum(ep)){
+      const win = roeOf(e.entry, ep, e.side, e.lev || 5) >= 0;
+      ctx.fillStyle = e.status === 'open' ? '#c8d6e8' : (win ? '#22c55e' : '#f43f5e');
+      ctx.beginPath(); ctx.arc(X(iX), clamp(Y(ep), yP + 2, yP + hPrice - 2), 3.2, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#0b1320'; ctx.lineWidth = 1; ctx.stroke();
+    }
+  }
+
+  /* 가격축 라벨(가격선) — 오른쪽에 작게, 서로 겹치면 밀어내기 */
+  const pills = levels.map(l => ({ y:clamp(Y(l.p), yP + 6, yP + hPrice - 6), l:l })).sort((a, b) => a.y - b.y);
+  pills.forEach((o, i) => { if (i) o.y = Math.max(o.y, pills[i - 1].y + 12); });
+  pills.forEach(o => {
+    const txt = fmtN(o.l.p, d);
+    ctx.font = 'bold 9px ui-monospace, SFMono-Regular, Menlo, sans-serif';
+    const w = ctx.measureText(txt).width + 6;
+    ctx.fillStyle = 'rgba(8,14,24,.94)';
+    ctx.fillRect(W - w - 3, o.y - 6, w + 2, 12);
+    ctx.fillStyle = (RPL_COL[o.l.role] || RPL_COL.entry).hex;
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(txt, W - 5, o.y);
+  });
+
+  /* 시점 마커 칩 — 진입(첫 줄) · 청산(둘째 줄) */
+  if (iE >= 0){
+    rplChip(ctx, W, X(iE), 3, (e.side === 'long' ? '▲ 진입 ' : '▼ 진입 ') + pxOf(e.entry, e.sym),
+      e.side === 'long' ? { hex:'#3ddc84', bg:'rgba(34,197,94,.16)', bd:'rgba(34,197,94,.5)' }
+                        : { hex:'#ff8fa3', bg:'rgba(244,63,94,.16)', bd:'rgba(244,63,94,.5)' });
+  }
+  if (iX >= 0){
+    const ep = e.status === 'open' ? livePriceOf(e.sym) : e.exitPrice;
+    const win = isNum(ep) && roeOf(e.entry, ep, e.side, e.lev || 5) >= 0;
+    const col = e.status === 'open' ? { hex:'#c8d6e8', bg:'rgba(147,162,182,.16)', bd:'rgba(147,162,182,.45)' }
+      : win ? { hex:'#a7f3c4', bg:'rgba(34,197,94,.18)', bd:'rgba(34,197,94,.52)' }
+            : { hex:'#ffb3c0', bg:'rgba(244,63,94,.18)', bd:'rgba(244,63,94,.52)' };
+    rplChip(ctx, W, X(iX), 16,
+      '✓ ' + rplExitKr(e) + ' ' + pxOf(ep, e.sym), col);
+  }
+
+  /* 시간축 — 앞 3~4개 라벨 */
+  const ticks = W < 350 ? 3 : 4;
+  ctx.font = '9px ui-monospace, SFMono-Regular, Menlo, sans-serif';
+  ctx.textBaseline = 'top'; ctx.fillStyle = '#4f5d72';
+  for (let k = 0; k < ticks; k++){
+    const idx = Math.round(k * (cs.length - 1) / (ticks - 1));
+    const tx = k === 0 ? padL + 1 : k === ticks - 1 ? padL + areaW : X(idx);
+    ctx.textAlign = k === 0 ? 'left' : k === ticks - 1 ? 'right' : 'center';
+    ctx.fillText(k === 0 ? kst(cs[idx].t, true) : kst(cs[idx].t), tx, H - 13);
+  }
+}
+window.addEventListener('resize', () => { if (rpl.e) rplDraw(); });
+
 /* 1페이지 ↔ 2페이지 전환 */
 function setPage(p){
   const page = p === 'journal' ? 'journal' : 'live';
