@@ -2179,7 +2179,7 @@ function buildAnalysis(c){
                 : '가설 숏 자리 ' + fmtLv(zsLo) + '~' + fmtLv(zsHi) + ' 안 — 리테스트 자리 충족')
             : (leg4 && !leg4.up
                 ? '4H 하락 레그 되돌림 ' + (leg4.retr(price) * 100).toFixed(0) + '% (필요 45~68%)' + (f4 ? ' · 자리는 ' + fmtPx(f4[0]) + '~' + fmtPx(f4[1]) : '')
-                : '4H 레그가 ' + (leg4 ? (leg4.up ? '상승' : '하락') : '—') + ' — 숏 되돌림 자리 아님 (필요 45~68%)')
+                : '4H 레그가 ' + (leg4 ? (leg4.up ? '상승' : '하락') : '없음(마지막 고·저점이 같은 봉)') + ' — 숏 되돌림 자리 아님 (필요 45~68%)')
               + (isNum(zsLo) ? ' · 숏 자리 ' + fmtLv(zsLo) + '~' + fmtLv(zsHi) + ' 대기' : '') },
         { ok:lineShort, name:'라인', text: lineShort
             ? nearShort.label + ' ' + fmtPx(nearShort.p) + ' 도달 (' + fmtPct(nearShort.d) + ')'
@@ -2193,7 +2193,7 @@ function buildAnalysis(c){
             ? (fibLong
                 ? '4H 상승 레그의 ' + (leg4.retr(price) * 100).toFixed(0) + '% 되돌림 — 0.5~0.618 롱 자리'
                 : '가설 롱 자리 ' + fmtLv(zlLo) + '~' + fmtLv(zlHi) + ' 안 — 지지 자리 충족')
-            : '상승 레그 0.5~0.618 되돌림 자리 아님 (현재 4H 레그는 ' + (leg4 ? (leg4.up ? '상승' : '하락') : '—') + ')'
+            : '상승 레그 0.5~0.618 되돌림 자리 아님 (현재 4H 레그는 ' + (leg4 ? (leg4.up ? '상승' : '하락') : '없음') + ')'
               + (isNum(zlLo) ? ' · 롱 자리 ' + fmtLv(zlLo) + '~' + fmtLv(zlHi) + ' 대기' : '') },
         { ok:lineLong, name:'라인', text: lineLong
             ? nearLong.label + ' ' + fmtPx(nearLong.p) + ' 도달 (' + fmtPct(nearLong.d) + ')'
@@ -4678,16 +4678,59 @@ const SEED_TRADES = [{
     hyp: { title: '가설 1 · 상위 저항 숏', kind: 'short',
            why: '11/23 밤 64,570 급등 스윕 후 62,000대 저항 반락 · 1D 하락 추세 + 1H 저항 확인 진입' },
     plan: { side: 'short', entry: 62000, stop: 63700, t1: 60770, t2: 59800, lev: 5 },
-    check: null, nw: null, rsi: null
+    /* 아래 세 값은 2026-11-24 01:00 KST 시점 OKX BTC-USDT-SWAP 실캔들(1H 200봉·4H 200봉·1D 200봉,
+       일봉은 09:00 KST 시작 진행봉 합성)로 이 앱의 buildAnalysis / extractMonowaves+analyzeNeowave를
+       그대로 돌려 나온 값입니다. 3중 점검은 기록된 진입가 62,000 기준(같은 시각 1H 마감 62,862.4). */
+    check: {
+      side: 'short', n: 1, total: 3, otherN: 2, label: '롱 대기',
+      items: [
+        { name: '자리', ok: false,
+          text: '4H 레그가 없음(마지막 고·저점이 같은 봉) — 숏 되돌림 자리 아님 (필요 45~68%) · 숏 자리 61,650~61,900 대기' },
+        { name: '라인', ok: true, text: '4H 스윙 저항 62,009.3 도달 (+0.02%)' },
+        { name: '다이버전스', ok: false, text: '4H·1H 하락 다이버전스 없음' }
+      ],
+      basis: '진입가 62,000 기준 · 01:00 KST 1H 마감 62,862.4'
+    },
+    nw: { pattern: '터미널 충격파 (Terminal)', retrace: 34.03, ruleId: 'Rule 1~2',
+          time: 3.03, timeId: '시간 부족', slope: 11.23, slopeId: '가속',
+          integ: '1·4파 결침 감지', tags: { w2: 'pass', overlap: 'fail', w3: 'half' },
+          n: 7, bar: '1H' },
+    rsi: { '1D': 32.5, '4H': 59.6, '1H': 64.8 }
   }
 }];
+/* 구버전 시드 스냅샷 보강 — 이 기기에 이미 저장된 시드 기록의 '빈 근거 칸'만 새 값으로 채웁니다.
+   사용자가 직접 고친 값이나 이미 채워진 칸은 건드리지 않습니다. */
+function backfillSeedSnap(ex, sd){
+  if (!ex || !sd || !sd.snap) return false;
+  if (!ex.snap || typeof ex.snap !== 'object'){
+    ex.snap = JSON.parse(JSON.stringify(sd.snap));
+    return true;
+  }
+  const s = ex.snap, t = sd.snap;
+  let changed = false;
+  const empty = v => v == null || (typeof v === 'object' && !Object.keys(v).length);
+  ['hyp', 'plan', 'check', 'nw', 'rsi'].forEach(k => {
+    if (empty(s[k]) && !empty(t[k])){
+      s[k] = JSON.parse(JSON.stringify(t[k]));
+      changed = true;
+    }
+  });
+  if (!isNum(s.price) && isNum(t.price)){ s.price = t.price; changed = true; }
+  if (!s.bar && t.bar){ s.bar = t.bar; changed = true; }
+  if (!isNum(s.at) && isNum(t.at)){ s.at = t.at; changed = true; }
+  return changed;
+}
 function seedTrades(){
   const del = store(SEED_DEL_KEY);
   const delSet = new Set(Array.isArray(del) ? del : []);
   let added = 0;
   SEED_TRADES.forEach(sd => {
     if (delSet.has(sd.id)) return;                                  /* 사용자가 지운 기록 */
-    if (tradeLog.some(e => e.id === sd.id)) return;                  /* 이미 있음 */
+    const ex = tradeLog.find(e => e.id === sd.id);
+    if (ex){                                                        /* 이미 있음 — 빈 근거만 채움 */
+      if (backfillSeedSnap(ex, sd)) added++;
+      return;
+    }
     tradeLog.push(JSON.parse(JSON.stringify(sd)));
     added++;
   });
@@ -5474,7 +5517,8 @@ function rplReasonHtml(e){
         (ck.side === 'short' ? '숏' : '롱') + ' ' + ck.n + '/3</b>' +
         (ck.items || []).map(it => '<span class="j-ck ' + (it.ok ? 'y' : 'n') + '">' + (it.ok ? '✓' : '✕') + ' ' + escHtml(it.name) + '</span>').join('') +
         (ck.items || []).map(it => '<span class="rc-rs-line">' + (it.ok ? '✓' : '✕') + ' ' + escHtml(it.name) + ' — ' + escHtml(it.text || '') + '</span>').join('') +
-        (ck.label ? '<span class="rc-rs-line">' + escHtml(ck.label) + '</span>' : '')
+        (ck.label ? '<span class="rc-rs-line">종합 판정 — ' + escHtml(ck.label) + '</span>' : '') +
+        (ck.basis ? '<span class="rc-rs-line">' + escHtml(ck.basis) + '</span>' : '')
       : miss) + '</span></div>';
     h += '<div class="rc-rs-row"><span class="rc-rs-k">NEoWave</span><span class="rc-rs-v">' + (nw
       ? '<b>' + escHtml(nw.pattern) + '</b> · 되돌림 ' + (isNum(nw.retrace) ? nw.retrace.toFixed(1) + '%' : '—') +
