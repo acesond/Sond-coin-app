@@ -1002,13 +1002,6 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
     </div>
     <div class="card tight" id="tfList"></div>
     <div class="card">
-      <div class="sec-title" style="margin:0 0 9px"><h2><i></i>진입 근거 3중 점검</h2><span class="hint" id="evHint">자리·캔들·RSI를 그림으로</span></div>
-      <div class="evhyp" id="evHyp"></div>
-      <div class="evviz" id="evViz"></div>
-      <div class="ev" id="evList"></div>
-      <div class="ev-sum" id="evSum"></div>
-    </div>
-    <div class="card">
       <div class="sec-title" style="margin:0 0 9px"><h2><i></i>감시선 · 자동 감시 기준</h2><span class="hint">15분 감시 액션과 동일</span></div>
       <div id="watchList" class="ev"></div>
     </div>
@@ -1066,6 +1059,18 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
     <div id="scnList"></div>
     <div id="autoScnList"></div>
   </section>
+
+  <!-- ===== 진입 근거 3중 점검 — 가설 시나리오(자동 후보 포함) 바로 아래 ===== -->
+  <section id="evSec">
+    <div class="card">
+      <div class="sec-title" style="margin:0 0 9px"><h2><i></i>진입 근거 3중 점검</h2><span class="hint" id="evHint">자리·캔들·RSI를 그림으로</span></div>
+      <div class="evhyp" id="evHyp"></div>
+      <div class="evviz" id="evViz"></div>
+      <div class="ev" id="evList"></div>
+      <div class="ev-sum" id="evSum"></div>
+    </div>
+  </section>
+
 
   <!-- ===== 내 타점 ===== -->
   <section id="planSec">
@@ -6654,7 +6659,7 @@ function bindMisc(){
         $$('.nav-item').forEach(n => n.classList.toggle('on', n.dataset.go === id));
       });
     }, { rootMargin:'-45% 0px -50% 0px' });
-    ['chartSec', 'analysisSec', 'scnSec', 'planSec', 'eventSec', 'checkSec'].forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
+    ['chartSec', 'analysisSec', 'scnSec', 'evSec', 'planSec', 'eventSec', 'checkSec'].forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
   }
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden){ state.countdown = 15; refreshTick(true); }
