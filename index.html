@@ -5475,9 +5475,11 @@ function rplFoot(){
   const e = rpl.e; if (!e) return;
   if (rpl.err){ el.innerHTML = '⚠ ' + escHtml(rpl.err) + ' · 봉을 바꾸면 다시 시도합니다.'; return; }
   const cs = rpl.candles; if (!cs.length) return;
+  const iE = rplIdxOf(cs, e.at), iX = rplIdxOf(cs, rplExitTs(e));
+  const pre = iE > 0 ? iE : 0, post = iX >= 0 ? (cs.length - 1 - iX) : 0;
   el.innerHTML = 'OKX ' + escHtml(e.sym) + ' · <b>' + rplBarKr(rpl.bar) + '봉 ' + cs.length + '개</b> · ' +
-    kst(cs[0].t, true) + ' ~ ' + kst(cs[cs.length - 1].t, true) + ' KST · 진입 ' + RPL_PRE + '봉 전 ~ ' +
-    (e.status === 'open' ? '지금' : '청산 ' + RPL_POST + '봉 후') + ' · 한 화면에 전 구간';
+    kst(cs[0].t, true) + ' ~ ' + kst(cs[cs.length - 1].t, true) + ' KST · 진입 ' + pre + '봉 전 ~ ' +
+    (e.status === 'open' ? '지금' : '청산 ' + post + '봉 후') + ' · 한 화면에 전 구간';
 }
 
 /* ---------- 차트 그림 ---------- */
