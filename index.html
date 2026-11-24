@@ -956,7 +956,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
     <span><i class="d2"></i>2/3 대기</span>
     <span class="st-upd" id="stUpd">10종목 점검 중</span>
   </div>
-  <div class="chip-easy" id="chipEasy">종목은 <b>바이낸스 선물 24시간 거래대금 1~10위</b> 순서입니다. 빨간 점 = 자리·라인·다이버전스가 <b>모두</b> 겹침(3/3, 타점) · 주황 점 = 하나 모자람(2/3, 대기). 3/3이어도 손익비 3:1이 안 되면 진입하지 않습니다.</div>
+  <div class="chip-easy" id="chipEasy">종목 순서는 <b>진입 중 포지션 → 타점 도달 3/3 → 바이낸스 선물 24시간 거래대금 1~10위</b>입니다. 빨간 점 = 자리·라인·다이버전스가 <b>모두</b> 겹침(3/3, 타점) · 주황 점 = 하나 모자람(2/3, 대기). 3/3이어도 손익비 3:1이 안 되면 진입하지 않습니다.</div>
 
   <!-- ===== 차트 ===== -->
   <section id="chartSec">
@@ -1583,12 +1583,12 @@ const isNum = v => typeof v === 'number' && isFinite(v);
 
 function symOf(id){ return SYMBOLS.find(s => s.id === id) || SYMBOLS[0]; }
 
-/* ------------------------- 종목 탭 정렬 — 매매 중 종목 우선 -------------------------
-   평소: 바이낸스 24시간 거래대금 1~10위(SYMBOLS 배열 순서 그대로).
-   매매 중(매매기록의 진행 중 포지션 status === 'open' 또는 state.pos)이 있으면
-   그 종목을 최근 진입 순으로 맨 앞에 두고, 나머지는 거래대금 순서를 유지합니다.
-   · 진입 기록· 청산· 삭제 때만 renderChips/renderPbarSyms가 다시 불리고,
-     15초 자동 갱신은 순서를 건드리지 않아 사용자가 고른 종목(state.sym)이 되돌아가지 않습니다. */
+/* ------------------------- 종목 탭 정렬 — 포지션 > 타점 도달 > 거래대금 -------------------------
+   1순위: 매매 중(매매기록의 진행 중 포지션 status === 'open' 또는 state.pos) 종목 — 최근 진입 순.
+   2순위: 포지션은 없지만 3중 점검이 3/3(빨간 점, 타점 도달)인 종목 — 거래대금 순서 유지.
+   3순위: 나머지 종목 — 바이낸스 24시간 거래대금 1~10위(SYMBOLS 배열 순서 그대로).
+   · 3/3 도달·해제는 15초 갱신(applySymStatus)에서 상태가 바뀌는 즉시 반영하되,
+     순서만 다시 그리고 사용자가 고른 종목(state.sym)은 건드리지 않습니다. */
 function openTradesByRecency(){
   const seen = {}, list = [];
   const push = (sym, at) => {
@@ -1606,12 +1606,22 @@ function tradingSyms(){
   openTradesByRecency().forEach(id => { m[id] = true; });
   return m;
 }
+/* 3/3 타점 도달 종목 — applySymStatus가 계산한 state.statusMap 기준 (level 3 = 빨간 점) */
+function hitSyms(){
+  const m = {}, map = state.statusMap || {};
+  SYMBOLS.forEach(s => { const st = map[s.id]; if (st && st.level === 3) m[s.id] = true; });
+  return m;
+}
 function getOrderedSymbols(){
   const openIds = openTradesByRecency();
+  const hit = hitSyms();
   const head = openIds.map(id => symOf(id));
-  const tail = SYMBOLS.filter(s => openIds.indexOf(s.id) < 0);
-  return head.concat(tail);
+  const rest = SYMBOLS.filter(s => openIds.indexOf(s.id) < 0);
+  return head.concat(rest.filter(s => hit[s.id]), rest.filter(s => !hit[s.id]));
 }
+/* 지금 그려진 탭 순서 — 상태 변화로 순서가 달라졌을 때만 다시 그립니다 */
+let tabOrderKey = '';
+function orderKeyOf(order){ return order.map(s => s.id).join(','); }
 function dp(){ return symOf(state.sym).dp; }
 function fmtN(n, d){
   if (!isNum(n)) return '—';
@@ -2721,10 +2731,12 @@ function selectSymbol(id){
   loadAll(true);
   renderEvents();
 }
-function renderChips(){
+function renderChips(keepLeft){
   const el = $('#symChips');
   const trd = tradingSyms();
-  el.innerHTML = getOrderedSymbols().map(s =>
+  const order = getOrderedSymbols();
+  tabOrderKey = orderKeyOf(order);
+  el.innerHTML = order.map(s =>
     '<button class="chip' + (s.id === state.sym ? ' on' : '') + (trd[s.id] ? ' trd' : '') + '" data-sym="' + s.id + '" data-rank="' + s.rank +
       '" title="' + (trd[s.id] ? '진입중 · ' : '') + s.rank + '위 · 24시간 거래대금 ' + s.vol + '">' +
       s.code + '<small>' + s.name + '</small>' +
@@ -2734,7 +2746,8 @@ function renderChips(){
     b.addEventListener('click', () => selectSymbol(b.dataset.sym));
   });
   paintSymStatus();
-  centerActiveTab(el, '.chip');
+  if (keepLeft) el.scrollLeft = 0;      /* 실시간 재정렬 — 맨 앞으로 올라온 포지션·3/3 종목이 보이도록 처음으로 */
+  else centerActiveTab(el, '.chip');
 }
 /* 선택한 종목 버튼이 가로 스크롤 밖에 있으면 가운데로 끌어옵니다 (10종목 대응) */
 function centerActiveTab(el, sel){
@@ -2746,17 +2759,20 @@ function centerActiveTab(el, sel){
   try { el.scrollTo({ left:Math.max(0, left), behavior:'smooth' }); } catch (e) { el.scrollLeft = Math.max(0, left); }
 }
 /* 상단 고정 가격 바 — 10종목 미니 탭(가로 스크롤) + 현재가·등락률 */
-function renderPbarSyms(){
+function renderPbarSyms(keepLeft){
   const el = $('#pbarSyms');
   if (!el) return;
   const trd = tradingSyms();
-  el.innerHTML = getOrderedSymbols().map(s =>
+  const order = getOrderedSymbols();
+  tabOrderKey = orderKeyOf(order);
+  el.innerHTML = order.map(s =>
     '<button class="psym' + (s.id === state.sym ? ' on' : '') + (trd[s.id] ? ' trd' : '') + '" type="button" data-sym="' + s.id +
     '" data-rank="' + s.rank + '" aria-pressed="' + (s.id === state.sym) + '"><i class="st" aria-hidden="true"></i>' + s.code +
     '<i class="tr" aria-hidden="true"></i></button>').join('');
   $$('.psym', el).forEach(b => b.addEventListener('click', () => selectSymbol(b.dataset.sym)));
   paintSymStatus();
-  centerActiveTab(el, '.psym');
+  if (keepLeft) el.scrollLeft = 0;
+  else centerActiveTab(el, '.psym');
 }
 function renderPbarLive(){
   const pEl = $('#pbarPrice'), cEl = $('#pbarChg');
@@ -2820,6 +2836,8 @@ function applySymStatus(){
   state.statusMap = map;
   state.statusAt = Date.now();
   paintSymStatus();
+  /* 3/3 타점 도달·해제로 탭 순서가 달라졌으면 즉시 다시 그림 (선택 종목 state.sym은 그대로) */
+  if (orderKeyOf(getOrderedSymbols()) !== tabOrderKey){ renderChips(true); renderPbarSyms(true); }
   checkAlerts();
 }
 function paintSymStatus(){
@@ -6581,9 +6599,10 @@ function init(){
   loadAssetState();
   loadTradeLog();
   loadJournalPeriod();
-  /* 첫 화면 — 매매 중 종목이 있으면 가장 최근 진입한 그 종목을 기본 선택 (없으면 BTC 그대로) */
+  /* 첫 화면 — 매매 중 종목이 있으면 가장 최근 진입한 그 종목, 없으면 정렬 1번째 종목을 기본 선택 */
   const firstOpen = openTradesByRecency()[0];
   if (firstOpen) state.sym = firstOpen;
+  else state.sym = getOrderedSymbols()[0].id;
   bindJournal();
   renderJournal();
   state.fibOn = store(FIB_ON_KEY) === true;
