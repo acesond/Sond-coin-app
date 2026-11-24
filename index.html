@@ -1057,15 +1057,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
     </div>
   </section>
 
-  <!-- ===== 가설 ===== -->
-  <section id="scnSec">
-    <div class="sec-title"><h2><i></i>가설 시나리오</h2><span class="hint" id="scnHint">종목별 기준</span></div>
-    <div class="evt-note" id="hypNote" style="display:none;color:#ffd79a;margin:0 3px 8px"></div>
-    <div id="scnList"></div>
-    <div id="autoScnList"></div>
-  </section>
-
-  <!-- ===== 진입 근거 3중 점검 — 가설 시나리오(자동 후보 포함) 바로 아래 ===== -->
+  <!-- ===== 진입 근거 3중 점검 — 가설 시나리오(자동 후보 포함) 바로 위 ===== -->
   <section id="evSec">
     <div class="card">
       <div class="sec-title" style="margin:0 0 9px"><h2><i></i>진입 근거 3중 점검</h2><span class="hint" id="evHint">자리·캔들·RSI를 그림으로</span></div>
@@ -1074,6 +1066,14 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
       <div class="ev" id="evList"></div>
       <div class="ev-sum" id="evSum"></div>
     </div>
+  </section>
+
+  <!-- ===== 가설 ===== -->
+  <section id="scnSec">
+    <div class="sec-title"><h2><i></i>가설 시나리오</h2><span class="hint" id="scnHint">종목별 기준</span></div>
+    <div class="evt-note" id="hypNote" style="display:none;color:#ffd79a;margin:0 3px 8px"></div>
+    <div id="scnList"></div>
+    <div id="autoScnList"></div>
   </section>
 
 
@@ -1185,7 +1185,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
   <button class="nav-item" data-go="analysisSec">
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M4 14l5-5 3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>판정
   </button>
-  <button class="nav-item" data-go="scnSec">
+  <button class="nav-item" data-go="evSec">
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M6 8h12M8 16h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>가설
   </button>
   <button class="nav-item" data-go="planSec">
@@ -6661,10 +6661,12 @@ function bindMisc(){
       entries.forEach(en => {
         if (!en.isIntersecting) return;
         const id = en.target.id;
-        $$('.nav-item').forEach(n => n.classList.toggle('on', n.dataset.go === id));
+        /* 가설 시나리오(scnSec)는 진입 근거(evSec) 바로 아래라 같은 '가설' 탭으로 묶습니다 */
+        const navId = (id === 'scnSec') ? 'evSec' : id;
+        $$('.nav-item').forEach(n => n.classList.toggle('on', n.dataset.go === navId));
       });
     }, { rootMargin:'-45% 0px -50% 0px' });
-    ['chartSec', 'analysisSec', 'scnSec', 'evSec', 'planSec', 'eventSec', 'checkSec'].forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
+    ['chartSec', 'analysisSec', 'evSec', 'scnSec', 'planSec', 'eventSec', 'checkSec'].forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
   }
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden){ state.countdown = 15; refreshTick(true); }
