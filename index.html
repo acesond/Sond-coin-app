@@ -512,6 +512,18 @@ body.sheet-open{overflow:hidden}
 .rc-leg .rc-li.mk{color:#9fb0c8; font-weight:800}
 .rc-note{margin-top:6px; font-size:8.5px; line-height:1.5; color:var(--dim2); font-variant-numeric:tabular-nums; word-break:keep-all}
 .rc-note b{color:#c8d6e8}
+/* 매매근거 — 진입 시점에 저장한 스냅샷(가설·3중 점검·NEoWave·RSI·메모) */
+.rc-reason{margin-top:9px; border:1px solid rgba(30,42,60,.9); background:#0b1320; border-radius:10px; padding:7px 8px 8px}
+.rc-rs-h{display:flex; align-items:baseline; gap:5px; font-size:9px; font-weight:800; color:#9fb6d8; letter-spacing:.03em; margin-bottom:1px}
+.rc-rs-h span{margin-left:auto; font-size:8px; font-weight:700; color:var(--dim2); letter-spacing:0}
+.rc-rs-row{display:flex; gap:7px; font-size:9.5px; line-height:1.45; margin-top:4px}
+.rc-rs-k{flex:0 0 46px; color:var(--dim2); font-weight:700}
+.rc-rs-v{flex:1; min-width:0; color:var(--dim); font-variant-numeric:tabular-nums; word-break:keep-all}
+.rc-rs-v b{color:#dbe6f5; font-weight:800}
+.rc-rs-why{display:block; font-size:9px; color:var(--dim2); line-height:1.45; margin-top:1px}
+.rc-rs-line{display:block; font-size:8.5px; color:var(--dim2); line-height:1.4; margin-top:2px}
+.rc-rs-none{font-size:8.5px; color:var(--dim2)}
+.rc-rs-memo{display:flex; gap:7px; margin-top:7px; border-top:1px dashed var(--line); padding-top:6px; font-size:9.5px; line-height:1.45; color:var(--dim)}
 .j-acts .btn.jchart{border-color:rgba(91,140,255,.45); background:rgba(91,140,255,.12); color:#cfe0ff}
 
 /* ---------- 알림 ---------- */
@@ -5349,6 +5361,68 @@ function rplIdxOf(cs, ts){
   for (let i = 0; i < cs.length; i++){ if (cs[i].t <= ts) idx = i; else break; }
   return idx < 0 && cs.length ? 0 : idx;
 }
+/* 1차 익절 도달 봉 — 저장된 기록(tp1At·tp1Hit) → 청산 사유(tp1be·tp2) → 캔들 터치 순으로 확인 */
+function rplTp1(cs, e){
+  if (!isNum(e.t1) || e.t1 <= 0 || !cs.length) return null;
+  const iE = rplIdxOf(cs, e.at);
+  const iX = rplIdxOf(cs, rplExitTs(e));
+  const last = e.status === 'open' ? cs.length - 1 : Math.max(iE, iX);
+  const viaReason = e.tp1Hit === true || e.exitReason === 'tp1be' || e.exitReason === 'tp2';
+  let idx = -1;
+  if (isNum(e.tp1At)){
+    idx = rplIdxOf(cs, e.tp1At);
+    if (idx < iE || idx > last) idx = -1;
+  }
+  if (idx < 0){
+    for (let i = Math.max(0, iE); i <= Math.min(cs.length - 1, last); i++){
+      const c = cs[i];
+      if (e.side === 'long' ? c.h >= e.t1 : c.l <= e.t1){ idx = i; break; }
+    }
+  }
+  if (idx < 0){
+    if (!viaReason) return null;          /* 도달 흔적이 없으면 마커를 올리지 않습니다 */
+    /* 사유는 1차 익절인데 캔들이 터치를 보이지 않으면 — 보유 구간에서 목표가에 가장 가까웠던 봉 */
+    idx = Math.min(cs.length - 1, Math.max(0, last));
+    let bestGap = Infinity;
+    for (let i = Math.max(0, iE); i <= Math.min(cs.length - 1, last); i++){
+      const gap = e.side === 'long' ? Math.abs(cs[i].h - e.t1) : Math.abs(cs[i].l - e.t1);
+      if (gap < bestGap){ bestGap = gap; idx = i; }
+    }
+  }
+  return { idx: idx, price: e.t1, at: cs[idx].t, stored: isNum(e.tp1At) || e.tp1Hit === true, viaReason: viaReason };
+}
+const RPL_TP1_COL = { hex:'#7ee2a4', bg:'rgba(34,197,94,.20)', bd:'rgba(34,197,94,.55)' };
+/* 시점 마커 칩 배치 — 겹치면 아래 줄로 내려 세 개(진입·1차·청산)가 서로 가리지 않게 */
+function rplChipPlan(ctx, W, X, e, iE, iX, tp1){
+  const items = [];
+  const add = (idx, text, col) => {
+    if (idx < 0) return;
+    ctx.font = 'bold 9px -apple-system, sans-serif';
+    const w = Math.min(W - 6, ctx.measureText(text).width + 10);
+    items.push({ text: text, col: col, w: w, x: clamp(X(idx) - w / 2, 3, Math.max(3, W - w - 3)), row: 0 });
+  };
+  if (iE >= 0) add(iE, (e.side === 'long' ? '▲ 진입 ' : '▼ 진입 ') + pxOf(e.entry, e.sym),
+    e.side === 'long' ? { hex:'#3ddc84', bg:'rgba(34,197,94,.16)', bd:'rgba(34,197,94,.5)' }
+                      : { hex:'#ff8fa3', bg:'rgba(244,63,94,.16)', bd:'rgba(244,63,94,.5)' });
+  if (tp1) add(tp1.idx, '✓ 1차 익절 ' + pxOf(tp1.price, e.sym), RPL_TP1_COL);
+  if (iX >= 0){
+    const ep = e.status === 'open' ? livePriceOf(e.sym) : e.exitPrice;
+    const win = isNum(ep) && roeOf(e.entry, ep, e.side, e.lev || 5) >= 0;
+    const col = e.status === 'open' ? { hex:'#c8d6e8', bg:'rgba(147,162,182,.16)', bd:'rgba(147,162,182,.45)' }
+      : win ? { hex:'#a7f3c4', bg:'rgba(34,197,94,.18)', bd:'rgba(34,197,94,.52)' }
+            : { hex:'#ffb3c0', bg:'rgba(244,63,94,.18)', bd:'rgba(244,63,94,.52)' };
+    add(iX, '✓ ' + rplExitKr(e) + ' ' + pxOf(ep, e.sym), col);
+  }
+  const rows = [];
+  items.slice().sort((a, b) => a.x - b.x).forEach(it => {
+    let r = 0;
+    while (r < rows.length && rows[r].some(o => it.x < o.x + o.w + 4 && o.x < it.x + it.w + 4)) r++;
+    if (!rows[r]) rows[r] = [];
+    rows[r].push(it);
+    it.row = r;
+  });
+  return { items: items, rows: Math.max(1, rows.length) };
+}
 
 /* ---------- 섬머리 · 탭 · 캔버스 ---------- */
 function rplSheetHtml(e){
@@ -5374,9 +5448,48 @@ function rplSheetHtml(e){
     '<div class="rc-leg">' + rplLevels(e).map(l =>
       '<span class="rc-li"><i style="background:' + (RPL_COL[l.role] || RPL_COL.entry).hex + '"></i>' + l.label +
       ' <b>' + pxOf(l.p, e.sym) + '</b></span>').join('') +
-      '<span class="rc-li mk">' + (long ? '▲' : '▼') + ' 진입</span><span class="rc-li mk">✓ 청산</span></div>' +
+      '<span class="rc-li mk">' + (long ? '▲' : '▼') + ' 진입</span>' +
+      '<span class="rc-li mk" id="rplTp1Leg" hidden>✓ 1차 익절</span>' +
+      '<span class="rc-li mk">✓ 청산</span></div>' +
     '<div class="rc-note" id="rplNote">캔들 불러오는 중…</div>' +
+    rplReasonHtml(e) +
     '<button class="btn ghost sh-cancel" data-rplclose="1" type="button">닫기</button>';
+}
+/* 매매근거 — 진입 시점에 저장한 스냅샷을 시트 안에서 그대로 보여 줍니다 */
+function rplReasonHtml(e){
+  const s = e.snap;
+  let h = '<div class="rc-reason"><div class="rc-rs-h">📌 매매근거' +
+    (s && s.bar ? ' · ' + escHtml(s.bar) + ' 기준' : '') + '<span>진입 시점 저장값</span></div>';
+  if (!s){
+    h += '<div class="rc-rs-none">이 매매는 근거 스냅샷 없이 기록되었습니다 — 진입가·손절·목표가는 위 차트와 카드에 남아 있습니다.</div>';
+  } else {
+    const hyp = s.hyp, ck = s.check, nw = s.nw, rsi = s.rsi || {};
+    const miss = e.seed ? '기록 없음 · 시드로 직접 등록한 매매' : '진입 시점 기록 없음';
+    h += '<div class="rc-rs-row"><span class="rc-rs-k">가설</span><span class="rc-rs-v">' +
+      (hyp ? '<b>' + escHtml(hyp.title) + '</b>' + (hyp.kind ? ' · ' + (hyp.kind === 'long' ? '롱' : '숏') + ' 기준' : '') +
+        (hyp.why ? '<span class="rc-rs-why">' + escHtml(hyp.why) + '</span>' : '')
+        : '연결된 가설 없음(내 타점 기준)') + '</span></div>';
+    h += '<div class="rc-rs-row"><span class="rc-rs-k">3중 점검</span><span class="rc-rs-v">' + (ck
+      ? '<b style="color:' + (ck.n >= 3 ? '#7ee2a4' : ck.n === 2 ? '#ffd79a' : '#b3c2d6') + '">' +
+        (ck.side === 'short' ? '숏' : '롱') + ' ' + ck.n + '/3</b>' +
+        (ck.items || []).map(it => '<span class="j-ck ' + (it.ok ? 'y' : 'n') + '">' + (it.ok ? '✓' : '✕') + ' ' + escHtml(it.name) + '</span>').join('') +
+        (ck.items || []).map(it => '<span class="rc-rs-line">' + (it.ok ? '✓' : '✕') + ' ' + escHtml(it.name) + ' — ' + escHtml(it.text || '') + '</span>').join('') +
+        (ck.label ? '<span class="rc-rs-line">' + escHtml(ck.label) + '</span>' : '')
+      : miss) + '</span></div>';
+    h += '<div class="rc-rs-row"><span class="rc-rs-k">NEoWave</span><span class="rc-rs-v">' + (nw
+      ? '<b>' + escHtml(nw.pattern) + '</b> · 되돌림 ' + (isNum(nw.retrace) ? nw.retrace.toFixed(1) + '%' : '—') +
+        ' (' + escHtml(nw.ruleId || '—') + ') · ' + escHtml(nw.integ || '—') +
+        '<span class="rc-rs-line">시간 ' + (isNum(nw.time) ? nw.time.toFixed(0) + '%' : '—') + ' · 속도 ' +
+        (isNum(nw.slope) ? nw.slope.toFixed(2) + '배' : '—') + ' · 모노웨이브 ' + (nw.n || 0) + '개</span>'
+      : miss) + '</span></div>';
+    h += '<div class="rc-rs-row"><span class="rc-rs-k">RSI</span><span class="rc-rs-v">' +
+      (['1D', '4H', '1H'].some(k => isNum(rsi[k]))
+        ? ['1D', '4H', '1H'].map(k => k + ' <b>' + (isNum(rsi[k]) ? rsi[k].toFixed(1) : '—') + '</b>').join(' · ') + ' · ' + escHtml(s.bar || '') + ' 기준'
+        : miss) + '</span></div>';
+  }
+  h += '<div class="rc-rs-memo"><span class="rc-rs-k">메모</span><span class="rc-rs-v">' +
+    (e.memo ? escHtml(e.memo) : '<span class="rc-rs-none">메모 없음</span>') + '</span></div>';
+  return h + '</div>';
 }
 function rplBindSheet(){
   const s = $('#sheet');
@@ -5514,15 +5627,20 @@ function rplDraw(){
     return;
   }
   const d = symOf(e.sym).dp;
-  const padL = 2, padR = 56, padT = 30, padB = 15, gap = 7;
+  const padL = 2, padR = 56, padB = 15, gap = 7;
   const areaW = Math.max(60, W - padL - padR);
+  const step = areaW / cs.length;
+  const bw = clamp(step * 0.62, 1, 11);
+  const X = i => padL + (i + 0.5) * step;
+  const iE = rplIdxOf(cs, e.at), iX = rplIdxOf(cs, rplExitTs(e));
+  const tp1 = rplTp1(cs, e);
+  const chips = rplChipPlan(ctx, W, X, e, iE, iX, tp1);
+  const legEl = $('#rplTp1Leg'); if (legEl) legEl.hidden = !tp1;
+  const padT = 4 + chips.rows * 13;
   const totalH = H - padT - padB;
   const hVol = Math.max(22, Math.round(totalH * 0.20));
   const hPrice = Math.max(56, totalH - hVol - gap);
   const yP = padT, yV = padT + hPrice + gap;
-  const step = areaW / cs.length;
-  const bw = clamp(step * 0.62, 1, 11);
-  const X = i => padL + (i + 0.5) * step;
 
   let min = Infinity, max = -Infinity, maxVol = 0;
   cs.forEach(c => { if (c.l < min) min = c.l; if (c.h > max) max = c.h; if (c.v > maxVol) maxVol = c.v; });
@@ -5549,7 +5667,6 @@ function rplDraw(){
   }
 
   /* 보유 구간(진입 → 청산) 음영 */
-  const iE = rplIdxOf(cs, e.at), iX = rplIdxOf(cs, rplExitTs(e));
   if (iE >= 0 && iX > iE){
     ctx.fillStyle = 'rgba(91,140,255,.055)';
     ctx.fillRect(X(iE), yP, X(iX) - X(iE), hPrice);
@@ -5588,10 +5705,14 @@ function rplDraw(){
   ctx.textAlign = 'left'; ctx.textBaseline = 'top';
   ctx.fillText('거래량', padL + 2, yV + 1);
 
-  /* 진입 · 청산 시점 세로선 */
+  /* 진입 · 1차 익절 · 청산 시점 세로선 */
   if (iE >= 0){
     ctx.save(); ctx.strokeStyle = 'rgba(91,140,255,.5)'; ctx.setLineDash([2, 3]); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(X(iE) + .5, yP); ctx.lineTo(X(iE) + .5, yP + hPrice); ctx.stroke(); ctx.restore();
+  }
+  if (tp1 && tp1.idx >= 0){
+    ctx.save(); ctx.strokeStyle = 'rgba(34,197,94,.55)'; ctx.setLineDash([3, 2]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(X(tp1.idx) + .5, yP); ctx.lineTo(X(tp1.idx) + .5, yP + hPrice); ctx.stroke(); ctx.restore();
   }
   if (iX >= 0){
     ctx.save(); ctx.strokeStyle = 'rgba(230,238,251,.30)'; ctx.setLineDash([2, 3]); ctx.lineWidth = 1;
@@ -5602,6 +5723,11 @@ function rplDraw(){
   if (iE >= 0){
     ctx.fillStyle = RPL_COL.entry.hex;
     ctx.beginPath(); ctx.arc(X(iE), clamp(Y(e.entry), yP + 2, yP + hPrice - 2), 2.8, 0, Math.PI * 2); ctx.fill();
+  }
+  /* 1차 익절 터치 점 — 목표가 위에 작은 초록 점 */
+  if (tp1 && tp1.idx >= 0){
+    ctx.fillStyle = '#3ddc84';
+    ctx.beginPath(); ctx.arc(X(tp1.idx), clamp(Y(tp1.price), yP + 2, yP + hPrice - 2), 2.6, 0, Math.PI * 2); ctx.fill();
   }
   if (iX >= 0){
     const ep = e.status === 'open' ? livePriceOf(e.sym) : e.exitPrice;
@@ -5627,21 +5753,8 @@ function rplDraw(){
     ctx.fillText(txt, W - 5, o.y);
   });
 
-  /* 시점 마커 칩 — 진입(첫 줄) · 청산(둘째 줄) */
-  if (iE >= 0){
-    rplChip(ctx, W, X(iE), 3, (e.side === 'long' ? '▲ 진입 ' : '▼ 진입 ') + pxOf(e.entry, e.sym),
-      e.side === 'long' ? { hex:'#3ddc84', bg:'rgba(34,197,94,.16)', bd:'rgba(34,197,94,.5)' }
-                        : { hex:'#ff8fa3', bg:'rgba(244,63,94,.16)', bd:'rgba(244,63,94,.5)' });
-  }
-  if (iX >= 0){
-    const ep = e.status === 'open' ? livePriceOf(e.sym) : e.exitPrice;
-    const win = isNum(ep) && roeOf(e.entry, ep, e.side, e.lev || 5) >= 0;
-    const col = e.status === 'open' ? { hex:'#c8d6e8', bg:'rgba(147,162,182,.16)', bd:'rgba(147,162,182,.45)' }
-      : win ? { hex:'#a7f3c4', bg:'rgba(34,197,94,.18)', bd:'rgba(34,197,94,.52)' }
-            : { hex:'#ffb3c0', bg:'rgba(244,63,94,.18)', bd:'rgba(244,63,94,.52)' };
-    rplChip(ctx, W, X(iX), 16,
-      '✓ ' + rplExitKr(e) + ' ' + pxOf(ep, e.sym), col);
-  }
+  /* 시점 마커 칩 — 진입 · 1차 익절 · 청산(겹치면 아래 줄로) */
+  chips.items.forEach(it => { rplChip(ctx, W, it.x + it.w / 2, 3 + it.row * 13, it.text, it.col); });
 
   /* 시간축 — 앞 3~4개 라벨 */
   const ticks = W < 350 ? 3 : 4;
