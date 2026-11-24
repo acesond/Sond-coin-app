@@ -942,7 +942,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
     <span><i class="d2"></i>2/3 대기</span>
     <span class="st-upd" id="stUpd">10종목 점검 중</span>
   </div>
-  <div class="chip-easy" id="chipEasy">빨간 점 = 자리·라인·다이버전스가 <b>모두</b> 겹침(3/3, 타점) · 주황 점 = 하나 모자람(2/3, 대기). 3/3이어도 손익비 3:1이 안 되면 진입하지 않습니다.</div>
+  <div class="chip-easy" id="chipEasy">종목은 <b>바이낸스 선물 24시간 거래대금 1~10위</b> 순서입니다. 빨간 점 = 자리·라인·다이버전스가 <b>모두</b> 겹침(3/3, 타점) · 주황 점 = 하나 모자람(2/3, 대기). 3/3이어도 손익비 3:1이 안 되면 진입하지 않습니다.</div>
 
   <!-- ===== 차트 ===== -->
   <section id="chartSec">
@@ -1195,22 +1195,22 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
    ========================================================= */
 
 const BINANCE = 'https://fapi.binance.com';
-/* 바이낸스 USDT-M 무기한 선물 24시간 거래대금(quoteVolume) 상위 10종목
-   — 2026-11-24 16:3x KST fapi.binance.com /fapi/v1/ticker/24hr 실측 (USDT · PERPETUAL · TRADING)
-   스테이블코인 제외. 1 BTC 202.8억$ · 2 ETH 111.0억$ · 3 SOL 23.6억$ · 4 ZEC 18.8억$ · 5 XRP 9.5억$
+/* 바이낸스 USDT-M 무기한 선물 24시간 거래대금(quoteVolume) 상위 10종목 — 큰 순서대로 1위→10위
+   2026-11-24 16:37 KST fapi.binance.com /fapi/v1/ticker/24hr 실측 (USDT · PERPETUAL · TRADING, 스테이블코인 제외)
+   1 BTC 202.8억$ · 2 ETH 111.0억$ · 3 SOL 23.6억$ · 4 ZEC 18.8억$ · 5 XRP 9.5억$
    6 HYPE 7.0억$ · 7 NEAR 4.4억$ · 8 BNB 3.9억$ · 9 DOGE 3.8억$ · 10 BLESS 3.2억$
-   (11위 EVAA 3.17억$ · 12위 1000PEPE 3.11억$) */
+   (11위 EVAA 3.13억$ · 12위 1000PEPE 3.10억$) — 아래 배열 순서가 곧 순위입니다. 탭·매매기록 필터 모두 이 순서. */
 const SYMBOLS = [
-  { id:'BTCUSDT',   code:'BTC',   name:'비트코인',      dp:1 },
-  { id:'ETHUSDT',   code:'ETH',   name:'이더리움',      dp:2 },
-  { id:'SOLUSDT',   code:'SOL',   name:'솔라나',        dp:2 },
-  { id:'ZECUSDT',   code:'ZEC',   name:'지캐시',        dp:2 },
-  { id:'XRPUSDT',   code:'XRP',   name:'리플',          dp:4 },
-  { id:'HYPEUSDT',  code:'HYPE',  name:'하이퍼리퀴드',  dp:3 },
-  { id:'NEARUSDT',  code:'NEAR',  name:'니어',          dp:3 },
-  { id:'BNBUSDT',   code:'BNB',   name:'바이낸스코인',  dp:2 },
-  { id:'DOGEUSDT',  code:'DOGE',  name:'도지코인',      dp:5 },
-  { id:'BLESSUSDT', code:'BLESS', name:'블레스',        dp:6 }
+  { id:'BTCUSDT',   code:'BTC',   name:'비트코인',      dp:1, rank:1,  vol:'202.8억$' },
+  { id:'ETHUSDT',   code:'ETH',   name:'이더리움',      dp:2, rank:2,  vol:'111.0억$' },
+  { id:'SOLUSDT',   code:'SOL',   name:'솔라나',        dp:2, rank:3,  vol:'23.6억$' },
+  { id:'ZECUSDT',   code:'ZEC',   name:'지캐시',        dp:2, rank:4,  vol:'18.8억$' },
+  { id:'XRPUSDT',   code:'XRP',   name:'리플',          dp:4, rank:5,  vol:'9.5억$' },
+  { id:'HYPEUSDT',  code:'HYPE',  name:'하이퍼리퀴드',  dp:3, rank:6,  vol:'7.0억$' },
+  { id:'NEARUSDT',  code:'NEAR',  name:'니어',          dp:3, rank:7,  vol:'4.4억$' },
+  { id:'BNBUSDT',   code:'BNB',   name:'바이낸스코인',  dp:2, rank:8,  vol:'3.9억$' },
+  { id:'DOGEUSDT',  code:'DOGE',  name:'도지코인',      dp:5, rank:9,  vol:'3.8억$' },
+  { id:'BLESSUSDT', code:'BLESS', name:'블레스',        dp:6, rank:10, vol:'3.2억$' }
 ];
 const BARS = [
   { k:'15m',  label:'15분', dp:'15m' },
@@ -2680,7 +2680,8 @@ function selectSymbol(id){
 function renderChips(){
   const el = $('#symChips');
   el.innerHTML = SYMBOLS.map(s =>
-    '<button class="chip' + (s.id === state.sym ? ' on' : '') + '" data-sym="' + s.id + '">' +
+    '<button class="chip' + (s.id === state.sym ? ' on' : '') + '" data-sym="' + s.id + '" data-rank="' + s.rank +
+      '" title="' + s.rank + '위 · 24시간 거래대금 ' + s.vol + '">' +
       s.code + '<small>' + s.name + '</small><i class="st" aria-hidden="true"></i></button>').join('');
   $$('.chip', el).forEach(b => {
     b.addEventListener('click', () => selectSymbol(b.dataset.sym));
@@ -2703,7 +2704,7 @@ function renderPbarSyms(){
   if (!el) return;
   el.innerHTML = SYMBOLS.map(s =>
     '<button class="psym' + (s.id === state.sym ? ' on' : '') + '" type="button" data-sym="' + s.id +
-    '" aria-pressed="' + (s.id === state.sym) + '"><i class="st" aria-hidden="true"></i>' + s.code + '</button>').join('');
+    '" data-rank="' + s.rank + '" aria-pressed="' + (s.id === state.sym) + '"><i class="st" aria-hidden="true"></i>' + s.code + '</button>').join('');
   $$('.psym', el).forEach(b => b.addEventListener('click', () => selectSymbol(b.dataset.sym)));
   paintSymStatus();
   centerActiveTab(el, '.psym');
@@ -2780,8 +2781,8 @@ function paintSymStatus(){
     b.classList.toggle('st2', lvl === 2);
     const s = symOf(id);
     const txt = st ? st.label + (st.timing ? ' · ' + st.timing : '') : '상태 계산 중';
-    b.setAttribute('aria-label', s.code + ' ' + s.name + ' — ' + txt);
-    b.title = s.code + ' — ' + txt + (st && isNum(st.price) ? ' · ' + fmtN(st.price, s.dp) : '');
+    b.setAttribute('aria-label', s.code + ' ' + s.name + ' (' + s.rank + '위) — ' + txt);
+    b.title = s.rank + '위 ' + s.code + ' (24h ' + s.vol + ') — ' + txt + (st && isNum(st.price) ? ' · ' + fmtN(st.price, s.dp) : '');
   });
   const upd = $('#stUpd');
   if (upd) upd.textContent = state.statusAt ? SYMBOLS.length + '종목 · ' + kst(state.statusAt) + ' 계산' : SYMBOLS.length + '종목 점검 중';
