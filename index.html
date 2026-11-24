@@ -210,6 +210,23 @@ button.toggle b{font-variant-numeric:tabular-nums; color:#67e8f9; font-weight:80
 .nw-badge.muted{color:#b3c2d6; background:rgba(147,162,182,.10); border-color:rgba(147,162,182,.22)}
 .nw-tf{font-size:9.5px; font-weight:800; color:#9fb6d8; background:rgba(91,140,255,.12); border:1px solid rgba(91,140,255,.28); border-radius:6px; padding:2px 6px; letter-spacing:.02em}
 .nw-basis{margin:0; font-size:10px; color:var(--dim2); line-height:1.5; font-variant-numeric:tabular-nums}
+/* 실전 운용 힌트 — 파동 상태에 따른 비중·익절 가이드 */
+.nw-hint{margin:0 0 10px; padding:8px 10px 9px; border-radius:11px; border:1px solid rgba(147,162,182,.24); background:#0b1320; border-left-width:3px}
+.nw-hint.reduce{border-color:rgba(245,158,11,.42); background:linear-gradient(180deg,rgba(245,158,11,.13),rgba(11,19,32,.94))}
+.nw-hint.caution{border-color:rgba(229,180,90,.4); background:linear-gradient(180deg,rgba(229,180,90,.10),rgba(11,19,32,.94))}
+.nw-hint.ok{border-color:rgba(34,197,94,.4); background:linear-gradient(180deg,rgba(34,197,94,.11),rgba(11,19,32,.94))}
+.nw-hint.wait{border-color:rgba(147,162,182,.22); background:#0b1320}
+.nw-hint-h{display:flex; align-items:center; gap:6px; font-size:9.5px; font-weight:800; letter-spacing:.03em; color:#9fb6d8}
+.nw-hint-c{margin-left:auto; font-size:8.5px; font-weight:800; padding:1.5px 6px; border-radius:5px; color:#dbe6f5; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); white-space:nowrap; letter-spacing:0}
+.nw-hint.reduce .nw-hint-c{color:#ffd79a; background:rgba(245,158,11,.16); border-color:rgba(245,158,11,.36)}
+.nw-hint.caution .nw-hint-c{color:#f0dca8; background:rgba(229,180,90,.14); border-color:rgba(229,180,90,.32)}
+.nw-hint.ok .nw-hint-c{color:#a7f3c4; background:rgba(34,197,94,.16); border-color:rgba(34,197,94,.34)}
+.nw-hint-b{margin-top:4px; font-size:11.5px; font-weight:800; line-height:1.45; letter-spacing:-.2px; color:#eaf1fa}
+.nw-hint.reduce .nw-hint-b{color:#ffe2b0}
+.nw-hint.ok .nw-hint-b{color:#c6f6d8}
+.nw-hint-w{margin-top:3px; font-size:9.5px; line-height:1.45; color:var(--dim2); font-variant-numeric:tabular-nums}
+.nw-hint-r{margin-top:5px; padding-top:5px; border-top:1px dashed rgba(255,255,255,.10); font-size:9.5px; line-height:1.45; color:#a9bdd6; font-variant-numeric:tabular-nums}
+.nw-hint-r b{color:#e6eefa; font-weight:800}
 .nw-grid{display:grid; grid-template-columns:1fr 1fr; gap:7px}
 .nw-cell{background:#0b1320; border:1px solid rgba(30,42,60,.9); border-radius:11px; padding:8px 9px; min-width:0}
 .nw-k{font-size:9.5px; color:var(--dim2); letter-spacing:.02em}
@@ -477,6 +494,13 @@ body.sheet-open{overflow:hidden}
 .sh-row .sh-k{flex:0 0 46px; color:var(--dim2); font-weight:700}
 .sh-row .sh-v{flex:1; min-width:0; color:var(--dim); font-variant-numeric:tabular-nums}
 .sh-row .sh-v b{color:#dbe6f5; font-weight:800}
+.sh-row.sh-hint{border-left:3px solid rgba(147,162,182,.4)}
+.sh-row.sh-hint.reduce{border-color:rgba(245,158,11,.45); background:linear-gradient(180deg,rgba(245,158,11,.13),rgba(11,19,32,.92))}
+.sh-row.sh-hint.reduce .sh-v b{color:#ffe2b0}
+.sh-row.sh-hint.caution{border-color:rgba(229,180,90,.45); background:linear-gradient(180deg,rgba(229,180,90,.11),rgba(11,19,32,.92))}
+.sh-row.sh-hint.caution .sh-v b{color:#f0dca8}
+.sh-row.sh-hint.ok{border-color:rgba(34,197,94,.45); background:linear-gradient(180deg,rgba(34,197,94,.11),rgba(11,19,32,.92))}
+.sh-row.sh-hint.ok .sh-v b{color:#a7f3c4}
 .sh-lbl{display:block; margin:10px 0 4px; font-size:9.5px; font-weight:700; color:var(--dim2)}
 .sh-inp{width:100%; border:1px solid var(--line2); background:#0a1220; color:#e6eefb; font-family:inherit; font-size:12px; padding:9px 10px; border-radius:10px; outline:none}
 .sh-inp:focus{border-color:#3a62a8}
@@ -984,6 +1008,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
         </div>
         <p class="nw-basis" id="nwBasis">모노웨이브 계산 중…</p>
       </div>
+      <div class="nw-hint wait" id="nwHint"></div>
       <div class="nw-grid">
         <div class="nw-cell">
           <div class="nw-k">① 되돌림 비율</div>
@@ -1794,6 +1819,8 @@ function renderNeowave(){
     '<span class="nw-lg"><b>1·4파 겹침</b>4파가 1파 영역을 침범하면 충격파가 아님</span>' +
     '<span class="nw-lg"><b>3파 최단</b>3파가 1·5파보다 짧으면 카운트 무효</span>';
 
+  renderNwHintApplied();
+
   renderWaveDetail();
 
   const pats = $('#nwPats');
@@ -1842,6 +1869,77 @@ function integTipText(r){
   if (s.indexOf('결침') >= 0) return '1·4파가 겹쳤습니다 — 일반 충격파가 아니라 터미널·다이아메트릭 후보. 되돌림 100%가 나올 수 있어 주의.';
   if (s.indexOf('잠정') >= 0) return '아직 통과지만 3파가 1파보다 짧습니다 — 5파가 더 길어지면 위반으로 바뀌니 확인하며 봅니다.';
   return '모노웨이브 5개가 쌓여야 세 규칙을 검사합니다 — 지금은 참고만 하세요.';
+}
+/* ---- 실전 운용 힌트 — 3중 점검 판정은 그대로 두고, NEoWave 파동 상태만으로 '비중을 줄이자 / 빨리 익절하자' 한 줄 ---- */
+function neowaveHint(nw, waveCount){
+  const wait = {
+    level: 'wait', icon: 'ℹ️', title: '판별 대기',
+    text: '기본 2% 리스크(표준 비중) 유지 · 파동이 2개 이상 쌓이면 비중·익절 가이드가 표시됩니다',
+    why: '모노웨이브 ' + (waveCount || 0) + '개 · 되돌림·시간·무결성 계산 전'
+  };
+  if (!nw || !(waveCount >= 2)) return wait;
+  const integ = nw.integrityStatus || '';
+  const pct = v => isNum(v) ? (+v).toFixed(1) + '%' : '—';
+  const overlap = !!nw.overlap || integ.indexOf('결침') >= 0;
+  const violation = !!nw.violated || integ.indexOf('위반') >= 0;
+  const terminal = (nw.primaryPattern || '').indexOf('터미널') >= 0;
+  const complexAdj = nw.ruleGroup === 'complex' || nw.ruleGroup === 'reversal';
+  const timeLong = nw.timeId === '시간 연장';
+  if (overlap || violation || terminal || complexAdj || timeLong){
+    const why = [];
+    if (overlap) why.push('1·4파 겹침');
+    if (violation) why.push(integ.replace(' 감지', '') || '무결성 규칙 위반');
+    if (terminal) why.push('터미널 후보');
+    if (complexAdj) why.push('되돌림 ' + pct(nw.retracePct) + ' 깊은 조정');
+    if (timeLong) why.push('시간 ' + (isNum(nw.timeRatioPct) ? (+nw.timeRatioPct).toFixed(0) + '%' : '—') + ' 연장');
+    return { level: 'reduce', icon: '⚠️', title: '파동 겹침/조정 구간',
+      text: '권장 비중 절반(50%) 축소 · 1차 목표에서 빠른 익절 및 본절 이동 유리',
+      why: '근거: ' + why.join(' · ') };
+  }
+  const why2 = [];
+  if (nw.timeId === '시간 부족') why2.push('시간 ' + (isNum(nw.timeRatioPct) ? (+nw.timeRatioPct).toFixed(0) + '%' : '—') + ' 부족');
+  if (nw.rules && nw.rules.w3 === 'half') why2.push('3파 최단 잠정 미달');
+  if (integ.indexOf('잠정') >= 0) why2.push('무결성 잠정 통과');
+  if (nw.slopeId === '가속') why2.push('조정 속도 ' + (isNum(nw.slopeRatio) ? (+nw.slopeRatio).toFixed(2) : '—') + '배 가속');
+  if (why2.length){
+    return { level: 'caution', icon: '⏳', title: '파동 불안정',
+      text: '분할 진입 · 1차 익절 비중 확대 권장',
+      why: '근거: ' + why2.join(' · ') };
+  }
+  const why3 = [];
+  if (integ.indexOf('부합') >= 0) why3.push('무결성 통과');
+  why3.push('되돌림 ' + pct(nw.retracePct));
+  why3.push('시간 ' + (isNum(nw.timeRatioPct) ? (+nw.timeRatioPct).toFixed(0) + '%' : '—'));
+  why3.push('속도 ' + (isNum(nw.slopeRatio) ? (+nw.slopeRatio).toFixed(2) + 'x' : '—'));
+  return { level: 'ok', icon: '✅', title: '파동 구조 깔끔',
+    text: '기본 2% 리스크(표준 비중) · 2차 목표까지 추세 홀딩 유리',
+    why: '근거: ' + why3.join(' · ') };
+}
+function renderNwHint(h, tier){
+  const el = $('#nwHint');
+  if (!el || !h) return;
+  const pctTxt = tier ? Math.round(tier.pct * 100) + '%' : '';
+  const chip = tier ? pctTxt + ' 리스크'
+    : { reduce: '비중 50% 축소', caution: '분할 진입', ok: '표준 비중', wait: '판별 대기' }[h.level] || '';
+  el.className = 'nw-hint ' + h.level;
+  let line = '';
+  if (tier){
+    line = '<div class="nw-hint-r">계산기 적용: <b>' + pctTxt + ' 리스크</b>(' + escHtml(tier.label) + ') · 증거금 ' +
+      (state.marginAuto ? '자동 입력' : '수동 고정') + '</div>';
+  }
+  el.innerHTML =
+    '<div class="nw-hint-h"><span>💡 실전 운용 힌트</span><span class="nw-hint-c">' + chip + '</span></div>' +
+    '<div class="nw-hint-b">' + h.icon + ' ' + escHtml(h.title) + ' — ' + escHtml(h.text) + '</div>' +
+    '<div class="nw-hint-w">' + escHtml(h.why) + '</div>' + line;
+}
+/* NEoWave 상태(파동) + 지금 타점 방향 기준 티어로 배너를 다시 그립니다 */
+function renderNwHintApplied(){
+  const el = $('#nwHint');
+  if (!el) return;
+  const mw = state.mw || {};
+  const h = neowaveHint(mw.nw, (mw.waves || []).length);
+  const side = $('#fEntry') ? readPlanForm().side : (state.planSide || 'short');
+  renderNwHint(h, riskTierFor(side));
 }
 function integTipCls(r){
   const s = r.integrityStatus;
@@ -3592,26 +3690,48 @@ function loadPlanToForm(slot){
   $('#planSec').scrollIntoView({ behavior:'smooth', block:'start' });
   drawChart();
 }
-/* ---------- 자산 대비 적정 증거금 (계좌 2% 리스크) ----------
-   권장 증거금 = (현재 자산 × 0.02) / (손절폭 × 레버리지)
-   · 손절폭 = |진입가 − 손절가| / 진입가 (비율)
-   · 최소 10 USDT · 최대 현재 자산의 30% · 정수 반올림
+/* ---------- 자산 대비 적정 증거금 (NEoWave·3중 점검 연동 리스크) ----------
+   권장 증거금 = (현재 자산 × 리스크%) / (손절폭 × 레버리지)
+   · A급 자리(3중 점검 3/3 + 파동 깔끔·무결성 통과) 3% · 상한 자산 40%
+   · 축소 구간(NEoWave 1·4파 겹침·터미널·복합조정/경고) 1%(절반) · 상한 자산 30%
+   · 그 외 표준 2% · 상한 자산 30%
+   · 손절폭 = |진입가 − 손절가| / 진입가 (비율) · 최소 10 USDT · 정수 반올림
    · 사용자가 증거금을 직접 고치면 그 값이 우선(수동 고정), [자산 기준 재계산]으로 되돌립니다. */
-const RISK_RATIO = 0.02;
+const RISK_TIERS = {
+  a:      { key:'a',      pct:0.03, cap:0.40, label:'A급 자리 · 비중 상향' },
+  reduce: { key:'reduce', pct:0.01, cap:0.30, label:'파동 겹침 · 비중 절반 축소' },
+  std:    { key:'std',    pct:0.02, cap:0.30, label:'표준' }
+};
 const MARGIN_MIN_USDT = 10;
-const MARGIN_MAX_RATIO = 0.30;
 function stopWidthPct(p){
   return isNum(p.entry) && isNum(p.stop) && p.entry > 0 ? Math.abs(p.entry - p.stop) / p.entry * 100 : NaN;
+}
+/* 지금 타점 방향 기준 적용 리스크 티어 — 3중 점검 개수 + NEoWave 파동 상태 */
+function riskTierFor(side){
+  const a = state.ana;
+  const n = a ? (side === 'long' ? a.nL : a.nS) : 0;
+  const mw = state.mw || {};
+  const nw = mw.nw || null;
+  const h = neowaveHint(nw, (mw.waves || []).length);
+  const integ = nw ? (nw.integrityStatus || '') : '';
+  const mk = (base, label) => ({ key: base.key, pct: base.pct, cap: base.cap, label: label, hint: h, n: n, check: !!a });
+  if (h.level === 'reduce') return mk(RISK_TIERS.reduce, RISK_TIERS.reduce.label);
+  if (h.level === 'ok'){
+    if (n >= 3 && integ.indexOf('부합') >= 0) return mk(RISK_TIERS.a, RISK_TIERS.a.label);
+    return mk(RISK_TIERS.std, integ.indexOf('부합') >= 0 && n >= 1 ? '표준 · 3중 점검 ' + n + '/3' : '표준 · 무결성 판정 전');
+  }
+  return mk(RISK_TIERS.std, h.level === 'wait' ? '표준 · 파동 판별 전' : '표준 · 파동 주의');
 }
 function riskMarginFor(p){
   const asset = currentAsset();
   const width = stopWidthPct(p);
   const lev = clamp(parseInt(p.lev, 10) || 5, 1, 50);
-  const out = { margin: NaN, asset: asset, risk: NaN, width: width, lev: lev, capped: false, unset: false };
+  const tier = riskTierFor(p.side === 'long' ? 'long' : 'short');
+  const out = { margin: NaN, asset: asset, risk: NaN, width: width, lev: lev, capped: false, unset: false, tier: tier };
   if (!isNum(asset) || asset <= 0) return out;
-  out.risk = asset * RISK_RATIO;
+  out.risk = asset * tier.pct;
   if (!isNum(width) || width <= 0) return out;   /* 진입가·손절가 없음 */
-  const cap = asset * MARGIN_MAX_RATIO;
+  const cap = asset * tier.cap;
   let m = out.risk / ((width / 100) * lev);
   if (m > cap){ m = cap; out.capped = true; }
   const floor = Math.min(MARGIN_MIN_USDT, cap);
@@ -3623,17 +3743,19 @@ function renderMarginNote(rm, manual){
   const el = $('#mNote');
   if (!el) return;
   el.classList.toggle('on', !manual);
+  const t = rm.tier || RISK_TIERS.std;
+  const pctTxt = Math.round(t.pct * 100) + '%';
   let txt;
   if (!isNum(rm.margin)){
     txt = isNum(rm.asset) && rm.asset > 0
-      ? '진입가·손절가를 넣으면 현재 자산 <b>' + Math.round(rm.asset) + '</b> USDT 기준 증거금을 계산합니다.'
+      ? '진입가·손절가를 넣으면 현재 자산 <b>' + Math.round(rm.asset) + '</b> USDT · <b>' + pctTxt + '</b> 리스크(' + t.label + ') 기준 증거금을 계산합니다.'
       : '자산현황을 먼저 입력하면 증거금을 계산합니다.';
   } else if (manual){
-    txt = '직접 입력한 증거금 사용 중 — 자산 <b>' + Math.round(rm.asset) + '</b> USDT 기준 권장 <b>' + rm.margin + '</b> USDT';
+    txt = '직접 입력한 증거금 사용 중 — 자산 <b>' + Math.round(rm.asset) + '</b> USDT · <b>' + pctTxt + '</b> 리스크(' + t.label + ') 기준 권장 <b>' + rm.margin + '</b> USDT';
   } else {
-    txt = '현재 자산 <b>' + Math.round(rm.asset) + '</b> USDT 대비 2% 리스크(손절 시 <b>' +
-          (rm.risk > 0 ? '-' : '') + rm.risk.toFixed(1) + '</b> USDT) 기준 자동 입력' +
-          (rm.capped ? ' · 상한 30% 적용' : '');
+    txt = '현재 자산 <b>' + Math.round(rm.asset) + '</b> USDT 대비 <b>' + pctTxt + '</b> 리스크(<b>' +
+          escHtml(t.label) + '</b> · 손절 시 <b>' + (rm.risk > 0 ? '-' : '') + rm.risk.toFixed(1) + '</b> USDT) 기준 자동 입력' +
+          (rm.capped ? ' · 상한 ' + Math.round(t.cap * 100) + '% 적용' : '');
   }
   el.innerHTML = '<span class="mg-t">' + txt + '</span>' +
     '<button class="mg-btn" id="mRecalc" type="button">자산 기준 재계산</button>';
@@ -3642,7 +3764,7 @@ function renderMarginNote(rm, manual){
     state.marginAuto = true;
     renderPlanner();
     savePlanDebounced();
-    toast('증거금 재계산', '현재 자산 기준 2% 리스크 금액으로 다시 입력했습니다.');
+    toast('증거금 재계산', '현재 자산 기준 ' + pctTxt + ' 리스크(' + t.label + ') 금액으로 다시 입력했습니다.');
   });
 }
 function refreshAutoMargin(){
@@ -3659,6 +3781,7 @@ function renderPlanner(force){
     if ($('#fMargin').value !== String(rm.margin)) $('#fMargin').value = String(rm.margin);
   }
   renderMarginNote(rm, !state.marginAuto);
+  renderNwHintApplied();   /* 배너에 지금 적용된 리스크 % 동기화 */
   const c = calcPlan(p);
   $('#cRisk').textContent = isNum(c.riskPct) ? c.riskPct.toFixed(2) + '%' : '—';
   $('#cRisk').style.color = c.riskPct > 3.5 ? 'var(--warn)' : '';
@@ -4905,12 +5028,14 @@ function openEntrySheet(){
   rows.push(['NEoWave', nw
     ? '<b>' + escHtml(nw.pattern) + '</b> · 되돌림 ' + (isNum(nw.retrace) ? nw.retrace.toFixed(1) + '%' : '—') + ' · ' + escHtml(nw.integ)
     : '계산 전']);
+  const nwh = neowaveHint(state.mw ? state.mw.nw : null, state.mw && state.mw.waves ? state.mw.waves.length : 0);
+  rows.push(['💡 힌트', '<b>' + nwh.icon + ' ' + escHtml(nwh.title) + '</b> — ' + escHtml(nwh.text), 'sh-hint ' + nwh.level]);
   rows.push(['RSI', ['1D', '4H', '1H'].map(k => k + ' <b>' + (isNum(rsi[k]) ? rsi[k].toFixed(1) : '—') + '</b>').join(' · ') + ' · ' + escHtml(snap.bar) + ' 기준']);
   openSheet(
     '<div class="sh-grip"></div>' +
     '<div class="sh-t">🎯 ' + symOf(state.sym).code + ' ' + sideKr + ' ' + lev + '배 진입 기록</div>' +
     '<div class="sh-sub">계산기에 입력한 <b>이 타점 값 그대로</b>와 지금 이 시점의 근거를 저장합니다. 청산하면 실현 ROE와 함께 2페이지에 남습니다.</div>' +
-    '<div class="sh-list">' + rows.map(r => '<div class="sh-row"><span class="sh-k">' + r[0] + '</span><span class="sh-v">' + r[1] + '</span></div>').join('') + '</div>' +
+    '<div class="sh-list">' + rows.map(r => '<div class="sh-row' + (r[2] ? ' ' + r[2] : '') + '"><span class="sh-k">' + r[0] + '</span><span class="sh-v">' + r[1] + '</span></div>').join('') + '</div>' +
     '<label class="sh-lbl" for="shMargin">투입 증거금 (USDT — 실현 손익 계산에 쓰입니다)</label>' +
     '<input class="sh-inp" id="shMargin" type="number" inputmode="decimal" step="any" min="0" value="' + mgDef + '">' +
     '<label class="sh-lbl" for="shMemo">한 줄 메모 (선택 — 나중에 수정할 수 있습니다)</label>' +
@@ -5991,9 +6116,9 @@ function renderAll(){
   }
   renderPosition();
   renderScenarios();
-  renderPlanner(false);
   computeMw();
   renderNeowave();
+  renderPlanner(false);
   if (state.page !== 'journal') drawChart();
   if (state.page === 'journal') renderJournal();
   updateAutoBar();
