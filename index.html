@@ -1924,7 +1924,8 @@ function renderNwHint(h, tier){
   el.className = 'nw-hint ' + h.level;
   let line = '';
   if (tier){
-    line = '<div class="nw-hint-r">계산기 적용: <b>' + pctTxt + ' 리스크</b>(' + escHtml(tier.label) + ') · 증거금 ' +
+    const upgrade = tier.key === 'a' ? ' · 기본 2% → 3%' : '';
+    line = '<div class="nw-hint-r">계산기 적용: <b>' + pctTxt + ' 리스크</b>(' + escHtml(tier.label) + upgrade + ') · 증거금 ' +
       (state.marginAuto ? '자동 입력' : '수동 고정') + '</div>';
   }
   el.innerHTML =
