@@ -3520,14 +3520,15 @@ function readPlanForm(){
            lev: +$('#fLev').value || 1, margin:n('#fMargin'), mAuto: state.marginAuto !== false };
 }
 /* 진입 기록은 화면 계산기에 지금 입력된 값을 그대로 씁니다.
-   저장은 400ms 디바운스라 바로 누르면 옛 값이 남으므로, 폼을 먼저 읽고 빈 칸만 가설값으로 채웁니다. */
+   진입가는 입력된 값이 있어야 기록하고, 비어 있는 손절·목표는 가설값으로 채웁니다.
+   (저장은 400ms 디바운스라 바로 눌러도 방금 고친 숫자가 쓰이도록 폼을 먼저 읽습니다.) */
 function calcEntryPlan(){
   const f = readPlanForm();
   const base = planFor(state.activeSlot) || {};
   const pos = v => isNum(v) && v > 0;
   return {
     side: f.side === 'long' ? 'long' : 'short',
-    entry: pos(f.entry) ? f.entry : base.entry,
+    entry: pos(f.entry) ? f.entry : NaN,
     stop:  pos(f.stop)  ? f.stop  : base.stop,
     t1:    pos(f.t1)    ? f.t1    : base.t1,
     t2:    pos(f.t2)    ? f.t2    : base.t2,
