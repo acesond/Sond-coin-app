@@ -447,6 +447,20 @@ button.toggle b{font-variant-numeric:tabular-nums; color:#67e8f9; font-weight:80
 .j-mini.ok{color:#a7f3c4; border-color:rgba(34,197,94,.4)}
 .j-mini.warn{color:#ffd79a; border-color:rgba(245,158,11,.4)}
 .j-memo-inp{flex:1; min-width:0; border:1px solid var(--line2); background:#0a1220; color:#e6eefb; font-family:inherit; font-size:10px; padding:4px 6px; border-radius:7px; outline:none}
+/* 진입 시간 수정 */
+.jwhen .j-mini{margin-left:5px; padding:1px 5px; font-size:8.5px; vertical-align:1px}
+.jwhen-edit{display:flex; align-items:center; gap:4px; flex-wrap:wrap; font-size:9px; color:var(--dim2); margin-top:3px}
+.jwhen-edit input{border:1px solid var(--line2); background:#0a1220; color:#e6eefb; font-family:inherit; font-size:10px; padding:3px 5px; border-radius:6px; outline:none; min-width:0; flex:1 1 130px}
+/* 패배 원인 분석 */
+.jloss{margin-top:8px; border:1px solid rgba(244,63,94,.30); background:rgba(244,63,94,.055); border-radius:10px; padding:8px 9px}
+.jloss-h{display:flex; align-items:center; gap:5px; font-size:10.5px; font-weight:800; color:#ffcdd6; letter-spacing:-.1px}
+.jloss-h .j-mini{margin-left:auto; border-color:rgba(244,63,94,.35); color:#ffb3c0}
+.jloss-l{display:flex; gap:6px; margin-top:6px; font-size:9.5px; line-height:1.5; color:#cfd9e8; word-break:keep-all}
+.jloss-k{flex:0 0 54px; color:#9fb0c8; font-weight:700}
+.jloss-v{flex:1; min-width:0}
+.jloss-v b{color:#fff0f2}
+.jloss-sum{margin-top:7px; padding-top:6px; border-top:1px dashed rgba(244,63,94,.28); font-size:9.5px; line-height:1.5; color:#ffd9de; word-break:keep-all}
+.jloss-sum b{color:#fff}
 .j-acts{display:flex; gap:6px; margin-top:8px}
 .j-acts .btn{flex:1; font-size:10px; padding:5px 8px}
 .j-empty{border:1px dashed var(--line); border-radius:12px; padding:20px 14px; text-align:center; color:var(--dim2); font-size:10.5px; line-height:1.6}
@@ -1553,6 +1567,16 @@ function kst(ts, withDate){
   const g = t => (parts.find(p => p.type === t) || {}).value || '';
   return withDate ? (g('month') + '/' + g('day') + ' ' + g('hour') + ':' + g('minute'))
                   : (g('hour') + ':' + g('minute'));
+}
+/* 진입 시간 입력 <input type="datetime-local"> — 브라우저 시간대와 상관없이 항상 KST 벽시계로 읽고 씁니다 */
+function kstInputValue(ts){
+  const t = isNum(ts) ? ts : Date.now();
+  return new Date(t + 9 * 3600 * 1000).toISOString().slice(0, 16);
+}
+function parseKstInput(v){
+  const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(String(v || '').trim());
+  if (!m) return NaN;
+  return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) - 9 * 3600 * 1000;
 }
 function todayKey(){
   return new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Seoul', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date());
@@ -5479,6 +5503,9 @@ function openEntrySheet(){
     '<div class="sh-list">' + rows.map(r => '<div class="sh-row' + (r[2] ? ' ' + r[2] : '') + '"><span class="sh-k">' + r[0] + '</span><span class="sh-v">' + r[1] + '</span></div>').join('') + '</div>' +
     '<label class="sh-lbl" for="shMargin">투입 증거금 (USDT — 실현 손익 계산에 쓰입니다)</label>' +
     '<input class="sh-inp" id="shMargin" type="number" inputmode="decimal" step="any" min="0" value="' + mgDef + '">' +
+    '<label class="sh-lbl" for="shAt">진입 시간 (KST — 이미 들어간 매매는 실제 진입 시각으로)</label>' +
+    '<input class="sh-inp" id="shAt" type="datetime-local" value="' + kstInputValue(Date.now()) + '">' +
+    '<div style="font-size:9.5px;line-height:1.45;color:var(--dim2);margin:-2px 0 8px">이 시각을 기준으로 보유 시간·복기 차트·패배 원인을 계산합니다. 기록한 뒤 매매기록 카드에서 언제든 고칠 수 있습니다.</div>' +
     '<label class="sh-lbl" for="shMemo">한 줄 메모 (선택 — 나중에 수정할 수 있습니다)</label>' +
     '<input class="sh-inp" id="shMemo" maxlength="140" placeholder="예: 4H 0.618 되돌림 + 1H 하락 다이버전스">' +
     '<div class="sh-acts"><button class="btn ghost" id="shCancel" type="button">취소</button><button class="btn primary" id="shOk" type="button">이 근거로 기록</button></div>'
@@ -5488,15 +5515,19 @@ function openEntrySheet(){
   $('#shOk').addEventListener('click', () => {
     const memo = ((($('#shMemo') || {}).value) || '').trim().slice(0, 140);
     const mg = parseFloat(($('#shMargin') || {}).value);
+    const atRaw = (($('#shAt') || {}).value) || '';
+    const atTs = atRaw ? parseKstInput(atRaw) : Date.now();
+    if (atRaw && !isNum(atTs)){ toast('진입 시간 확인', '날짜와 시각을 다시 확인해 주세요.'); return; }
+    if (isNum(atTs) && atTs > Date.now() + 60000){ toast('진입 시간 확인', '미래 시각으로는 기록할 수 없습니다.'); return; }
     closeSheet();
-    doOpenPosition(plan, memo, snap, mg);
+    doOpenPosition(plan, memo, snap, mg, atTs);
   });
 }
-function doOpenPosition(plan, memo, snap, margin){
+function doOpenPosition(plan, memo, snap, margin, atArg){
   plan = plan || calcEntryPlan();
   if (!plan || !isNum(plan.entry) || plan.entry <= 0) return;
   const levNow = clamp(parseInt(plan.lev, 10) || 5, 1, 50);
-  const at = Date.now();
+  const at = isNum(atArg) && atArg > 0 ? atArg : Date.now();
   const id = 'tl' + at + Math.random().toString(36).slice(2, 6);
   const side = plan.side === 'long' ? 'long' : 'short';
   const mg = isNum(margin) && margin > 0 ? margin
@@ -5760,6 +5791,253 @@ function jSnapHtml(e){
   }
   return h + '</div>';
 }
+/* ===== 진입 시간 수정 (매매기록 카드는 진행 중·종료 모두) ===== */
+function startAtEdit(btn){
+  const id = btn.dataset.jat;
+  const e = tradeLog.find(x => x.id === id);
+  const row = btn.closest('.jwhen');
+  if (!e || !row) return;
+  row.innerHTML = '<span>진입 시간(KST)</span>' +
+    '<input type="datetime-local" value="' + kstInputValue(e.at) + '">' +
+    '<button class="j-mini ok" data-jatsave="' + id + '" type="button">저장</button>' +
+    '<button class="j-mini" data-jatcancel="1" type="button">취소</button>';
+  row.classList.add('jwhen-edit');
+  const inp = row.querySelector('input');
+  if (inp && inp.focus) inp.focus({ preventScroll: true });
+}
+function saveAt(id, row){
+  const e = tradeLog.find(x => x.id === id);
+  if (!e) return;
+  const inp = row ? row.querySelector('input') : null;
+  const ts = parseKstInput(inp && inp.value);
+  if (!isNum(ts)){ toast('진입 시간 확인', '날짜와 시각을 다시 확인해 주세요.'); return; }
+  if (ts > Date.now() + 60000){ toast('진입 시간 확인', '미래 시각으로는 기록할 수 없습니다.'); return; }
+  e.at = ts;
+  /* 진입 시각이 바뀌면 그 시각 기준 복기·패배 원인을 다시 계산합니다 */
+  delete e.review; delete e.reviewAt;
+  if (e.status === 'open'){
+    const p = state.pos && state.pos[e.sym];
+    if (p && (!p.logId || p.logId === e.id)){ p.at = ts; savePos(); }
+  }
+  saveTradeLog();
+  renderJournal();
+  if (rpl.e && rpl.e.id === e.id && !$('#sheetWrap').hidden) openReplayChart(e.id);
+  toast('진입 시간 수정', kst(ts, true) + ' KST 기준으로 보유 시간·복기 차트·패배 원인을 다시 계산합니다.');
+}
+
+/* ========================= 패배 원인 자동 분석 =========================
+   · 손절로 끝난 매매 카드에 '🔍 왜 패했을까?' 박스를 붙입니다.
+   · 저장된 진입 근거 스냅샷 + 진입~청산 1H 캔들 + 진입 전 1D 캔들(추세) + 1H ATR을 대조합니다. */
+const lossRev = { running:{}, failed:{} };
+function isLossRecord(e){ return !!e && e.status === 'closed' && isNum(e.roe) && e.roe < 0; }
+function lossBoxHtml(e){
+  const r = e.review;
+  let body;
+  if (r && r.items && r.items.length){
+    body = r.items.map(it => '<div class="jloss-l"><span class="jloss-k">' + escHtml(it.k) + '</span><span class="jloss-v">' + it.v + '</span></div>').join('') +
+      (r.basis ? '<div class="jloss-l"><span class="jloss-k">기준</span><span class="jloss-v">' + escHtml(r.basis) + '</span></div>' : '') +
+      (r.sum ? '<div class="jloss-sum">' + r.sum + '</div>' : '');
+  } else if (lossRev.running[e.id]){
+    body = '<div class="jloss-l"><span class="jloss-k">분석 중</span><span class="jloss-v">진입 시점 근거와 1H·1D 실캔들을 다시 대조하고 있습니다…</span></div>';
+  } else if (lossRev.failed[e.id]){
+    body = '<div class="jloss-l"><span class="jloss-k">분석 실패</span><span class="jloss-v">' + escHtml(lossRev.failed[e.id]) + '</span></div>';
+  } else {
+    body = '<div class="jloss-l"><span class="jloss-k">분석 전</span><span class="jloss-v">진입 당시 근거와 그 뒤 캔들 흐름으로 패배 원인을 정리합니다.</span></div>';
+  }
+  return '<div class="jloss"><div class="jloss-h">🔍 왜 패했을까?' +
+    '<button class="j-mini" data-jrev="' + e.id + '" type="button">' + (r ? '원인 다시 분석' : '원인 분석') + '</button></div>' + body + '</div>';
+}
+function autoLossReview(){
+  tradeLog.forEach(e => {
+    if (!isLossRecord(e) || e.review || lossRev.running[e.id] || lossRev.failed[e.id]) return;
+    lossRev.running[e.id] = 1;
+    setTimeout(() => runLossReview(e), 60);
+  });
+}
+function revLossNow(id){
+  const e = tradeLog.find(x => x.id === id);
+  if (!e || !isLossRecord(e)) return;
+  delete e.review; delete e.reviewAt; delete lossRev.failed[id];
+  runLossReview(e, true);
+}
+async function runLossReview(e, force){
+  if (!e || !isLossRecord(e)) return;
+  if (lossRev.running[e.id] && !force) return;
+  lossRev.running[e.id] = 1;
+  try {
+    const r = await buildLossReview(e);
+    if (!tradeLog.some(x => x.id === e.id)) return;      /* 분석 중 삭제된 기록 */
+    e.review = r; e.reviewAt = Date.now();
+    saveTradeLog();
+    delete lossRev.failed[e.id];
+  } catch (err){
+    lossRev.failed[e.id] = (err && err.message) ? ('캔들·근거 대조 실패 (' + err.message + ')') : '분석하지 못했습니다 — 잠시 뒤 다시 시도해 주세요.';
+  } finally {
+    delete lossRev.running[e.id];
+    renderJournal();
+  }
+}
+/* 캔들 범위 조회 — 페이지당 500개, 최대 4페이지 */
+async function klRange(sym, bar, startTs, endTs){
+  const ms = rplBarMs(bar);
+  let rows = [], cursor = Math.floor(startTs / ms) * ms, pages = 0;
+  while (pages < 4 && cursor <= endTs){
+    const got = await rplPage(sym, bar, cursor, endTs);
+    pages++;
+    if (!got.length) break;
+    rows = rows.concat(got);
+    const lastT = got[got.length - 1].t;
+    if (got.length < 500 || lastT >= endTs) break;
+    cursor = lastT + ms;
+  }
+  const seen = {}, out = [];
+  rows.forEach(c => { if (!seen[c.t]){ seen[c.t] = 1; out.push(c); } });
+  return out.sort((a, b) => a.t - b.t);
+}
+function emaAt(vals, p){
+  if (!vals || vals.length < p) return NaN;
+  const k = 2 / (p + 1);
+  let v = vals.slice(0, p).reduce((a, b) => a + b, 0) / p;
+  for (let i = p; i < vals.length; i++) v = vals[i] * k + v * (1 - k);
+  return v;
+}
+function lossAtr(cs, idx, p){
+  p = p || 14;
+  const from = Math.max(1, idx - p + 1);
+  if (idx - from + 1 < 3) return NaN;
+  let sum = 0, n = 0;
+  for (let i = from; i <= idx && i < cs.length; i++){
+    const pc = cs[i - 1].c;
+    sum += Math.max(cs[i].h - cs[i].l, Math.abs(cs[i].h - pc), Math.abs(cs[i].l - pc));
+    n++;
+  }
+  return n ? sum / n : NaN;
+}
+async function buildLossReview(e){
+  const long = e.side === 'long';
+  const entryTs = e.at, exitTs = isNum(e.exitAt) ? e.exitAt : Date.now();
+  const h1 = await klRange(e.sym, '1H', entryTs - 72 * 3600 * 1000, Math.min(exitTs + 36 * 3600 * 1000, Date.now()));
+  if (h1.length < 5) throw new Error('1H 캔들 부족');
+  let iE = -1, iX = -1;
+  h1.forEach((c, i) => { if (c.t <= entryTs) iE = i; if (c.t <= exitTs) iX = i; });
+  if (iE < 0) iE = 0;
+  if (iX < iE) iX = h1.length - 1;
+  const risk = Math.abs(e.entry - e.stop) || 0;
+  const s = e.snap || {}, ck = s.check, nw = s.nw, rsi = s.rsi || {};
+  const items = [];
+  const flags = [];
+  /* ① 진입 근거 점검 */
+  const f1 = [];
+  let mayday = false;
+  if (ck && isNum(ck.n)){
+    if (ck.n < 3){
+      f1.push('<b>3중 점검 ' + ck.n + '/3</b> — ' + (3 - ck.n) + '개가 빠진 채로 들어갔습니다(성급 진입)');
+      flags.push('근거 ' + ck.n + '/3');
+    } else {
+      f1.push('<b>3중 점검 3/3</b> — 근거는 갖췄지만 자리가 지나간 뒤였을 수 있습니다');
+    }
+    const miss = (ck.items || []).filter(x => !x.ok).map(x => escHtml(x.name));
+    if (miss.length) f1.push('빠진 조건: ' + miss.join(' · '));
+    if ((ck.items || []).some(x => /같은 레벨|중복/.test(x.text || ''))){
+      f1.push('자리·라인이 <b>같은 레벨(≈)</b>이라 근거를 두 번 센 셈입니다');
+      mayday = true;
+    }
+  } else {
+    f1.push('진입 근거 스냅샷이 없어 점검값을 되살릴 수 없습니다');
+  }
+  if (nw){
+    const overlap = /겹침/.test(nw.integ || '') || (nw.tags && nw.tags.overlap === 'fail');
+    const complex = /다이아메트릭|플랫/.test(nw.pattern || '');
+    if (overlap || complex){
+      f1.push('NEoWave <b>' + escHtml(nw.pattern || '—') + '</b> · ' + escHtml(nw.integ || '조정 구간') + ' — 겹침·조정 구간에서 추세를 추격했습니다');
+      flags.push('NEoWave 겹침');
+    }
+  }
+  try {
+    const d1 = await klRange(e.sym, '1Dutc', entryTs - 280 * 24 * 3600 * 1000, entryTs);
+    const cl = d1.map(c => c.c);
+    if (cl.length >= 55){
+      const last = cl[cl.length - 1], e20 = emaAt(cl, 20), e50 = emaAt(cl, 50);
+      const up = last > e20 && e20 > e50, down = last < e20 && e20 < e50;
+      if ((long && down) || (!long && up)){
+        f1.push('1D가 <b>' + (up ? '상승' : '하락') + ' 배열</b>(종가 ' + pxOf(last, e.sym) + ' · EMA20 ' + pxOf(e20, e.sym) + ') — 상위 추세 역방향 진입');
+        flags.push('1D 역추세');
+      } else if (up || down){
+        f1.push('1D 추세는 ' + (up ? '상승' : '하락') + ' 배열로 진입 방향과 같았습니다');
+      }
+    }
+  } catch (_){ /* 1D 조회 실패는 나머지 진단을 막지 않습니다 */ }
+  items.push({ k:'① 진입 근거', v: f1.join('<br>') });
+  /* ② 손익비·손절폭 점검 */
+  const f2 = [];
+  const rr1 = (isNum(e.t1) && risk) ? Math.abs(e.t1 - e.entry) / risk : NaN;
+  if (isNum(rr1)){
+    f2.push('손익비 1차 <b>' + rr1.toFixed(2) + ':1</b>' + (rr1 < 3 ? ' — 3:1 미달로 기대값이 낮았습니다' : ' — 3:1은 넘었습니다'));
+    if (rr1 < 3) flags.push('손익비 ' + rr1.toFixed(1) + ':1');
+  }
+  const atr = lossAtr(h1, iE, 14);
+  if (isNum(atr) && risk > 0){
+    const k = risk / atr;
+    f2.push('손절폭 ' + pxOf(risk, e.sym) + ' = 1H ATR(14) ' + pxOf(atr, e.sym) + '의 <b>' + k.toFixed(2) + '배</b>' +
+      (k < 0.8 ? ' — ATR보다 좁아 잡음·꼬리에 걸리기 쉬웠습니다' : k > 2.5 ? ' — 넓어서 한 번에 손실이 크게 났습니다' : ' — 무난한 폭'));
+    if (k < 0.8) flags.push('좁은 손절(ATR×' + k.toFixed(2) + ')');
+  }
+  items.push({ k:'② 손익비·손절', v: f2.join('<br>') || '진입·손절·목표가가 남아 있지 않아 계산할 수 없습니다' });
+  /* ③ 실제 캔들 흐름 */
+  const f3 = [];
+  const after = h1.slice(iE + 1, iX + 1);
+  let whipsaw = false;
+  if (after.length){
+    const worst = long ? Math.min.apply(null, after.map(c => c.l)) : Math.max.apply(null, after.map(c => c.h));
+    const worstPct = ((worst - e.entry) / e.entry) * 100 * (long ? 1 : -1);
+    f3.push('진입 후 ' + after.length + '봉 동안 최대 역행 <b>' + worstPct.toFixed(2) + '%</b> (' + pxOf(worst, e.sym) + ')');
+    const f3c = after.slice(0, 3);
+    if (f3c.length && risk > 0){
+      const w3 = long ? Math.min.apply(null, f3c.map(c => c.l)) : Math.max.apply(null, f3c.map(c => c.h));
+      const d3 = Math.abs(w3 - e.entry) / risk;
+      if (d3 >= 0.5) f3.push('첫 3봉에서 손절폭의 <b>' + Math.round(d3 * 100) + '%</b>를 바로 밀렸습니다 — 진입 직후 역행');
+    }
+  }
+  if (e.exitReason === 'stop' && iX >= 0){
+    const post = h1.slice(iX + 1, iX + 13).filter(c => c.t + 3600000 <= Date.now());
+    if (post.length){
+      const best = long ? Math.max.apply(null, post.map(c => c.h)) : Math.min.apply(null, post.map(c => c.l));
+      const back = (long ? best - e.entry : e.entry - best) / e.entry * 100;
+      if (back > 0){
+        const t1ok = isNum(e.t1) && (long ? best >= e.t1 : best <= e.t1);
+        whipsaw = true;
+        f3.push('손절 후 ' + post.length + '봉 안에 ' + pxOf(best, e.sym) + '까지 회복(' + back.toFixed(2) + '%)' +
+          (t1ok ? ' — <b>1차 목표에도 닿았습니다(꼬리만 스친 휩쏘)</b>' : ' — <b>꼬리로 손절만 스친 휩쏘</b> 가능성'));
+        flags.push('휩쏘');
+      }
+    }
+  }
+  if (iX >= 0 && iX < h1.length){
+    const pre = h1.slice(Math.max(0, iX - 20), iX);
+    const avgV = pre.length ? pre.reduce((a, c) => a + c.v, 0) / pre.length : 0;
+    if (avgV > 0){
+      const vr = h1[iX].v / avgV;
+      f3.push('손절 봉 거래량 <b>' + vr.toFixed(2) + '배</b>' + (vr > 1.8 ? ' — 힘 실린 추세 이탈이라 되돌림이 약했습니다' : ' — 거래량은 평범, 추세 이탈보다 잡음에 가깝습니다'));
+    }
+  }
+  const rs1 = rsi['1H'], rs4 = rsi['4H'];
+  if (isNum(rs1)){
+    if (long && rs1 >= 60) f3.push('진입 당시 1H RSI <b>' + rs1.toFixed(1) + '</b> — 과열 구간에서 롱을 잡았습니다');
+    else if (!long && rs1 <= 40) f3.push('진입 당시 1H RSI <b>' + rs1.toFixed(1) + '</b> — 과매도에서 숏을 잡아 되돌림에 취약했습니다');
+    else f3.push('진입 당시 1H RSI <b>' + rs1.toFixed(1) + '</b>' + (isNum(rs4) ? ' · 4H ' + rs4.toFixed(1) : '') + ' — 방향 자체는 무리한 자리가 아니었습니다');
+  }
+  items.push({ k:'③ 캔들 흐름', v: f3.join('<br>') || '진입~청산 구간 캔들을 읽지 못했습니다' });
+  /* 요약 */
+  const advice = [];
+  if (ck && isNum(ck.n) && ck.n < 3) advice.push('3/3 되는 자리까지 기다리기');
+  if (isNum(rr1) && rr1 < 3) advice.push('3:1 되는 진입가로 조정');
+  if (whipsaw) advice.push('손절을 ATR×1.2 밖으로 넓히거나 1H 마감 후 진입');
+  if (!advice.length) advice.push('진입 전 1H 봉 마감과 거래량 확인');
+  const sum = '<b>요약 — ' + (flags.length ? flags.join(' · ') + '가 겹쳤습니다. ' : '근거 자체는 나쁘지 않았지만 타이밍이 어긋났습니다. ') +
+    '다음엔 ' + advice.join(' · ') + '.</b>';
+  return { items: items, sum: sum, basis: '진입 ' + kst(entryTs, true) + ' → 청산 ' + kst(exitTs, true) + ' KST · 1H ' + h1.length + '봉 대조', at: Date.now() };
+}
+
 function jCard(e){
   const long = e.side === 'long';
   const lev = e.lev || 5;
@@ -5785,7 +6063,8 @@ function jCard(e){
       '<span class="jlev">' + lev + '배</span>' +
       '<span class="jstate ' + (open ? 'open' : 'closed') + '">' + (open ? '진행 중' : '종료됨') + '</span>' +
     '</div>' +
-    '<div class="jwhen">진입 ' + kst(e.at, true) + ' KST' + (e.slot ? ' · ' + escHtml(slotLabel(e.slot, e.sym)) : '') + '</div>' +
+    '<div class="jwhen">진입 <b>' + kst(e.at, true) + ' KST</b>' + (e.slot ? ' · ' + escHtml(slotLabel(e.slot, e.sym)) : '') +
+      '<button class="j-mini" data-jat="' + e.id + '" type="button">시간 수정</button></div>' +
     '<div class="jline">' +
       '<span class="jpx num">' + pxOf(e.entry, e.sym) + '</span>' +
       '<span class="jarrow">→</span>' +
@@ -5794,7 +6073,7 @@ function jCard(e){
     '</div>' +
     '<div class="jreason">' + escHtml(reason) + '</div>' +
     jMoneyHtml(e, roe) +
-    jSnapHtml(e) + memoHtml +
+    jSnapHtml(e) + memoHtml + (isLossRecord(e) ? lossBoxHtml(e) : '') +
     '<div class="j-acts">' +
       (open ? '<button class="btn primary" data-jexit="' + e.sym + '" type="button">청산 기록</button>' : '') +
       '<button class="btn ghost jchart" data-jchart="' + e.id + '" type="button">📈 차트 보기</button>' +
@@ -5864,6 +6143,7 @@ function renderJournal(){
       '<section class="jgrp" aria-label="' + escHtml(g.label + ' ' + g.sub) + '">' + jGroupHead(g) + g.items.map(jCard).join('') + '</section>'
     ).join('');
   }
+  autoLossReview();
   updateJournalBadges();
 }
 function startMemoEdit(btn){
@@ -5925,7 +6205,7 @@ function bindJournal(){
   if (!page || page.dataset.bound === '1') return;
   page.dataset.bound = '1';
   page.addEventListener('click', ev => {
-    const t = ev.target.closest('[data-jperiod],[data-jstatus],[data-jsym],[data-jexit],[data-jchart],[data-jdel],[data-jmemo],[data-jmemosave],[data-jmemocancel],[data-jmargin],[data-jmarginsave],[data-wdel]');
+    const t = ev.target.closest('[data-jperiod],[data-jstatus],[data-jsym],[data-jexit],[data-jchart],[data-jdel],[data-jmemo],[data-jmemosave],[data-jmemocancel],[data-jmargin],[data-jmarginsave],[data-jat],[data-jatsave],[data-jatcancel],[data-jrev],[data-wdel]');
     if (!t) return;
     if (t.hasAttribute('data-jperiod')){ jFilter.period = t.dataset.jperiod; store(JPERIOD_KEY, jFilter.period); renderJournal(); return; }
     if (t.hasAttribute('data-jstatus')){ jFilter.status = t.dataset.jstatus; renderJournal(); return; }
@@ -5938,6 +6218,10 @@ function bindJournal(){
     if (t.hasAttribute('data-jdel')){ armDelete(t); return; }
     if (t.hasAttribute('data-jmargin')){ startMarginEdit(t); return; }
     if (t.hasAttribute('data-jmarginsave')){ saveMargin(t.dataset.jmarginsave, t.closest('.jpy')); return; }
+    if (t.hasAttribute('data-jat')){ startAtEdit(t); return; }
+    if (t.hasAttribute('data-jatsave')){ saveAt(t.dataset.jatsave, t.closest('.jwhen')); return; }
+    if (t.hasAttribute('data-jatcancel')){ renderJournal(); return; }
+    if (t.hasAttribute('data-jrev')){ revLossNow(t.dataset.jrev); return; }
     if (t.hasAttribute('data-wdel')){ delWithdrawal(t.dataset.wdel); return; }
   });
 }
@@ -5946,7 +6230,7 @@ function bindJournal(){
    · 바이낸스 선물 공개 캔들(fapi klines)을 진입 10봉 전 ~ 청산 6봉 후까지 모아 그리고,
      진입가/손절가/1차/2차 목표가 수평선과 진입·청산 시점 마커를 올립니다. */
 const RPL_BARS = [['15m', '15분'], ['1H', '1시간'], ['4H', '4시간']];
-const RPL_BAR_MS = { '15m': 900000, '1H': 3600000, '4H': 14400000 };
+const RPL_BAR_MS = { '15m': 900000, '1H': 3600000, '4H': 14400000, '1Dutc': 86400000 };
 const RPL_PRE = 10, RPL_POST = 6, RPL_BAR_DEF = '1H';
 const RPL_COL = {
   entry: { hex:'#6f9cff', line:'rgba(91,140,255,.85)', bg:'rgba(91,140,255,.18)', bd:'rgba(91,140,255,.52)' },
