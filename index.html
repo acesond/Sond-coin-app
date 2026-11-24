@@ -284,6 +284,14 @@ button.toggle b{font-variant-numeric:tabular-nums; color:#67e8f9; font-weight:80
 .pos-acts{display:flex; gap:6px; margin-top:8px}
 .pos-acts .btn{flex:1; font-size:10.5px; padding:6px 8px}
 .pos-acts .btn.done{background:rgba(34,197,94,.14); border-color:rgba(34,197,94,.4); color:#a7f3c4}
+/* 손익비 계산기 카드 안으로 통합된 진입 기록 영역 */
+.pos-sep{display:flex; align-items:center; gap:7px; margin:12px 0 9px; font-size:9.5px; font-weight:800; letter-spacing:-.1px; color:#9fb6d8; white-space:nowrap}
+.pos-sep::before,.pos-sep::after{content:''; flex:1; height:1px; min-width:8px; background:linear-gradient(90deg,rgba(147,162,182,0),rgba(147,162,182,.34),rgba(147,162,182,0))}
+#planSec .pos-open{margin-bottom:0}
+#planSec .pos{margin-bottom:0}
+/* 계산기 안 진입 기록 버튼 — 바로 위 '이 타점 저장'(primary)과 위계를 구분 */
+#planSec .pos-btn{background:linear-gradient(160deg,rgba(91,140,255,.24),rgba(47,107,255,.10)); border:1px solid rgba(91,140,255,.62); color:#e3ecff; letter-spacing:-.2px}
+#planSec .pos-btn:active{background:rgba(91,140,255,.32)}
 
 /* ---------- 페이지 전환 · 파동 해설 · 매매기록 · 시트 ---------- */
 .pgbar{display:flex; gap:6px; margin:10px 0 2px}
@@ -917,7 +925,6 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
       <div class="v-easy" id="vEasy">근거 3/3 = 세 조건(자리·라인·다이버전스)이 모두 겹쳤다는 뜻입니다. 하나라도 빠지면 진입이 아니라 대기입니다.</div>
       <div class="vtiming hold" id="vTiming" hidden></div>
       <div id="vHyp"></div>
-      <div class="pos-wrap" id="posBox"></div>
       <div id="vSummary" class="ev-sum" style="border-top:0;padding-top:0;margin-top:0"></div>
     </div>
     <div class="card tight" id="tfList"></div>
@@ -1026,6 +1033,8 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
         <button class="btn ghost" id="resetPlanBtn">초기화</button>
       </div>
       <div style="font-size:10px; color:var(--dim2); margin-top:8px" id="planSaved">가설 1 · 저장된 값</div>
+      <div class="pos-sep"><span>🎯 진입 기록 · 실시간 대응</span></div>
+      <div class="pos-wrap" id="posBox"></div>
     </div>
   </section>
 
@@ -3510,6 +3519,22 @@ function readPlanForm(){
   return { side: state.planSide || 'short', entry:n('#fEntry'), stop:n('#fStop'), t1:n('#fT1'), t2:n('#fT2'),
            lev: +$('#fLev').value || 1, margin:n('#fMargin'), mAuto: state.marginAuto !== false };
 }
+/* 진입 기록은 화면 계산기에 지금 입력된 값을 그대로 씁니다.
+   저장은 400ms 디바운스라 바로 누르면 옛 값이 남으므로, 폼을 먼저 읽고 빈 칸만 가설값으로 채웁니다. */
+function calcEntryPlan(){
+  const f = readPlanForm();
+  const base = planFor(state.activeSlot) || {};
+  const pos = v => isNum(v) && v > 0;
+  return {
+    side: f.side === 'long' ? 'long' : 'short',
+    entry: pos(f.entry) ? f.entry : base.entry,
+    stop:  pos(f.stop)  ? f.stop  : base.stop,
+    t1:    pos(f.t1)    ? f.t1    : base.t1,
+    t2:    pos(f.t2)    ? f.t2    : base.t2,
+    lev:   clamp(parseInt(f.lev, 10) || 5, 1, 50),
+    margin: pos(f.margin) ? f.margin : NaN
+  };
+}
 function fillPlanForm(p){
   state.planSide = p.side || 'short';
   /* 저장된 값이 '수동 고정'이면 그대로, 아니면 자산 기준 자동 계산 */
@@ -3622,6 +3647,7 @@ function renderPlanner(force){
   $('#levVal').textContent = p.lev + '배';
   $('#levVal').style.color = p.lev > 10 ? 'var(--warn)' : '';
   state.lastCalc = c;
+  renderPosition();   /* 계산기 숫자가 바뀌면 진입 기록 버튼 문구도 같이 갱신 */
 }
 let saveTimer = null;
 function sanitizePlan(p){
@@ -4410,19 +4436,19 @@ function renderPosition(){
   const box = $('#posBox');
   if (!box) return;
   const p = posOf(state.sym);
-  const plan = planFor(state.activeSlot);
   const price = currentPrice();
-  const levNow = clamp(parseInt(($('#fLev') || {}).value, 10) || 5, 1, 50);
 
   if (!p){
+    const plan = calcEntryPlan();
     const kk = SLOT_LABEL[state.activeSlot] || '현재 가설';
     const sideTxt = plan && plan.side === 'long' ? '롱' : '숏';
+    const mgTxt = plan && isNum(plan.margin) && plan.margin > 0 ? ' · 증거금 ' + (Math.round(plan.margin * 100) / 100) + ' USDT' : '';
     box.innerHTML =
       '<div class="pos-open">' +
         '<button class="btn primary pos-btn" id="posOpenBtn" type="button">🎯 이 타점 진입 기록</button>' +
         '<div class="pos-hint">' + (plan && isNum(plan.entry) && plan.entry > 0
-          ? kk + ' · ' + sideTxt + ' ' + fmtPx(plan.entry) + ' · 손절 ' + fmtPx(plan.stop) + ' · 1차 ' + fmtPx(plan.t1) + ' · ' + levNow + '배로 기록'
-          : '가설값을 불러오면 진입·손절·목표가가 자동 세팅됩니다') + '</div>' +
+          ? kk + ' · 계산기 값 그대로 — ' + sideTxt + ' ' + fmtPx(plan.entry) + ' · 손절 ' + fmtPx(plan.stop) + ' · 1차 ' + fmtPx(plan.t1) + ' · ' + plan.lev + '배' + mgTxt
+          : '위 계산기에 진입가를 넣으면 그 값 그대로 기록됩니다') + '</div>' +
       '</div>';
     const b = $('#posOpenBtn');
     if (b) b.addEventListener('click', openEntrySheet);
@@ -4714,9 +4740,9 @@ function updateJournalBadges(){
 }
 
 /* 진입 시점 근거 스냅샷 */
-function entrySnapshot(){
+function entrySnapshot(planArg){
   const a = state.ana;
-  const plan = planFor(state.activeSlot);
+  const plan = planArg || planFor(state.activeSlot);
   const side = plan.side === 'long' ? 'long' : 'short';
   const hp = hypOf(state.activeSlot);
   const mw = state.mw;
@@ -4736,7 +4762,7 @@ function entrySnapshot(){
     at: Date.now(),
     hyp: hp ? { slot: state.activeSlot, title: hp.title, kind: hp.kind, why: hp.why || '',
                 entry: plan.entry, stop: plan.stop, t1: plan.t1, t2: plan.t2 } : null,
-    plan: { side: side, entry: plan.entry, stop: plan.stop, t1: plan.t1, t2: plan.t2, lev: parseLev() },
+    plan: { side: side, entry: plan.entry, stop: plan.stop, t1: plan.t1, t2: plan.t2, lev: isNum(plan.lev) ? plan.lev : parseLev() },
     check: a ? {
       side: side,
       n: side === 'short' ? a.nS : a.nL,
@@ -4779,20 +4805,24 @@ function toast(title, body){
   }, 4200);
 }
 
-/* 진입 기록 — 누를 때 그 시점 근거를 미리 보여주고 메모를 받습니다 */
+/* 진입 기록 — 계산기에 입력된 값을 그대로 읽어, 그 시점 근거와 함께 미리 보여줍니다 */
 function openEntrySheet(){
-  const plan = planFor(state.activeSlot);
+  const plan = calcEntryPlan();
   if (!plan || !isNum(plan.entry) || plan.entry <= 0){
-    toast('진입가가 없습니다', '가설값을 불러오거나 진입가를 입력한 뒤 기록하세요.');
+    toast('진입가가 없습니다', '계산기에 진입가를 입력하거나 가설값을 불러온 뒤 기록하세요.');
     return;
   }
-  const lev = parseLev();
+  const lev = plan.lev;
   const sideKr = plan.side === 'long' ? '롱' : '숏';
-  const snap = entrySnapshot();
+  const snap = entrySnapshot(plan);
   const ck = snap.check, nw = snap.nw, rsi = snap.rsi || {};
+  const mgDef = isNum(plan.margin) && plan.margin > 0 ? Math.round(plan.margin * 100) / 100 : defaultMargin();
   const rows = [];
   rows.push(['가격 계획', '진입 <b>' + fmtPx(plan.entry) + '</b> · 손절 <b>' + fmtPx(plan.stop) + '</b> · 1차 <b>' + fmtPx(plan.t1) + '</b> · 2차 <b>' + fmtPx(plan.t2) + '</b> · ' + lev + '배']);
   rows.push(['가설', snap.hyp ? '<b>' + escHtml(snap.hyp.title) + '</b> · ' + escHtml(hypKindKr(snap.hyp)) + ' 기준' : '연결된 가설 없음(내 타점)']);
+  if (snap.hyp && snap.hyp.kind && snap.hyp.kind !== plan.side){
+    rows.push(['⚠ 방향 확인', '가설은 <b>' + (snap.hyp.kind === 'long' ? '롱' : '숏') + '</b>인데 계산기는 <b>' + sideKr + '</b>입니다 — 의도한 방향인지 확인하세요']);
+  }
   rows.push(['3중 점검', ck
     ? '<b>' + (ck.side === 'short' ? '숏' : '롱') + ' ' + ck.n + '/3</b> · ' + ck.items.map(it => (it.ok ? '✓' : '✕') + ' ' + escHtml(it.name)).join(' · ')
     : '계산 전 — 다음 갱신에서 채워집니다']);
@@ -4803,10 +4833,10 @@ function openEntrySheet(){
   openSheet(
     '<div class="sh-grip"></div>' +
     '<div class="sh-t">🎯 ' + symOf(state.sym).code + ' ' + sideKr + ' ' + lev + '배 진입 기록</div>' +
-    '<div class="sh-sub">아래 근거를 <b>지금 이 시점 그대로</b> 저장합니다. 청산하면 실현 ROE와 함께 2페이지에 남습니다.</div>' +
+    '<div class="sh-sub">계산기에 입력한 <b>이 타점 값 그대로</b>와 지금 이 시점의 근거를 저장합니다. 청산하면 실현 ROE와 함께 2페이지에 남습니다.</div>' +
     '<div class="sh-list">' + rows.map(r => '<div class="sh-row"><span class="sh-k">' + r[0] + '</span><span class="sh-v">' + r[1] + '</span></div>').join('') + '</div>' +
     '<label class="sh-lbl" for="shMargin">투입 증거금 (USDT — 실현 손익 계산에 쓰입니다)</label>' +
-    '<input class="sh-inp" id="shMargin" type="number" inputmode="decimal" step="any" min="0" value="' + defaultMargin() + '">' +
+    '<input class="sh-inp" id="shMargin" type="number" inputmode="decimal" step="any" min="0" value="' + mgDef + '">' +
     '<label class="sh-lbl" for="shMemo">한 줄 메모 (선택 — 나중에 수정할 수 있습니다)</label>' +
     '<input class="sh-inp" id="shMemo" maxlength="140" placeholder="예: 4H 0.618 되돌림 + 1H 하락 다이버전스">' +
     '<div class="sh-acts"><button class="btn ghost" id="shCancel" type="button">취소</button><button class="btn primary" id="shOk" type="button">이 근거로 기록</button></div>'
@@ -4817,29 +4847,31 @@ function openEntrySheet(){
     const memo = ((($('#shMemo') || {}).value) || '').trim().slice(0, 140);
     const mg = parseFloat(($('#shMargin') || {}).value);
     closeSheet();
-    doOpenPosition(memo, snap, mg);
+    doOpenPosition(plan, memo, snap, mg);
   });
 }
-function doOpenPosition(memo, snap, margin){
-  const plan = planFor(state.activeSlot);
+function doOpenPosition(plan, memo, snap, margin){
+  plan = plan || calcEntryPlan();
   if (!plan || !isNum(plan.entry) || plan.entry <= 0) return;
-  const levNow = parseLev();
+  const levNow = clamp(parseInt(plan.lev, 10) || 5, 1, 50);
   const at = Date.now();
   const id = 'tl' + at + Math.random().toString(36).slice(2, 6);
   const side = plan.side === 'long' ? 'long' : 'short';
+  const mg = isNum(margin) && margin > 0 ? margin
+    : (isNum(plan.margin) && plan.margin > 0 ? plan.margin : defaultMargin());
   state.pos = state.pos || {};
   state.pos[state.sym] = { side: side, entry: plan.entry, stop: plan.stop, t1: plan.t1, t2: plan.t2,
     lev: levNow, slot: state.activeSlot, at: at, half: false, logId: id };
   savePos();
   tradeLog.unshift({ id: id, sym: state.sym, code: symOf(state.sym).code, side: side,
     lev: levNow, entry: plan.entry, stop: plan.stop, t1: plan.t1, t2: plan.t2, slot: state.activeSlot,
-    margin: isNum(margin) && margin > 0 ? Math.round(margin * 100) / 100 : defaultMargin(),
-    at: at, status: 'open', memo: memo || '', snap: snap || entrySnapshot() });
+    margin: Math.round(mg * 100) / 100,
+    at: at, status: 'open', memo: memo || '', snap: snap || entrySnapshot(plan) });
   saveTradeLog();
   renderPosition();
   renderJournal();
   refreshAutoMargin();
-  toast('🎯 진입 기록 저장', (plan.side === 'long' ? '롱' : '숏') + ' ' + levNow + '배 · 근거 스냅샷과 함께 매매기록에 남겼습니다.');
+  toast('🎯 진입 기록 저장', (plan.side === 'long' ? '롱' : '숏') + ' ' + levNow + '배 · 계산기 값과 근거 스냅샷을 매매기록에 남겼습니다.');
 }
 
 /* 청산 — 사유별 실현 ROE */
