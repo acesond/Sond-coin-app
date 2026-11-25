@@ -210,6 +210,60 @@ globalThis.__run = async function(){
   ok('8-1 no-cors 전송으로 서버 저장', SRV.journal.length === 2, SRV.journal.map(e => e.id).join(','));
   ok('8-2 동기화됨 배지', badge().cls.indexOf('ok') >= 0, badge().txt);
 
+  /* 9) 가짜 테스트 기록 숙청 — 폰이 새 버전을 여는 순간 localStorage·시트에서 함께 사라지고 다시 안 올라감 */
+  reset({});
+  store(SYNC_TS_KEY, 1795500000000);
+  const T_WIN  = { id:'t-win', sym:'BTCUSDT', code:'BTC', side:'short', lev:5, margin:100, entry:62000,
+    stop:63000, t1:60000, t2:59800, at:1795500000000, status:'closed', exitReason:'tp2', roe:88.7, memo:'테스트 승' };
+  const T_LOSS = { id:'t-loss', sym:'ETHUSDT', code:'ETH', side:'long', lev:5, margin:100, entry:1700,
+    stop:1600, t1:1800, t2:1900, at:1795500000000, status:'closed', exitReason:'stop', roe:-8.82, memo:'테스트 패' };
+  const T_OPEN = { id:'t-open', sym:'SOLUSDT', code:'SOL', side:'short', lev:5, margin:50, entry:72,
+    stop:76, t1:68, t2:64, at:1795600000000, status:'open', memo:'테스트 진행' };
+  const T_BTC  = { id:'tl17955490867980uya', sym:'BTCUSDT', code:'BTC', side:'long', lev:5, margin:200,
+    entry:60200, stop:59700, t1:61200, t2:61700, at:1795549086798, status:'closed', exitReason:'stop', roe:-4.15, memo:'' };
+  const T_MEMO = { id:'tl-old-fake-77', sym:'XRPUSDT', code:'XRP', side:'long', lev:5, margin:10,
+    entry:0.9, stop:0.88, t1:0.95, t2:1, at:1795300000000, status:'closed', exitReason:'stop', roe:-2, memo:'테스트' };
+  const fakes = [T_WIN, T_LOSS, T_OPEN, T_BTC, T_MEMO];
+  SRV.journal = [clone(SEED)].concat(fakes.map(clone));
+  SRV.updatedAt = 1795500000000;
+  tradeLog = [clone(SEED)].concat(fakes.map(clone));
+  syncInit();
+  flushTimers();
+  await pump(50);
+  ok('9-1 이 기기에서 가짜 5건 삭제', tradeLog.length === 1 && tradeLog[0].id === SEED.id,
+     tradeLog.map(e => e.id).join(','));
+  ok('9-2 시트에서도 가짜 5건 삭제', SRV.journal.length === 1 && SRV.journal[0].id === SEED.id,
+     SRV.journal.map(e => e.id).join(','));
+  const dset9 = Array.from(deletedIdSet());
+  ok('9-3 지운 목록에 5건 기록', fakes.every(f => dset9.indexOf(f.id) >= 0), dset9.join(','));
+
+  /* 10) 다른 기기에서 지운 기록은 이 기기에서도 사라지고 되살아나지 않음 */
+  reset({});
+  const T0 = 1795500000000;
+  store(SYNC_TS_KEY, T0);
+  store(SYNC_SEEN_KEY, [SEED.id, ENTRY2.id]);     /* 지난번엔 둘 다 시트에 있었음 */
+  SRV.journal = [clone(SEED)];                   /* 그 사이 다른 기기가 tl-test-1을 삭제·저장 */
+  SRV.updatedAt = T0 + 60000;
+  tradeLog = [clone(SEED), clone(ENTRY2)];
+  syncInit();
+  flushTimers();
+  await pump(50);
+  ok('10-1 다른 기기 삭제가 이 기기에 반영', !tradeLog.some(e => e.id === ENTRY2.id), tradeLog.map(e => e.id).join(','));
+  ok('10-2 다시 올라가지 않음', !SRV.journal.some(e => e.id === ENTRY2.id), SRV.journal.map(e => e.id).join(','));
+  ok('10-3 지운 목록에 기록', deletedIdSet().has(ENTRY2.id), Array.from(deletedIdSet()).join(','));
+
+  /* 11) 서버에 아직 남아 있어도 지운 기록은 pull 때 걸러짐(옛 복사본 부활 방지) */
+  reset({});
+  store(SYNC_TS_KEY, 1795500000000);
+  store(DEL_KEY, [ENTRY2.id]);
+  SRV.journal = [clone(SEED), clone(ENTRY2)];
+  SRV.updatedAt = 1795500000000;
+  tradeLog = [clone(SEED)];
+  syncNow();
+  await pump(50);
+  ok('11-1 이 기기에 되살아나지 않음', !tradeLog.some(e => e.id === ENTRY2.id), tradeLog.map(e => e.id).join(','));
+  ok('11-2 시트에서도 정리됨', !SRV.journal.some(e => e.id === ENTRY2.id), SRV.journal.map(e => e.id).join(','));
+
   globalThis.__result = JSON.stringify({ results: __out, log: __log });
   return 1;
  } catch (e){ globalThis.__result = JSON.stringify({ results: __out, log: __log, fatal: String(e && (e.message || e)) + ' || ' + String(e && e.stack) }); }
@@ -219,7 +273,7 @@ globalThis.__run = async function(){
 ctx = quickjs.Context()
 ctx.eval(PRELUDE + MODULE + DRIVER)
 ctx.eval('__run()')
-for _ in range(500):
+for _ in range(20000):
     if not ctx.execute_pending_job():
         break
 raw = ctx.get('__result')

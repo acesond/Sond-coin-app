@@ -5766,6 +5766,8 @@ function loadTradeLog(){
     changed = true;
   });
   if (changed){ store(LOG_KEY, tradeLog); store(POS_KEY, pos); }
+  /* 가짜 테스트 기록·지운 기록은 앱을 여는 순간 이 기기에서도 정리합니다 */
+  purgeTradeLog();
   /* 투입 증거금이 비어 있는 기록은 초기 금액으로 한 번 채워 자산현황이 끊기지 않게 합니다 */
   let mchanged = false;
   tradeLog.forEach(e => { if (!isNum(marginOf(e))){ e.margin = assetState.initial; mchanged = true; } });
@@ -5785,11 +5787,80 @@ function updateJournalBadges(){
 /* ========================= 구글 시트 자동 동기화 =========================
    · 앱을 열면 시트에서 최신 상태를 받아(pull) 이 기기 기록과 합친 뒤 올립니다(push).
    · 진입·익절·손절·삭제·메모·자산 수정 때마다 1.2초 모아서 자동으로 올립니다.
+   · 삭제 동기화: 한 기기에서 지운 id는 deletedIds에 남아 어떤 옛 복사본도 되살리지 못하고,
+     지난번에 시트에 있었는데 이번에 사라진 id는 다른 기기가 지운 것으로 보고 이 기기에서도 지웁니다.
+   · 배포 테스트 중 섞인 가짜 기록(PURGE_TEST_IDS·'테스트' 메모)은 앱을 여는 순간 자동 삭제됩니다.
    · 서버 규격: apps-script-sync.gs — 읽기 GET(JSON, 막히면 JSONP), 쓰기 POST text/plain
    · 시트 원본은 _JournalJSON + _Sync 이고 매매기록·요약·출금내역은 서버가 다시 그립니다. */
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbzrR9WYm67ggHFrCdu_b7aNxebxhs1OdMiMCQD21srCThXYU1tCmkTQC0cruB3bQncf/exec';
 const SYNC_TS_KEY = 'maeyo.sync.updatedAt.v1';      /* 마지막으로 서버와 맞춘 updatedAt */
 const SYNC_STAT_KEY = 'maeyo.sync.stat.v1';         /* 마지막 동기화 시각·상태 */
+const SYNC_SEEN_KEY = 'maeyo.sync.seenIds.v1';      /* 지난번에 시트에서 본 기록 id — 사라진 id = 다른 기기가 지운 기록 */
+/* 지운 기록 id — 한 기기에서 지운 매매가 다른 기기의 옛 복사본 때문에 되살아나지 않게 합니다.
+   시트(_JournalJSON)에는 목록을 따로 둘 칸이 없어서, '이 기기에서는 다시는 안 씀'을 기억하는 방식으로 지킵니다. */
+const DEL_KEY = 'maeyo.deletedIds.v1';
+
+/* ---------- 가짜 기록 숙청 목록 ----------
+   배포·동기화 테스트 중에 시트로 새어 나간 기록들입니다. 새 버전 앱이 열리는 순간
+   이 기기의 localStorage에서도 지우고, 시트에도 절대 다시 올리지 않습니다.
+   · t-win / t-loss / t-open : 메모가 '테스트 승·패·진행'이던 시험용 3건
+   · tl17955490867980uya    : 테스트 브라우저의 11/25 04:38 BTC 롱 200 USDT (진입=청산 같은 분) */
+const PURGE_TEST_IDS = ['t-win', 't-loss', 't-open', 'tl17955490867980uya'];
+function isPurgeTestRecord(e){
+  if (!e) return true;
+  const id = String(e.id || '');
+  if (!id) return true;
+  if (PURGE_TEST_IDS.indexOf(id) >= 0) return true;
+  if (/^t-(win|loss|open)$/i.test(id)) return true;
+  return /^\s*테스트/.test(String(e.memo || ''));
+}
+function deletedIdSet(){
+  const v = store(DEL_KEY);
+  return new Set(Array.isArray(v) ? v.map(String) : []);
+}
+function markDeletedIds(ids){
+  const set = deletedIdSet();
+  let changed = false;
+  (ids || []).forEach(id => {
+    const k = String(id || '');
+    if (k && !set.has(k)){ set.add(k); changed = true; }
+  });
+  if (changed) store(DEL_KEY, Array.from(set).slice(-500));
+  return changed;
+}
+function syncDelIds(){                     /* 시드 삭제 목록 + 일반 삭제 목록 */
+  const set = syncDelSeedIds();
+  deletedIdSet().forEach(id => set.add(id));
+  return set;
+}
+function rememberSeedDeleted(ids){         /* 지운 기록이 시드면 자동 재등록도 막습니다 */
+  const all = (typeof SEED_TRADES !== 'undefined' && Array.isArray(SEED_TRADES)) ? SEED_TRADES : [];
+  const d = store(SEED_DEL_KEY);
+  const arr = Array.isArray(d) ? d.map(String) : [];
+  let changed = false;
+  (ids || []).forEach(id => {
+    if (all.some(s => s.id === String(id)) && arr.indexOf(String(id)) < 0){ arr.push(String(id)); changed = true; }
+  });
+  if (changed) store(SEED_DEL_KEY, arr);
+}
+/* 이 기기 localStorage에 남은 가짜·지운 기록을 실제로 지웁니다 (시트로 다시 올라가지 않게) */
+function purgeTradeLog(){
+  const del = deletedIdSet();
+  const gone = [];
+  const keep = [];
+  tradeLog.forEach(e => {
+    if (!e || !e.id) return;
+    const k = String(e.id);
+    if (del.has(k) || isPurgeTestRecord(e)) gone.push(k);
+    else keep.push(e);
+  });
+  if (!gone.length) return 0;
+  markDeletedIds(gone);
+  rememberSeedDeleted(gone);
+  tradeLog = keep;
+  store(LOG_KEY, tradeLog);
+  return gone.length;
+}
 let syncApplying = false;   /* 서버 값을 받아 적용하는 중 (되쏘기 방지) */
 let syncBusy = false;
 let syncTimer = null;
@@ -5800,6 +5871,14 @@ function syncLastTs(){ const v = store(SYNC_TS_KEY); return isNum(v) ? v : 0; }
 function syncDelSeedIds(){
   const v = store(SEED_DEL_KEY);
   return new Set(Array.isArray(v) ? v.map(String) : []);
+}
+function syncSeenIds(){
+  const v = store(SYNC_SEEN_KEY);
+  return new Set(Array.isArray(v) ? v.map(String) : []);
+}
+function syncRememberSeen(ids){
+  const set = new Set((ids || []).map(String).filter(Boolean));
+  store(SYNC_SEEN_KEY, Array.from(set).slice(-600));
 }
 function syncHhmm(ts){
   if (!isNum(ts)) return '';
@@ -5888,8 +5967,8 @@ async function syncPullOnce(){
 }
 /* 이 기기 상태 올리기 — 서버 응답 {ok:true,…} 또는 {ok:false,reason:'stale',…} */
 async function syncPushOnce(force){
-  const del = syncDelSeedIds();
-  const journal = tradeLog.filter(e => !(e.seed && del.has(String(e.id))));
+  const del = syncDelIds();
+  const journal = tradeLog.filter(e => e && e.id && !del.has(String(e.id)) && !isPurgeTestRecord(e));
   const body = JSON.stringify({
     action: 'save', journal: journal,
     asset: { initial: assetState.initial, withdrawals: assetState.withdrawals },
@@ -5932,16 +6011,30 @@ function syncMergeJournal(local, remote){
   });
   return Array.from(byId.values()).sort((a, b) => (Number(b.at) || 0) - (Number(a.at) || 0));
 }
-/* 받은 상태를 이 기기에 반영 (이 기기 기록은 버리지 않고 합칩니다) */
+/* 받은 상태를 이 기기에 반영 (이 기기 기록은 버리지 않고 합칩니다)
+   · 삭제 전파: 지난번에 시트에서 봤는데 이번에 사라진 id = 다른 기기가 지운 기록 → 이 기기에서도 삭제
+     (이 기기에서만 지운 id는 deletedIds에 남아 옛 복사본이 되살려도 다시 올라가지 않습니다) */
 function syncApply(data){
   if (!data) return;
   syncApplying = true;
   try {
     if (Array.isArray(data.journal)){
-      const del = syncDelSeedIds();
-      const remote = data.journal.filter(e => e && e.id && !del.has(String(e.id)));
-      tradeLog = syncMergeJournal(tradeLog, remote);
+      const del = syncDelIds();
+      const seen = syncSeenIds();
+      const remote = data.journal.filter(e => e && e.id);
+      const remoteIds = new Set(remote.map(e => String(e.id)));
+      const goneElsewhere = [];
+      seen.forEach(id => { if (!remoteIds.has(id)) goneElsewhere.push(id); });
+      if (goneElsewhere.length){
+        markDeletedIds(goneElsewhere);
+        rememberSeedDeleted(goneElsewhere);
+        goneElsewhere.forEach(id => del.add(id));
+      }
+      const remoteKeep = remote.filter(e => !del.has(String(e.id)) && !isPurgeTestRecord(e));
+      tradeLog = syncMergeJournal(tradeLog, remoteKeep);
+      tradeLog = tradeLog.filter(e => e && e.id && !del.has(String(e.id)) && !isPurgeTestRecord(e));
       store(LOG_KEY, tradeLog);
+      syncRememberSeen(remote.map(e => String(e.id)));
     }
     if (data.asset && isNum(parseFloat(data.asset.initial))){
       const ws = Array.isArray(data.asset.withdrawals) ? data.asset.withdrawals : [];
@@ -6894,18 +6987,16 @@ function deleteRecord(id){
     const p = state.pos && state.pos[e.sym];
     if (p && (!p.logId || p.logId === e.id)){ delete state.pos[e.sym]; savePos(); }
   }
-  if (e.seed){
-    const d = store(SEED_DEL_KEY);
-    const arr = Array.isArray(d) ? d : [];
-    if (!arr.includes(e.id)){ arr.push(e.id); store(SEED_DEL_KEY, arr); }
-  }
+  /* 지운 id를 기억해 폰·PC 어느 쪽의 옛 복사본도 되살리지 못하게 합니다 */
+  markDeletedIds([e.id]);
+  rememberSeedDeleted([e.id]);
   tradeLog.splice(i, 1);
   saveTradeLog();
   renderChips();                       /* 삭제 즉시 탭 순서·진입중 배지 재정렬 */
   renderPbarSyms();
   renderPosition();
   renderJournal();
-  toast('기록 삭제됨', '이 기기의 매매기록에서 지웠습니다.');
+  toast('기록 삭제됨', '이 기기와 구글 시트에서 지웠습니다 — 다른 기기에서도 다시 살아나지 않습니다.');
 }
 function bindJournal(){
   const page = $('#page-journal');
