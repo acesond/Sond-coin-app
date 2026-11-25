@@ -487,6 +487,25 @@ button.toggle b{font-variant-numeric:tabular-nums; color:#67e8f9; font-weight:80
 .mg-note .mg-btn{margin-left:auto; border:1px solid var(--line2); background:transparent; color:var(--dim2); font-family:inherit; font-size:9px; font-weight:700; padding:4px 7px; border-radius:7px; cursor:pointer; flex:none; white-space:nowrap}
 .mg-note.on .mg-btn{color:#cfe0ff; border-color:rgba(91,140,255,.45); background:rgba(91,140,255,.14)}
 .mg-note.on b{color:#cfe0ff}
+/* ---------- 증거금 비중(%) 슬라이더 — 바이낸스 선물 스타일 ---------- */
+.mg-box{margin:8px 0 9px; border:1px solid var(--line); border-radius:12px; background:#0b1320; padding:9px 12px 6px}
+.mg-head{display:flex; align-items:baseline; gap:6px; margin-bottom:1px}
+.mg-head .mg-lab{font-size:10px; color:var(--dim2); font-weight:700}
+.mg-head .mg-lab span{font-size:8.5px; color:#5f7290; font-weight:700; margin-left:3px}
+.mg-head .mg-pct{margin-left:auto; font-size:17px; font-weight:800; color:#cfe0ff; font-variant-numeric:tabular-nums; letter-spacing:-.4px; line-height:1.1}
+.mg-head .mg-pct small{font-size:10px; font-weight:800; color:#8fa6c6; margin-left:1px}
+.mg-range{-webkit-appearance:none; appearance:none; display:block; width:100%; height:36px; margin:0; background:transparent; cursor:pointer; touch-action:pan-y}
+.mg-range::-webkit-slider-runnable-track{height:9px; border-radius:5px; background:linear-gradient(90deg,#2f6bff 0%,#2f6bff var(--fill,0%),#22304a var(--fill,0%),#22304a 100%)}
+.mg-range::-webkit-slider-thumb{-webkit-appearance:none; width:28px; height:28px; margin-top:-9.5px; border-radius:50%; background:radial-gradient(circle at 36% 30%,#fff,#dbe6f5 40%,#5b8cff 100%); border:2px solid #0f1725; box-shadow:0 3px 10px rgba(0,0,0,.6), 0 0 0 1px rgba(91,140,255,.4)}
+.mg-range::-moz-range-track{height:9px; border-radius:5px; background:#22304a}
+.mg-range::-moz-range-progress{height:9px; border-radius:5px; background:#2f6bff}
+.mg-range::-moz-range-thumb{width:26px; height:26px; border-radius:50%; background:#5b8cff; border:2px solid #0f1725; box-shadow:0 3px 10px rgba(0,0,0,.6)}
+.mg-range:focus{outline:none}
+.mg-range:focus::-webkit-slider-thumb{box-shadow:0 3px 10px rgba(0,0,0,.6), 0 0 0 4px rgba(59,110,194,.28)}
+.mg-ticks{display:flex; justify-content:space-between; margin:-4px -2px 0}
+.mg-ticks button{border:0; background:transparent; color:#6c7f9b; font-family:inherit; font-size:9.5px; font-weight:800; padding:3px 5px; border-radius:6px; cursor:pointer; font-variant-numeric:tabular-nums}
+.mg-ticks button:active{background:rgba(91,140,255,.14)}
+.mg-ticks button.on{color:#cfe0ff; background:rgba(91,140,255,.16)}
 /* ---------- 자산현황 카드 (매매기록 2페이지 상단) ---------- */
 .ass-card{border:1px solid rgba(91,140,255,.28); background:linear-gradient(160deg,rgba(91,140,255,.13),var(--card) 62%); border-radius:14px; padding:11px 11px 12px; margin-bottom:9px}
 .ass-h{display:flex; align-items:center; gap:6px; margin-bottom:7px}
@@ -1132,8 +1151,24 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
         <div class="field"><label>손절가 (근거 무효화 라인)</label><input id="fStop" type="number" inputmode="decimal" step="any"></div>
         <div class="field"><label>목표 1차</label><input id="fT1" type="number" inputmode="decimal" step="any"></div>
         <div class="field"><label>목표 2차</label><input id="fT2" type="number" inputmode="decimal" step="any"></div>
+      </div>
+      <div class="fields" style="margin-top:8px">
         <div class="field"><label>증거금 (USDT, 선택)</label><input id="fMargin" type="number" inputmode="decimal" step="any" placeholder="0"></div>
         <div class="field"><label>손절 시 손실 / 1차 이익</label><div id="fPnL" style="font-size:11.5px; font-weight:700; padding-top:4px; line-height:1.3">—</div></div>
+      </div>
+      <div class="mg-box">
+        <div class="mg-head">
+          <span class="mg-lab">증거금 비중<span>자산 대비</span></span>
+          <span class="mg-pct" id="mgPctTxt">—<small>%</small></span>
+        </div>
+        <input class="mg-range" id="fPctRange" type="range" min="0" max="100" step="1" value="0" aria-label="현재 자산 대비 증거금 비중">
+        <div class="mg-ticks" id="mgTicks" role="group" aria-label="비중 빠른 선택">
+          <button type="button" data-pct="0">0%</button>
+          <button type="button" data-pct="25">25%</button>
+          <button type="button" data-pct="50">50%</button>
+          <button type="button" data-pct="75">75%</button>
+          <button type="button" data-pct="100">100%</button>
+        </div>
       </div>
       <div class="mg-note" id="mNote"></div>
       <div class="lev-row">
@@ -4375,20 +4410,23 @@ function renderMarginNote(rm, manual){
   el.classList.toggle('on', !manual);
   const t = rm.tier || RISK_TIERS.std;
   const pctTxt = Math.round(t.pct * 100) + '%';
+  const fmEl = $('#fMargin');
+  const curPct = pctOfMargin(fmEl ? parseFloat(fmEl.value) : NaN);
   let txt;
   if (!isNum(rm.margin)){
     txt = isNum(rm.asset) && rm.asset > 0
       ? '진입가·손절가를 넣으면 현재 자산 <b>' + Math.round(rm.asset) + '</b> USDT · <b>' + pctTxt + '</b> 리스크(' + t.label + ') 기준 증거금을 계산합니다.'
       : '자산현황을 먼저 입력하면 증거금을 계산합니다.';
   } else if (manual){
-    txt = '직접 입력한 증거금 사용 중 — 자산 <b>' + Math.round(rm.asset) + '</b> USDT · <b>' + pctTxt + '</b> 리스크(' + t.label + ') 기준 권장 <b>' + rm.margin + '</b> USDT';
+    txt = '직접 고른 증거금 사용 중' + (isNum(curPct) ? ' (자산 대비 <b>' + (Math.round(curPct * 10) / 10) + '%</b>)' : '') +
+          ' — 자산 <b>' + Math.round(rm.asset) + '</b> USDT · <b>' + pctTxt + '</b> 리스크(' + t.label + ') 기준 권장 <b>' + rm.margin + '</b> USDT';
   } else {
     txt = '현재 자산 <b>' + Math.round(rm.asset) + '</b> USDT 대비 <b>' + pctTxt + '</b> 리스크(<b>' +
           escHtml(t.label) + '</b> · 손절 시 <b>' + (rm.risk > 0 ? '-' : '') + rm.risk.toFixed(1) + '</b> USDT) 기준 자동 입력' +
           (rm.capped ? ' · 상한 ' + Math.round(t.cap * 100) + '% 적용' : '');
   }
   el.innerHTML = '<span class="mg-t">' + txt + '</span>' +
-    '<button class="mg-btn" id="mRecalc" type="button">자산 기준 재계산</button>';
+    '<button class="mg-btn" id="mRecalc" type="button" title="현재 자산 2% 리스크 기준으로 다시 계산">🔄 자동</button>';
   const b = $('#mRecalc');
   if (b) b.addEventListener('click', () => {
     state.marginAuto = true;
@@ -4403,6 +4441,42 @@ function refreshAutoMargin(){
   renderPlanner();
   savePlanDebounced();
 }
+/* ---------- 증거금 비중(%) 슬라이더 ----------
+   슬라이더 → 증거금 = 현재 자산 × % / 100 (수동 고정)
+   증거금 직접 입력·[🔄 자동](2% 리스크) → 슬라이더 위치와 % 배지를 자산 대비 비율로 역산해 같이 움직입니다. */
+function assetNow(){ const a = currentAsset(); return isNum(a) && a > 0 ? a : NaN; }
+function pctOfMargin(margin){
+  const a = assetNow();
+  return isNum(a) && isNum(margin) && margin > 0 ? margin / a * 100 : NaN;
+}
+function paintPctSlider(pct){
+  const r = $('#fPctRange');
+  if (!r) return;
+  const safe = isNum(pct) ? Math.max(0, Math.min(100, pct)) : 0;
+  if (document.activeElement !== r) r.value = String(Math.round(safe));   /* 직접 조작 중에는 덮지 않음 */
+  r.style.setProperty('--fill', safe.toFixed(1) + '%');
+  const txt = $('#mgPctTxt');
+  if (txt) txt.innerHTML = isNum(pct) ? (Math.round(pct * 10) / 10) + '<small>%</small>' : '—<small>%</small>';
+  document.querySelectorAll('#mgTicks button').forEach(b => {
+    b.classList.toggle('on', isNum(pct) && Math.abs(Math.round(pct) - (+b.dataset.pct)) < 0.5);
+  });
+}
+function applyMarginPct(pct, opts){
+  const a = assetNow();
+  const v = Math.max(0, Math.min(100, isNum(pct) ? pct : 0));
+  if (!isNum(a)){
+    paintPctSlider(pctOfMargin(parseFloat(($('#fMargin') || {}).value)));
+    if (opts && opts.warn) toast('비중 계산 불가', '매매기록의 자산현황(초기 금액)을 먼저 넣어 주세요.');
+    return;
+  }
+  const m = v > 0 ? Math.round(a * v / 100 * 100) / 100 : '';
+  state.marginAuto = false;               /* 슬라이더로 고른 값은 수동 고정 */
+  const fm = $('#fMargin');
+  if (fm) fm.value = m === '' ? '' : String(m);
+  renderPlanner();
+  savePlanDebounced();
+  if (opts && opts.toast) toast('증거금 ' + v + '%', '자산 ' + Math.round(a) + ' USDT × ' + v + '% = ' + (m === '' ? '0' : m) + ' USDT');
+}
 function renderPlanner(force){
   let p = readPlanForm();
   const rm = riskMarginFor(p);
@@ -4410,6 +4484,7 @@ function renderPlanner(force){
     p.margin = rm.margin;
     if ($('#fMargin').value !== String(rm.margin)) $('#fMargin').value = String(rm.margin);
   }
+  paintPctSlider(pctOfMargin(p.margin));   /* 증거금 ↔ 비중(%) 양방향 동기화 */
   renderMarginNote(rm, !state.marginAuto);
   renderNwHintApplied();   /* 배너에 지금 적용된 리스크 % 동기화 */
   const c = calcPlan(p);
@@ -4463,6 +4538,19 @@ function bindPlanner(){
     el.addEventListener('blur', () => el.closest('.field').classList.remove('focus'));
   });
   $('#fLev').addEventListener('input', () => { renderPlanner(); savePlanDebounced(); });
+  /* 증거금 비중 슬라이더 — 드래그하는 즉시 USDT·예상 손익이 따라 움직입니다 */
+  const rng = $('#fPctRange');
+  if (rng){
+    rng.addEventListener('input', () => applyMarginPct(parseFloat(rng.value)));
+    rng.addEventListener('change', () => { paintPctSlider(pctOfMargin(parseFloat($('#fMargin').value))); savePlanDebounced(); });
+  }
+  const ticks = $('#mgTicks');
+  if (ticks) ticks.addEventListener('click', ev => {
+    const b = ev.target.closest('button[data-pct]'); if (!b) return;
+    const v = +b.dataset.pct;
+    if (rng) rng.value = String(v);
+    applyMarginPct(v, { toast:true, warn:true });
+  });
   $('#sideSwitch').addEventListener('click', ev => {
     const b = ev.target.closest('button'); if (!b) return;
     state.planSide = b.dataset.side;
