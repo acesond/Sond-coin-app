@@ -2560,7 +2560,7 @@ function buildAnalysis(c){
   const evOf = s => s === 'short' ? nS : nL;
   let side = nS > nL ? 'short' : nL > nS ? 'long' : (tfs['4H'].trend === 'up' ? 'long' : 'short');
   const zSide = (zoneS.inZone && !zoneL.inZone) ? 'short' : (zoneL.inZone && !zoneS.inZone) ? 'long' : null;
-  if (zSide && zSide !== side && evOf(zSide) >= 2) side = zSide;
+  if (zSide && zSide !== side && evOf(zSide) >= 1) side = zSide;
   const best = evOf(side);                       /* 판정 방향의 근거 개수 (반대 방향은 참고) */
   const zSideM = side === 'short' ? zoneS : zoneL;
   /* 실제 진입 구간 일치가 확인된 3/3만 ‘타점 도달’ — 아니면 대기 */

@@ -707,7 +707,7 @@ def build_analysis(sym, price, candles):
         z_side = "long"
     else:
         z_side = None
-    if z_side and z_side != side and ev_of(z_side) >= 2:
+    if z_side and z_side != side and ev_of(z_side) >= 1:
         side = z_side
 
     best = ev_of(side)                       # 판정 방향의 근거 개수 (반대 방향은 참고)
