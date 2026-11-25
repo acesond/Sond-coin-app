@@ -616,6 +616,36 @@ def neowave_reduce_hint(waves):
 
 # ---------------------------------------------------------------- 3중 점검
 
+# 가설 진입 구간 실제 일치 — 현재가가 그 방향 가설의 진입 구간 안인가.
+# 요청(2026-11-26): 「타점 도달(3/3)」은 근거가 겹쳐도 현재가가 그 가설의 진입 구간에
+# 실제로 들어와 있을 때만 성립합니다. 진입가에서 1.0% 넘게 떨어져 있으면 3/3이어도
+# 타점 도달로 승격하지 않고 「대기(진입가와 X% 차이)」로 남깁니다.
+# 진입 구간 = 가설 진입가 기준 ±1.0% (숏·롱·돌파 모두).
+ZONE_MATCH_TOL = 1.0   # 진입가 기준 허용 갭 (%)
+
+
+def hyp_zone_match(side, price, sym):
+    h = HYP_DATA["HYP"].get(sym) or {}
+    if not is_num(price) or price <= 0:
+        return {"inZone": False, "entry": None, "slot": None, "gapPct": None}
+    pick = None
+    for slot in ("h1", "h2", "br"):
+        hy = h.get(slot)
+        if not hy or hy.get("kind") != side:
+            continue
+        entry = hy.get("entry")
+        if not is_num(entry) or entry <= 0:
+            continue
+        gap_pct = (price - entry) / entry * 100
+        in_zone = abs(gap_pct) <= ZONE_MATCH_TOL
+        cand = {"inZone": in_zone, "entry": entry, "slot": slot, "gapPct": gap_pct}
+        if pick is None:
+            pick = cand
+        elif ((cand["inZone"] and not pick["inZone"])
+              or (cand["inZone"] == pick["inZone"] and abs(gap_pct) < abs(pick["gapPct"]))):
+            pick = cand
+    return pick or {"inZone": False, "entry": None, "slot": None, "gapPct": None}
+
 
 def build_analysis(sym, price, candles):
     tfs = {bar: tf_analysis(bar, candles, price) for bar in ("1Dutc", "4H", "1H")}
@@ -660,14 +690,29 @@ def build_analysis(sym, price, candles):
     line_long_ind = line_long and not dup_long
     n_s = sum(1 for x in (wave_short, line_short_ind, div_short) if x)
     n_l = sum(1 for x in (wave_long, line_long_ind, div_long) if x)
+    # 판정 방향 — 현재가가 실제로 들어와 있는 가설을 먼저 봅니다
+    #   (숏 구간 안에서 ‘롱 타점 도달’ 제목 + ‘숏 진입 구간’ 부제가 겹치지 않도록)
+    zone_s = hyp_zone_match("short", price, sym)
+    zone_l = hyp_zone_match("long", price, sym)
+    ev_of = lambda s: n_s if s == "short" else n_l  # noqa: E731
     if n_s > n_l:
         side = "short"
     elif n_l > n_s:
         side = "long"
     else:
         side = "long" if tfs["4H"]["trend"] == "up" else "short"
+    if zone_s["inZone"] and not zone_l["inZone"]:
+        z_side = "short"
+    elif zone_l["inZone"] and not zone_s["inZone"]:
+        z_side = "long"
+    else:
+        z_side = None
+    if z_side and z_side != side and ev_of(z_side) >= 2:
+        side = z_side
 
-    best = max(n_s, n_l)
+    best = ev_of(side)                       # 판정 방향의 근거 개수 (반대 방향은 참고)
+    z_side_m = zone_s if side == "short" else zone_l
+    zone_hit = best >= 3 and z_side_m["inZone"]   # 실제 진입 구간 일치가 확인된 3/3만 타점
     # 참고 정보 — 판정을 깎지 않습니다.
     # 3/3이면 폐기·이탈이 아닌 한 ‘타점 도달’(매억남 기본)이고, NEoWave·1D 역추세는 본문 참고 줄로만.
     nw_ref = None
@@ -688,8 +733,13 @@ def build_analysis(sym, price, candles):
             trend_ref = ("1D " + ("하락" if d1 == "down" else "상승") + " 배열 — 역추세 "
                          + ("롱" if side == "long" else "숏") + ", 비중만 조절")
 
-    if best >= 3:
+    if zone_hit:
         label, cls = "타점 도달", ("bad" if side == "short" else "long")
+    elif best >= 3:
+        # 근거 3/3이어도 현재가가 진입 구간 밖 — 타점 도달로 승격하지 않습니다
+        gap_txt = (f" (진입가 {abs(z_side_m['gapPct']):.2f}% 차이)"
+                   if z_side_m.get("gapPct") is not None else "")
+        label, cls = ("숏 대기" if side == "short" else "롱 대기") + " — 3/3 구간 밖" + gap_txt, ("bad" if side == "short" else "long")
     elif best == 2:
         label, cls = ("숏 대기" if side == "short" else "롱 대기"), ("bad" if side == "short" else "long")
     elif best == 1:
@@ -727,9 +777,12 @@ def build_analysis(sym, price, candles):
         "label": label,
         "cls": cls,
         "best": best,
+        "zoneHit": zone_hit,
+        "zoneEntry": z_side_m.get("entry"),
+        "zoneGap": z_side_m.get("gapPct"),
         "nwRef": nw_ref,
         "trendRef": trend_ref,
-        "alertable": best >= 3 and label == "타점 도달",
+        "alertable": best >= 3 and zone_hit and label == "타점 도달",
     }
 
 

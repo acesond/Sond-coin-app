@@ -1065,7 +1065,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
     <span><i class="d2"></i>2/3 대기</span>
     <span class="st-upd" id="stUpd">6종목 점검 중</span>
   </div>
-  <div class="chip-easy" id="chipEasy">종목 순서는 <b>진입 중 포지션 → 타점 도달 3/3 → 바이낸스 선물 24시간 거래대금 순(6종목)</b>입니다. 빨간 점 = 자리·라인·다이버전스가 <b>모두</b> 겹침(3/3, 타점) — 매억남 기본 판정이라 NEoWave·1D 역추세로 깎지 않습니다 · 주황 점 = 하나 모자람(2/3, 대기). 자리와 라인이 같은 레벨이면 근거 1개로 셉니다. 3/3이어도 손익비 3:1이 안 되면 진입하지 않고, 확인봉 무효면 들어가지 않습니다. NEoWave·1D 역추세는 참고 줄로만 안내합니다.</div>
+  <div class="chip-easy" id="chipEasy">종목 순서는 <b>진입 중 포지션 → 타점 도달 3/3 → 바이낸스 선물 24시간 거래대금 순(6종목)</b>입니다. 빨간 점 = 자리·라인·다이버전스가 <b>모두</b> 겹침(3/3) <b>그리고 현재가가 그 가설의 진입가 ±1.0% 안</b> — 둘 다여야 타점 도달입니다(근거가 3/3이어도 진입가에서 떨어져 있으면 ‘3/3 대기 — 구간 밖’). NEoWave·1D 역추세로 깎지 않습니다 · 주황 점 = 하나 모자람(2/3, 대기). 자리와 라인이 같은 레벨이면 근거 1개로 셉니다. 3/3이어도 손익비 3:1이 안 되면 진입하지 않고, 확인봉 무효면 들어가지 않습니다. NEoWave·1D 역추세는 참고 줄로만 안내합니다.</div>
 
   <!-- ===== 차트 ===== -->
   <section id="chartSec">
@@ -2473,6 +2473,35 @@ function inFib(leg, lo, hi, price){
   return r >= lo && r <= hi;
 }
 
+/* ── 가설 진입 구간 실제 일치 — 현재가가 그 방향 가설의 진입 구간 안인가 ─────────
+   요청(2026-11-26): 「타점 도달(3/3)」은 근거가 겹쳐도 현재가가 그 가설의 진입 구간에
+   실제로 들어와 있을 때만 성립합니다. 진입가에서 1.0% 넘게 떨어져 있으면 3/3이어도
+   타점 도달로 승격하지 않고 「대기(진입가와 X% 차이)」로 남깁니다.
+   · 진입 구간 = 가설 진입가 기준 ±1.0% (숏·롱·돌파 모두).
+     가설 존(zLo~zHi)은 ‘자리’ 근거로만 쓰고, 존 상단(예: 눌림목 롱 존의 mid)까지
+     진입 구간으로 넓히면 진입가와 3~4% 떨어진 가격이 다시 ‘타점 도달’이 되므로 쓰지 않습니다. */
+const ZONE_MATCH_TOL = 1.0;                       /* 진입가 기준 허용 갭 (%) */
+function hypZoneMatch(side, price, sym){
+  const s = sym || state.sym;
+  if (!isNum(price) || price <= 0) return { inZone:false, entry:null, slot:null, gapPct:NaN };
+  let pick = null;
+  const consider = (entry, slot) => {
+    if (!isNum(entry) || entry <= 0) return;
+    const gapPct = (price - entry) / entry * 100;
+    const inZone = Math.abs(gapPct) <= ZONE_MATCH_TOL;
+    const cand = { inZone:inZone, entry:entry, slot:slot, gapPct:gapPct };
+    if (!pick){ pick = cand; return; }
+    const better = (cand.inZone && !pick.inZone) ||
+      (cand.inZone === pick.inZone && Math.abs(cand.gapPct) < Math.abs(pick.gapPct));
+    if (better) pick = cand;
+  };
+  hypByKind(side, s).forEach(h => {
+    const p = (s === state.sym) ? hypPlan(h.slot) : h;
+    consider(p.entry, h.slot);
+  });
+  return pick || { inZone:false, entry:null, slot:null, gapPct:NaN };
+}
+
 function buildAnalysis(c){
   c = c || state;
   const sym = c.sym;
@@ -2523,10 +2552,22 @@ function buildAnalysis(c){
   const lineLongInd  = lineLong && !dupLong;
   const nS = [waveShort, lineShortInd, divShort].filter(Boolean).length;
   const nL = [waveLong, lineLongInd, divLong].filter(Boolean).length;
-  const side = nS > nL ? 'short' : nL > nS ? 'long' : (tfs['4H'].trend === 'up' ? 'long' : 'short');
+  /* ── 판정 방향 — 현재가가 실제로 들어와 있는 가설을 먼저 봅니다 ────────────
+     숏 구간 안에 있으면 숏 가설(가설 1)로 판정해야 ‘롱 타점 도달’ 제목 아래
+     빨간 ‘숏 진입 구간’ 부제가 겹치는 모순이 생기지 않습니다. */
+  const zoneS = hypZoneMatch('short', price, sym);
+  const zoneL = hypZoneMatch('long', price, sym);
+  const evOf = s => s === 'short' ? nS : nL;
+  let side = nS > nL ? 'short' : nL > nS ? 'long' : (tfs['4H'].trend === 'up' ? 'long' : 'short');
+  const zSide = (zoneS.inZone && !zoneL.inZone) ? 'short' : (zoneL.inZone && !zoneS.inZone) ? 'long' : null;
+  if (zSide && zSide !== side && evOf(zSide) >= 2) side = zSide;
+  const best = evOf(side);                       /* 판정 방향의 근거 개수 (반대 방향은 참고) */
+  const zSideM = side === 'short' ? zoneS : zoneL;
+  /* 실제 진입 구간 일치가 확인된 3/3만 ‘타점 도달’ — 아니면 대기 */
+  const zoneHit = best >= 3 && zSideM.inZone;
+  const gapAbs = isNum(zSideM.gapPct) ? Math.abs(zSideM.gapPct) : NaN;
 
   let vLabel = '관망', vCls = 'neutral', vTitle = '관망 — 지금은 자리가 아니다';
-  const best = Math.max(nS, nL);
   /* 참고 정보 — 매억남 기본 원칙이 메인 판정입니다.
      근거 3/3이면 폐기·이탈이 아닌 한 ‘타점 도달 3/3’이고,
      NEoWave 파동 상태와 1D 역추세는 판정을 깎지 않고 ‘참고’ 줄로만 짧게 붙입니다.
@@ -2544,9 +2585,15 @@ function buildAnalysis(c){
     if ((side === 'long' && d1 === 'down') || (side === 'short' && d1 === 'up'))
       trendRef = '1D ' + (d1 === 'down' ? '하락' : '상승') + ' 배열 — 역추세 ' + (side === 'long' ? '롱' : '숏') + ', 비중만 조절';
   }
-  if (best >= 3) {
+  if (zoneHit) {
     vLabel = '타점 도달'; vCls = side === 'short' ? 'bad' : 'long';
     vTitle = (side === 'short' ? '숏' : '롱') + ' 타점 도달 — 근거 3/3 (매억남 기준)';
+  } else if (best >= 3) {
+    /* 근거 3/3이어도 현재가가 진입 구간 밖 — 타점 도달로 승격하지 않습니다 */
+    vLabel = side === 'short' ? '숏 대기' : '롱 대기';
+    vCls = side === 'short' ? 'bad' : 'long';
+    vTitle = (side === 'short' ? '숏' : '롱') + ' 대기 — 진입가 ' + (isNum(zSideM.entry) ? fmtPx(zSideM.entry) : '—') +
+      (isNum(gapAbs) ? '와 ' + gapAbs.toFixed(2) + '% 차이' : '') + ' (근거 3/3 · 구간 밖, 지금 가격은 타점 아님)';
   } else if (best === 2) {
     vLabel = side === 'short' ? '숏 대기' : '롱 대기';
     vCls = side === 'short' ? 'bad' : 'long';
@@ -2649,7 +2696,9 @@ function buildAnalysis(c){
             : '4H·1H 상승 다이버전스 없음' }
       ]
     },
-    nS, nL, side, vLabel, vCls, vTitle, nwRef, trendRef, caution:null, dup:{ short:dupShort, long:dupLong },
+    nS, nL, side, nSide:best, nOther:(side === 'short' ? nL : nS),
+    zoneHit, zoneEntry:zSideM.entry, zoneGap:zSideM.gapPct, zoneMatch:{ short:zoneS, long:zoneL },
+    vLabel, vCls, vTitle, nwRef, trendRef, caution:null, dup:{ short:dupShort, long:dupLong },
     summary: lines, nextHint,
     counters: { anyDiv, divT4:t4.div, divT1:t1.div }
   };
@@ -2699,7 +2748,7 @@ function entryTiming(a, c1h){
   /* 직전 확정봉의 종가 위치(0=저가, 1=고가) — 꼬리 캔들은 종가가 유리한 쪽 절반에 있어야 ‘확인’으로 인정 */
   const cf = (last && last.h > last.l) ? (last.c - last.l) / (last.h - last.l) : null;
   const price = a.price;
-  const best = Math.max(a.nS || 0, a.nL || 0);
+  const best = isNum(a.nSide) ? a.nSide : Math.max(a.nS || 0, a.nL || 0);
   const tol = price * 0.004;                                        /* 존 판정 여유 ±0.4% */
   const inR = (v, lo, hi) => isNum(v) && v >= lo - tol && v <= hi + tol;
   const lastTxt = last ? '직전 확정봉 ' + kst(last.t) + ' ' + ic.text + ' · 고가 ' + fx(last.h) + ' · 종가 ' + fx(last.c) : '직전 확정 1H 봉 없음';
@@ -2747,6 +2796,15 @@ function entryTiming(a, c1h){
   base.rrTxt = rr ? rrTxt() : '';
   base.rrOk = rr ? !rrBlocked() : null;
   base.rrNow = rr ? '현재가 ' + fx(price) + ' 기준 손익비 ' + rrTxt() + (rrBlocked() ? ' — 3:1 미달' : ' — 3:1 이상') + ' · 진입가 ' + fx(rr.entry) + '에서는 ' + rr.rrEntry + ':1' : '';
+
+  /* ── 근거 3/3이어도 현재가가 진입 구간 밖이면 타점 아님 — 진입가 도달 대기 ── */
+  if (best >= 3 && a.zoneHit === false){
+    const gap = isNum(a.zoneGap) ? Math.abs(a.zoneGap).toFixed(2) + '%' : '1% 이상';
+    const goalTxt = isNum(a.zoneEntry) ? fx(a.zoneEntry) : '진입 구간';
+    return Object.assign(base, { state:'wait', cls:'wait', branch:'none', branchKr:sideKr + ' 대기', short:'진입가 대기',
+      compact:'⏳ 진입가 대기', label:'⏳ 진입가 도달 대기 — 지금은 타점 아님',
+      detail: sideKr + ' 진입가 ' + goalTxt + '과 ' + gap + ' 차이 — 근거는 3/3이지만 가격이 진입 구간 밖이라 타점 도달이 아닙니다. ' + lastTxt + curTxt + '.' });
+  }
 
   /* ── 근거 2/3 — 한 개 더 + 정각 마감 대기 ── */
   if (best === 2){
@@ -3032,13 +3090,17 @@ function altCtx(id){
 }
 function statusOfAnalysis(a){
   if (!a) return null;
-  const best = Math.max(a.nS, a.nL);
+  const best = isNum(a.nSide) ? a.nSide : Math.max(a.nS, a.nL);
   const voided = !!(a.zone && a.zone.code === 'void');                /* 가설 폐기 → 관망 */
-  /* 매억남 기본 — 3/3이면 폐기·이탈이 아닌 한 ‘타점 도달’(빨강). NEoWave·1D 역추세는 판정을 깎지 않습니다 */
-  const level = (voided || best < 2) ? 0 : (best >= 3 ? 3 : 2);        /* 3=빨강 · 2=주황 · 0=기본 */
+  /* 매억남 기본 — 3/3이면 폐기·이탈이 아닌 한 ‘타점 도달’(빨강).
+     단, 현재가가 그 가설의 진입 구간(±1.0%) 안에 실제로 있을 때만 타점(3)입니다 */
+  const hit = best >= 3 && a.zoneHit !== false;
+  const level = (voided || best < 2) ? 0 : (hit ? 3 : 2);              /* 3=빨강 · 2=주황 · 0=기본 */
   const sideKr = a.side === 'short' ? '숏' : '롱';
+  const gapTxt = isNum(a.zoneGap) ? ' (진입가 ' + Math.abs(a.zoneGap).toFixed(2) + '% 차이)' : '';
   const label = voided ? '관망 — 가설 폐기 구간 ' + best + '/3'
-    : level === 3 ? sideKr + ' 타점 도달 3/3'
+    : hit ? sideKr + ' 타점 도달 3/3'
+    : best >= 3 ? sideKr + ' 3/3 대기 — 구간 밖' + gapTxt
     : level === 2 ? sideKr + ' 2/3 대기'
     : '관망 ' + best + '/3';
   return { level, best, side:a.side, voided, price:a.price, label,
@@ -3647,7 +3709,7 @@ function hypShort(h){
 function hypBindHtml(a){
   const all = hypAll();
   if (!all.length || !a) return '';
-  const best = Math.max(a.nS, a.nL);
+  const best = isNum(a.nSide) ? a.nSide : Math.max(a.nS, a.nL);
   const same = hypByKind(a.side);
   const opp  = hypByKind(a.side === 'short' ? 'long' : 'short');
   const p = hypPrimaryFor(a) || all[0];
@@ -3690,6 +3752,9 @@ function hypBindHtml(a){
   const valSrc = hp.edited ? '이 기기에 저장된 <b>내 수정값</b>' : '이 가설 값';
   const note = (p.slot === 'br' && a.zone && a.zone.code === 'brk2')
     ? '지금 «' + a.vLabel + '» 판정 — 하방 이탈(종가 붕괴) 가설 기준입니다. 종가 확인 전 추격 금지.'
+    : (best >= 3 && a.zoneHit === false)
+    ? '지금 «' + a.vLabel + ' · 근거 ' + best + '/3» — 근거는 갖춰졌지만 현재가가 이 가설의 진입 구간 밖이라 타점 도달이 아닙니다. '
+      + (isNum(a.zoneEntry) ? '진입가 ' + fmtPx(a.zoneEntry) + '까지 ' + Math.abs(a.zoneGap).toFixed(2) + '% — 구간에 들어와야 진입.' : '진입 구간에 들어와야 진입.')
     : '지금 «' + a.vLabel + ' · 근거 ' + best + '/3» 판정이 이 가설 기준 — 진입·손절·목표도 ' + valSrc + '입니다.';
   const caution = (a.side === 'short' && a.zone && a.zone.code === 'brkup')
     ? '<div class="vhyp-alt" style="color:#ffd79a">⚠ 지금 가격은 돌파 롱 감시 구간 — 숏 근거가 무효화되는지 먼저 확인.</div>' : '';
@@ -3742,13 +3807,13 @@ function renderVTiming(tm){
 function renderAnalysis(a){
   const badge = $('#vBadge');
   badge.className = 'v-badge ' + a.vCls;
-  const bn = Math.max(a.nS, a.nL);
+  const bn = isNum(a.nSide) ? a.nSide : Math.max(a.nS, a.nL);
   badge.innerHTML = '<span>' + a.vLabel + '</span><small style="font-size:9px;font-weight:600;opacity:.7;letter-spacing:0">근거 ' + bn + '/3</small>';
   const hp = hypPrimaryFor(a);
   $('#vTitle').innerHTML = a.vTitle + ((hp && a.zone.code !== 'void')
     ? ' <span class="badge ' + hypKindCls(hp) + '" style="vertical-align:2px">' + hp.title.split(' · ')[0] + '</span>' : '');
   const zc = a.zone.cls === 'short' ? 'var(--down)' : a.zone.cls === 'long' ? 'var(--up)' : a.zone.cls === 'warn' ? 'var(--warn)' : 'var(--dim)';
-  $('#vSub').innerHTML = '<span style="color:' + zc + '">' + a.zone.text + '</span> · 근거 ' + Math.max(a.nS, a.nL) + '/3 · 현재가 ' + fmtPx(a.price);
+  $('#vSub').innerHTML = '<span style="color:' + zc + '">' + a.zone.text + '</span> · 근거 ' + (isNum(a.nSide) ? a.nSide : Math.max(a.nS, a.nL)) + '/3 · 현재가 ' + fmtPx(a.price);
   const ve = $('#vEasy');
   if (ve) ve.innerHTML = verdictEasy(a);
   renderVTiming(a.timing);
@@ -3818,12 +3883,17 @@ function renderAnalysis(a){
 }
 /* 판정 카드의 한 줄 설명 — 근거 개수를 초보자 말로 */
 function verdictEasy(a){
-  const n = Math.max(a.nS, a.nL), side = a.side === 'short' ? '숏' : '롱';
+  const n = isNum(a.nSide) ? a.nSide : Math.max(a.nS, a.nL), side = a.side === 'short' ? '숏' : '롱';
   if (a.zone && a.zone.code === 'void'){
     return '<b>가설 폐기 구간</b> · 원래 가설의 손절선을 넘어섰습니다. 되돌림을 기다리지 말고 새 추세가 맞는지 먼저 보세요.';
   }
   let t;
-  if (n >= 3) t = '자리·라인·다이버전스가 모두 겹쳤습니다(매억남 기준 타점). 손익비 3:1이 안 되면 건너뜁니다.'; 
+  if (n >= 3 && a.zoneHit === false){
+    t = '근거는 3개가 됐지만 지금 가격이 ' + side + ' 진입가에서 ' +
+      (isNum(a.zoneGap) ? Math.abs(a.zoneGap).toFixed(2) + '%' : '1% 이상') + ' 떨어져 있습니다 — 판정은 <b>대기</b>. ' +
+      '가격이 진입 구간에 들어와야 타점 도달입니다(지금은 추격 금지).';
+  }
+  else if (n >= 3) t = '자리·라인·다이버전스가 모두 겹쳤습니다(매억남 기준 타점). 손익비 3:1이 안 되면 건너뜁니다.'; 
   else if (n === 2) t = '하나 모자랍니다. 빠진 조건(다이버전스·거래량·전환 캔들)이 채워질 때까지 기다리는 자리입니다.';
   else if (n === 1) t = '한 개만 겹쳤습니다. 진입 신호가 아니라 지켜보는 구간입니다.';
   else t = '겹친 조건이 없습니다. 지금은 아무것도 하지 않는 구간입니다.';
@@ -4842,7 +4912,7 @@ function hypBound(){
   const a = (state.ana && state.ana.sym === state.sym) ? state.ana : null;
   let h = null, mode = 'wait', n = 0;
   if (a){
-    n = Math.max(a.nS, a.nL);
+    n = isNum(a.nSide) ? a.nSide : Math.max(a.nS, a.nL);
     const voided = !!(a.zone && a.zone.code === 'void');
     if (n >= 2 && !voided){ h = hypPrimaryFor(a); mode = 'live'; }
   }
