@@ -424,6 +424,14 @@ button.toggle b{font-variant-numeric:tabular-nums; color:#67e8f9; font-weight:80
 /* 기간 보기(전체·주별·월별) — 주/월 헤더 요약 */
 .jtabs.jperiod .jtab{font-size:11px; font-weight:800; padding:6px 6px}
 .jtabs.jperiod .jtab.on{color:#e9f1ff; border-color:rgba(91,140,255,.62); background:linear-gradient(160deg,rgba(91,140,255,.26),rgba(47,107,255,.10))}
+/* 결과 보기(전체·승·패·진행중) */
+.jtabs.jresult .jtab.win.on{color:#a7f3c4; border-color:rgba(34,197,94,.58); background:rgba(34,197,94,.16)}
+.jtabs.jresult .jtab.win.on b{color:#a7f3c4}
+.jtabs.jresult .jtab.loss.on{color:#ffb3c0; border-color:rgba(244,63,94,.58); background:rgba(244,63,94,.14)}
+.jtabs.jresult .jtab.loss.on b{color:#ffb3c0}
+.jtabs.jresult .jtab.openc.on{color:#cfe0ff; border-color:rgba(91,140,255,.58); background:rgba(91,140,255,.16)}
+.jtabs.jresult .jtab.openc.on b{color:#cfe0ff}
+.jstat b.sm{font-size:12.5px}
 .jgrp{margin-top:2px}
 .jgrp+.jgrp{margin-top:13px}
 .jgrp-h{display:flex; flex-direction:column; gap:4px; border:1px solid rgba(91,140,255,.24); background:linear-gradient(160deg,rgba(91,140,255,.12),rgba(12,21,34,.94) 70%); border-radius:11px; padding:7px 9px 8px; margin:0 0 8px}
@@ -504,6 +512,18 @@ button.toggle b{font-variant-numeric:tabular-nums; color:#67e8f9; font-weight:80
 .mg-note .mg-btn{margin-left:auto; border:1px solid var(--line2); background:transparent; color:var(--dim2); font-family:inherit; font-size:9px; font-weight:700; padding:4px 7px; border-radius:7px; cursor:pointer; flex:none; white-space:nowrap}
 .mg-note.on .mg-btn{color:#cfe0ff; border-color:rgba(91,140,255,.45); background:rgba(91,140,255,.14)}
 .mg-note.on b{color:#cfe0ff}
+/* ---------- 바이낸스 선물 수수료 (손익비 계산기) ---------- */
+.fee-box{margin:9px 0 0; border:1px solid var(--line); border-radius:12px; background:#0b1320; padding:8px 10px 9px}
+.fee-head{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+.fee-head .fee-lab{font-size:10px; color:var(--dim2); font-weight:700; line-height:1.25}
+.fee-head .fee-lab span{display:block; font-size:8.5px; color:#5f7290; font-weight:700; margin-top:1px}
+.fee-switch{margin-left:auto; display:flex; gap:3px; padding:2px; border:1px solid var(--line2); border-radius:9px; background:#0c1522}
+.fee-switch button{border:0; background:transparent; color:var(--dim2); font-family:inherit; font-size:9.5px; font-weight:800; padding:4px 7px; border-radius:7px; cursor:pointer; white-space:nowrap}
+.fee-switch button.on{color:#e6eefb; background:rgba(91,140,255,.20); box-shadow:inset 0 0 0 1px rgba(91,140,255,.45)}
+.fee-out{display:flex; gap:9px; flex-wrap:wrap; align-items:baseline; margin-top:7px; font-size:9.5px; color:var(--dim2); font-variant-numeric:tabular-nums; line-height:1.45}
+.fee-out b{font-size:11px; font-weight:800; color:#dbe6f5}
+.fee-out b.down{color:var(--down)} .fee-out b.up{color:var(--up)}
+.fee-out .fee-net{margin-left:auto}
 /* ---------- 증거금 비중(%) 슬라이더 — 바이낸스 선물 스타일 ---------- */
 .mg-box{margin:8px 0 9px; border:1px solid var(--line); border-radius:12px; background:#0b1320; padding:9px 12px 6px}
 .mg-head{display:flex; align-items:baseline; gap:6px; margin-bottom:1px}
@@ -558,6 +578,14 @@ button.toggle b{font-variant-numeric:tabular-nums; color:#67e8f9; font-weight:80
 .jpy .jpy-v{margin-left:auto; font-weight:800; font-size:10px; color:var(--dim)}
 .jpy .jpy-v.up{color:var(--up)} .jpy .jpy-v.down{color:var(--down)}
 .jpy .j-memo-inp{flex:1 1 80px}
+/* 수수료 · 순손익 줄 (바이낸스 선물 왕복 수수료) */
+.jfee{display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:5px; font-size:9px; color:var(--dim2); font-variant-numeric:tabular-nums}
+.jfee .jfee-k{font-weight:700; color:var(--dim2)}
+.jfee b{color:#dbe6f5; font-weight:800; font-size:9.5px}
+.jfee .jfee-m{font-size:8.5px; color:#8ea3c0; border:1px solid rgba(147,162,182,.24); border-radius:5px; padding:0 4px; line-height:1.55}
+.jfee .jfee-n{margin-left:auto; color:var(--dim2)}
+.jfee .jfee-n b{font-size:10px}
+.jfee .jfee-n b.up{color:var(--up)} .jfee .jfee-n b.down{color:var(--down)} .jfee .jfee-n b.flat{color:var(--dim)}
 
 /* ---------- 바텀 시트 (진입/청산 기록) ---------- */
 .sheet-wrap{position:fixed; inset:0; z-index:70; display:flex; align-items:flex-end; justify-content:center}
@@ -1172,7 +1200,17 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
       </div>
       <div class="fields" style="margin-top:8px">
         <div class="field"><label>증거금 (USDT, 선택)</label><input id="fMargin" type="number" inputmode="decimal" step="any" placeholder="0"></div>
-        <div class="field"><label>손절 시 손실 / 1차 이익</label><div id="fPnL" style="font-size:11.5px; font-weight:700; padding-top:4px; line-height:1.3">—</div></div>
+        <div class="field"><label>손절 시 손실 / 1차 이익 (수수료 전)</label><div id="fPnL" style="font-size:11.5px; font-weight:700; padding-top:4px; line-height:1.3">—</div></div>
+      </div>
+      <div class="fee-box">
+        <div class="fee-head">
+          <span class="fee-lab">바이낸스 선물 수수료<span>진입+청산 왕복 · VIP 0 기본</span></span>
+          <div class="fee-switch" id="feeSwitch" role="group" aria-label="주문 방식">
+            <button type="button" data-fee="taker" class="on">시장가 0.10%</button>
+            <button type="button" data-fee="maker">지정가 0.04%</button>
+          </div>
+        </div>
+        <div class="fee-out" id="feeOut">증거금을 넣으면 예상 왕복 수수료와 수수료 반영 순손익을 계산합니다.</div>
       </div>
       <div class="mg-box">
         <div class="mg-head">
@@ -1261,11 +1299,11 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
       <div class="card jstat-card" id="jStats"></div>
       <div class="jfilter">
         <div class="jtabs jperiod" id="jPeriod" role="group" aria-label="기간 보기"></div>
-        <div class="jtabs" id="jStatus" role="group" aria-label="상태 필터"></div>
+        <div class="jtabs jresult" id="jResult" role="group" aria-label="결과 보기"></div>
         <div class="jsyms" id="jSyms" role="group" aria-label="종목 필터"></div>
       </div>
       <div id="jList"></div>
-      <p class="jnote">진입할 때의 <b>근거 스냅샷</b>(가설·3중 점검·NEoWave·RSI)을 함께 저장하고, 청산할 때 실현 ROE를 계산해 <b>종료됨</b>으로 남깁니다. 기록은 <span id="jSyncNote">이 기기 브라우저(localStorage)에 저장하고 구글 시트와 자동으로 맞춰 폰·PC에서 함께 봅니다.</span> 이 앱은 주문을 실행하지 않으므로 표시된 ROE는 계산값입니다.</p>
+      <p class="jnote">진입할 때의 <b>근거 스냅샷</b>(가설·3중 점검·NEoWave·RSI)을 함께 저장하고, 청산할 때 실현 ROE를 계산해 <b>종료됨</b>으로 남깁니다. 새 기록은 바이낸스 선물 <b>왕복 수수료</b>(시장가 0.10% · 지정가 0.04%)를 빼낸 <b>순손익</b>으로 자산현황을 계산하며, 수수료 정보가 없는 예전 기록은 기존 금액을 그대로 둡니다. 기록은 <span id="jSyncNote">이 기기 브라우저(localStorage)에 저장하고 구글 시트와 자동으로 맞춰 폰·PC에서 함께 봅니다.</span> 이 앱은 주문을 실행하지 않으므로 표시된 ROE·수수료는 계산값입니다.</p>
     </section>
   </div><!-- /page-journal -->
 </div>
@@ -1551,6 +1589,7 @@ const state = {
   fibOn: false,
   showMonowave: true,
   marginAuto: true,          /* 계산기 증거금을 자산 기준으로 자동 입력 (수동 수정 시 false) */
+  feeMode: 'taker',          /* 바이낸스 선물 수수료 — taker(시장가 0.10% 왕복) / maker(지정가 0.04% 왕복) */
   mw: null,
   hover: null,
   prevPrice: null,
@@ -3864,6 +3903,29 @@ function planFor(slot){
   p.side = def.kind;
   return p;
 }
+/* ---------- 바이낸스 USDT-M 선물 수수료 (VIP 0 기본) ----------
+   진입과 청산에 각각 한 번씩 붙어 왕복 기준으로 계산합니다.
+   · 시장가(Taker) 왕복 0.10% = 진입 0.05% + 청산 0.05%
+   · 지정가(Maker) 왕복 0.04% = 진입 0.02% + 청산 0.02%
+   수수료 = 포지션 규모(증거금 × 레버리지) × 왕복 수수료율 */
+const FEE_RATES = { taker: 0.001, maker: 0.0004 };
+const FEE_MODE_LABEL = { taker: '시장가 0.10%', maker: '지정가 0.04%' };
+function feeModeOf(v){ return v === 'maker' ? 'maker' : 'taker'; }
+function feeRateOfMode(mode){ return FEE_RATES[feeModeOf(mode)] || FEE_RATES.taker; }
+/* 기록에 저장된 수수료율 — 없으면 null (이번 배포 전 기록) */
+function storedFeeRate(e){
+  const r = e ? parseFloat(e.feeRate) : NaN;
+  return isNum(r) && r > 0 && r < 0.01 ? r : null;
+}
+function hasFeeRecord(e){ return storedFeeRate(e) != null; }
+function feeOfRecord(e){ return hasFeeRecord(e) ? feeRateOfMode(storedFeeRate(e) === FEE_RATES.maker ? 'maker' : 'taker') : NaN; }
+function roundTripFee(e, rate){
+  const m = e ? parseFloat(e.margin) : NaN;
+  const lev = e ? (parseInt(e.lev, 10) || 5) : 5;
+  const r = isNum(rate) ? rate : feeOfRecord(e);
+  if (!isNum(m) || m <= 0 || !isNum(r)) return NaN;
+  return Math.round(m * lev * r * 100) / 100;
+}
 function calcPlan(p){
   const risk = p.side === 'short' ? p.stop - p.entry : p.entry - p.stop;
   const rew1 = p.side === 'short' ? p.entry - p.t1 : p.t1 - p.entry;
@@ -3877,6 +3939,12 @@ function calcPlan(p){
   const loss = size ? size * riskPct / 100 : NaN;
   const profit1 = size ? size * (rew1 / p.entry * 100) / 100 : NaN;
   const profit2 = size ? size * (rew2 / p.entry * 100) / 100 : NaN;
+  /* 바이낸스 선물 왕복 수수료 — 포지션 규모 × 수수료율 */
+  const feeRate = feeRateOfMode(p.feeMode);
+  const fee = size ? Math.round(size * feeRate * 100) / 100 : NaN;
+  const lossNet = size ? -(loss + fee) : NaN;
+  const profit1Net = size ? profit1 - fee : NaN;
+  const profit2Net = size ? profit2 - fee : NaN;
   const best = Math.max(isNum(r1) ? r1 : -9, isNum(r2) ? r2 : -9);
   let status = { cls:'bad', big:'진입 금지', sub:'손익비가 1:1도 안 된다 — 매억남 기준 진입 없음' };
   if (!okRisk) status = { cls:'bad', big:'값 확인', sub:'손절가가 ' + (p.side === 'short' ? '진입가 위' : '진입가 아래') + '에 있어야 한다' };
@@ -3888,7 +3956,7 @@ function calcPlan(p){
   if (p.lev > 10) warns.push('레버리지 ' + p.lev + '배 — 10배 초과는 손절 폭이 아주 짧은 특별한 자리만. 5~10배 기본.');
   if (okRisk && riskPct > 3.5) warns.push('손절 폭 ' + riskPct.toFixed(2) + '% — 라인이 먼 자리는 비중을 줄이거나 건너뜁니다.');
   const t3 = okRisk ? (p.side === 'short' ? p.entry - risk * 3 : p.entry + risk * 3) : NaN;
-  return { risk, rew1, rew2, riskPct, r1, r2, liq, loss, profit1, profit2, status, warns, t3, okRisk, best };
+  return { risk, rew1, rew2, riskPct, r1, r2, liq, loss, profit1, profit2, fee, feeRate, lossNet, profit1Net, profit2Net, size, status, warns, t3, okRisk, best };
 }
 /* 가설 카드 미니 차트 — 최근 1H 봉 흐름 + 점선 예상 경로 */
 function miniChartSVG(slot){
@@ -4339,7 +4407,7 @@ const FIB_ON_KEY = 'maeyo.fib.on.v1';
 function readPlanForm(){
   const n = id => { const v = parseFloat($(id).value); return isNum(v) ? v : NaN; };
   return { side: state.planSide || 'short', entry:n('#fEntry'), stop:n('#fStop'), t1:n('#fT1'), t2:n('#fT2'),
-           lev: +$('#fLev').value || 1, margin:n('#fMargin'), mAuto: state.marginAuto !== false };
+           lev: +$('#fLev').value || 1, margin:n('#fMargin'), mAuto: state.marginAuto !== false, feeMode: feeModeOf(state.feeMode) };
 }
 /* 진입 기록은 화면 계산기에 지금 입력된 값을 그대로 씁니다.
    진입가는 입력된 값이 있어야 기록하고, 비어 있는 손절·목표는 가설값으로 채웁니다.
@@ -4355,11 +4423,15 @@ function calcEntryPlan(){
     t1:    pos(f.t1)    ? f.t1    : base.t1,
     t2:    pos(f.t2)    ? f.t2    : base.t2,
     lev:   clamp(parseInt(f.lev, 10) || 5, 1, 50),
-    margin: pos(f.margin) ? f.margin : NaN
+    margin: pos(f.margin) ? f.margin : NaN,
+    feeMode: feeModeOf(f.feeMode)
   };
 }
 function fillPlanForm(p){
   state.planSide = p.side || 'short';
+  state.feeMode = feeModeOf(p.feeMode);
+  const fsw0 = $('#feeSwitch');
+  if (fsw0) fsw0.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.fee === state.feeMode));
   /* 저장된 값이 '수동 고정'이면 그대로, 아니면 자산 기준 자동 계산 */
   state.marginAuto = p.mAuto === true ? true : p.mAuto === false ? false : !(isNum(p.margin) && p.margin > 0);
   $('#sideSwitch').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.side === state.planSide));
@@ -4494,6 +4566,21 @@ function applyMarginPct(pct, opts){
   savePlanDebounced();
   if (opts && opts.toast) toast('증거금 ' + v + '%', '자산 ' + Math.round(a) + ' USDT × ' + v + '% = ' + (m === '' ? '0' : m) + ' USDT');
 }
+/* 계산기 수수료 줄 — 주문 방식 토글과 예상 수수료 · 수수료 반영 순손익 */
+function renderFeeBox(c){
+  const sw = $('#feeSwitch');
+  if (sw) sw.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.fee === feeModeOf(state.feeMode)));
+  const el = $('#feeOut');
+  if (!el) return;
+  if (!isNum(c.fee) || c.fee <= 0){
+    el.innerHTML = '증거금을 넣으면 예상 왕복 수수료와 수수료 반영 순손익을 계산합니다.';
+    return;
+  }
+  el.innerHTML =
+    '<span class="fee-i">예상 왕복 수수료 <b class="down">-' + c.fee.toFixed(2) + '</b> USDT</span>' +
+    '<span class="fee-i fee-net">순손익 <b class="down">' + (isNum(c.lossNet) ? c.lossNet.toFixed(2) : '—') + '</b> / ' +
+      '<b class="up">' + (isNum(c.profit1Net) ? '+' + c.profit1Net.toFixed(2) : '—') + '</b> USDT</span>';
+}
 function renderPlanner(force){
   let p = readPlanForm();
   const rm = riskMarginFor(p);
@@ -4516,6 +4603,7 @@ function renderPlanner(force){
   $('#fPnL').textContent = c.loss && isNum(c.loss)
     ? '-' + c.loss.toFixed(1) + ' / +' + (isNum(c.profit1) ? c.profit1.toFixed(1) : '0') + ' USDT'
     : '증거금 입력 시 계산';
+  renderFeeBox(c);
   const strip = $('#statusStrip');
   strip.className = 'status-strip ' + c.status.cls;
   $('#statusBig').textContent = c.status.big;
@@ -4530,7 +4618,7 @@ function renderPlanner(force){
 let saveTimer = null;
 function sanitizePlan(p){
   const out = { side: p.side === 'long' ? 'long' : 'short', lev: clamp(p.lev || 5, 1, 20), margin: isNum(p.margin) ? p.margin : 0,
-                mAuto: p.mAuto === false ? false : true };
+                mAuto: p.mAuto === false ? false : true, feeMode: feeModeOf(p.feeMode) };
   ['entry','stop','t1','t2'].forEach(k => { if (isNum(p[k]) && p[k] > 0) out[k] = p[k]; });
   return out;
 }
@@ -4572,6 +4660,13 @@ function bindPlanner(){
     const b = ev.target.closest('button'); if (!b) return;
     state.planSide = b.dataset.side;
     $('#sideSwitch').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    renderPlanner(); savePlanDebounced();
+  });
+  const fsw = $('#feeSwitch');
+  if (fsw) fsw.addEventListener('click', ev => {
+    const b = ev.target.closest('button[data-fee]'); if (!b) return;
+    state.feeMode = feeModeOf(b.dataset.fee);
+    fsw.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
     renderPlanner(); savePlanDebounced();
   });
   $('#presetBtn').addEventListener('click', () => {
@@ -5438,15 +5533,29 @@ function saveAssetState(){ store(ASSET_KEY, assetState); if (!syncApplying) sync
 function totalWithdrawals(){ return assetState.withdrawals.reduce((a, w) => a + (+w.usd || 0), 0); }
 function marginOf(e){ return e && isNum(parseFloat(e.margin)) && parseFloat(e.margin) > 0 ? Math.round(parseFloat(e.margin) * 100) / 100 : NaN; }
 function pnlUsd(e, roe){ const m = marginOf(e); return isNum(m) && isNum(roe) ? m * roe / 100 : NaN; }
+/* 수수료 반영 순손익 — 수수료율이 저장된 기록만 차감합니다.
+   이번 배포 전에 만든 기록(feeRate 없음)은 기존 손익·잔액을 그대로 둡니다. */
+function feeUsdOf(e){
+  if (!hasFeeRecord(e)) return NaN;
+  return isNum(e && e.fee) && e.fee >= 0 ? Math.round(e.fee * 100) / 100 : roundTripFee(e);
+}
+function netPnlUsd(e, roe){
+  const gross = isNum(e && e.pnl) ? e.pnl : pnlUsd(e, isNum(roe) ? roe : (e && e.roe));
+  if (!hasFeeRecord(e)) return gross;
+  const f = feeUsdOf(e);
+  return isNum(gross) && isNum(f) ? Math.round((gross - f) * 100) / 100 : gross;
+}
 function realizedPnlUsd(){
   return tradeLog.filter(e => e.status === 'closed').reduce((a, e) => {
-    const v = isNum(e.pnl) ? e.pnl : pnlUsd(e, e.roe);
+    const v = netPnlUsd(e, e.roe);
     return a + (isNum(v) ? v : 0);
   }, 0);
 }
 function openPnlUsd(){
   return tradeLog.filter(e => e.status === 'open').reduce((a, e) => {
-    const v = pnlUsd(e, roeOf(e.entry, livePriceOf(e.sym), e.side, e.lev || 5));
+    const gross = pnlUsd(e, roeOf(e.entry, livePriceOf(e.sym), e.side, e.lev || 5));
+    const f = hasFeeRecord(e) ? feeUsdOf(e) : NaN;
+    const v = isNum(gross) ? (isNum(f) ? Math.round((gross - f) * 100) / 100 : gross) : NaN;
     return a + (isNum(v) ? v : 0);
   }, 0);
 }
@@ -5510,7 +5619,7 @@ function renderAssetCard(){
       ws.map(w => '<div class="ass-wd-i"><span class="ass-wd-t">' + kst(w.at, true) + ' · <span>' + escHtml(w.memo || '메모 없음') + '</span></span>' +
         '<span class="ass-wd-n">-' + (+w.usd).toFixed(2) + '</span>' +
         '<button class="j-mini warn" data-wdel="' + w.id + '" type="button">삭제</button></div>').join('') + '</div>' : '') +
-    '<div class="ass-note">초기 금액·출금 내역은 ' + (syncEnabled() ? '구글 시트와 함께 저장됩니다.' : '이 기기에만 저장됩니다.') + ' 실현 손익은 기록마다 입력한 <b>투입 증거금 × 실현 ROE</b>로 계산하며, 진행 중 포지션의 미실현 손익은 현재가 기준 참고값입니다.</div>';
+    '<div class="ass-note">초기 금액·출금 내역은 ' + (syncEnabled() ? '구글 시트와 함께 저장됩니다.' : '이 기기에만 저장됩니다.') + ' 실현 손익은 기록마다 입력한 <b>투입 증거금 × 실현 ROE</b>에서 <b>왕복 수수료</b>를 뺀 순손익으로 계산하며, 진행 중 포지션의 미실현 손익은 현재가 기준 참고값(예상 수수료 차감)입니다.</div>';
   const initEl = $('#assInit'), saveEl = $('#assSave'), wdEl = $('#assWd'), wmEl = $('#assWdMemo'), addEl = $('#assWdAdd');
   if (saveEl) saveEl.addEventListener('click', () => setInitialAmount(initEl && initEl.value));
   if (initEl) initEl.addEventListener('keydown', ev => { if (ev.key === 'Enter'){ ev.preventDefault(); setInitialAmount(initEl.value); } });
@@ -5606,7 +5715,7 @@ const EXIT_REASON = {
 };
 const EXIT_ORDER = ['tp1be', 'tp2', 'stop', 'manual'];
 let tradeLog = [];
-const jFilter = { period:'all', status:'all', sym:'ALL' };
+const jFilter = { period:'all', sym:'ALL', result:'all' };
 const JPERIOD_KEY = 'maeyo.journal.period.v1';
 const JPERIOD = [['all', '전체'], ['week', '주별'], ['month', '월별']];
 function loadJournalPeriod(){
@@ -5936,7 +6045,7 @@ function entrySnapshot(planArg){
     at: Date.now(),
     hyp: hp ? { slot: state.activeSlot, title: hp.title, kind: hp.kind, why: hp.why || '',
                 entry: plan.entry, stop: plan.stop, t1: plan.t1, t2: plan.t2 } : null,
-    plan: { side: side, entry: plan.entry, stop: plan.stop, t1: plan.t1, t2: plan.t2, lev: isNum(plan.lev) ? plan.lev : parseLev() },
+    plan: { side: side, entry: plan.entry, stop: plan.stop, t1: plan.t1, t2: plan.t2, lev: isNum(plan.lev) ? plan.lev : parseLev(), feeMode: feeModeOf(plan.feeMode) },
     check: a ? {
       side: side,
       n: side === 'short' ? a.nS : a.nL,
@@ -5991,8 +6100,13 @@ function openEntrySheet(){
   const snap = entrySnapshot(plan);
   const ck = snap.check, nw = snap.nw, rsi = snap.rsi || {};
   const mgDef = isNum(plan.margin) && plan.margin > 0 ? Math.round(plan.margin * 100) / 100 : defaultMargin();
+  const fr = feeRateOfMode(plan.feeMode);
+  const fEst = isNum(mgDef) && mgDef > 0 ? Math.round(mgDef * lev * fr * 100) / 100 : NaN;
   const rows = [];
   rows.push(['가격 계획', '진입 <b>' + fmtPx(plan.entry) + '</b> · 손절 <b>' + fmtPx(plan.stop) + '</b> · 1차 <b>' + fmtPx(plan.t1) + '</b> · 2차 <b>' + fmtPx(plan.t2) + '</b> · ' + lev + '배']);
+  rows.push(['수수료', '<b>' + FEE_MODE_LABEL[feeModeOf(plan.feeMode)] + '</b> 왕복' +
+    (isNum(fEst) ? ' · 예상 <b>-' + fEst.toFixed(2) + ' USDT</b>' : '') +
+    ' — 청산 때 순손익에서 뺍니다']);
   rows.push(['가설', snap.hyp ? '<b>' + escHtml(snap.hyp.title) + '</b> · ' + escHtml(hypKindKr(snap.hyp)) + ' 기준' : '연결된 가설 없음(내 타점)']);
   if (snap.hyp && snap.hyp.kind && snap.hyp.kind !== plan.side){
     rows.push(['⚠ 방향 확인', '가설은 <b>' + (snap.hyp.kind === 'long' ? '롱' : '숏') + '</b>인데 계산기는 <b>' + sideKr + '</b>입니다 — 의도한 방향인지 확인하세요']);
@@ -6049,6 +6163,7 @@ function doOpenPosition(plan, memo, snap, margin, atArg){
   tradeLog.unshift({ id: id, sym: state.sym, code: symOf(state.sym).code, side: side,
     lev: levNow, entry: plan.entry, stop: plan.stop, t1: plan.t1, t2: plan.t2, slot: state.activeSlot,
     margin: Math.round(mg * 100) / 100,
+    feeMode: feeModeOf(plan.feeMode), feeRate: feeRateOfMode(plan.feeMode),
     at: at, status: 'open', memo: memo || '', snap: snap || entrySnapshot(plan) });
   saveTradeLog();
   renderChips();                       /* 매매 중 종목을 탭 맨 앞으로 — 진입 즉시 재정렬 */
@@ -6056,7 +6171,7 @@ function doOpenPosition(plan, memo, snap, margin, atArg){
   renderPosition();
   renderJournal();
   refreshAutoMargin();
-  toast('🎯 진입 기록 저장', (plan.side === 'long' ? '롱' : '숏') + ' ' + levNow + '배 · 계산기 값과 근거 스냅샷을 매매기록에 남겼습니다.');
+  toast('🎯 진입 기록 저장', (plan.side === 'long' ? '롱' : '숏') + ' ' + levNow + '배 · 수수료 ' + FEE_MODE_LABEL[feeModeOf(plan.feeMode)] + ' 왕복 기준으로 근거 스냅샷을 매매기록에 남겼습니다.');
 }
 
 /* 청산 — 사유별 실현 ROE */
@@ -6096,19 +6211,25 @@ function openExitSheet(sym){
     return;
   }
   const q = exitQuote(e);
+  const fr0 = storedFeeRate(e);
+  const frX = fr0 != null ? fr0 : FEE_RATES.taker;   /* 수수료율이 없던 진행 기록은 시장가 기준으로 청산 */
+  const mgX = marginOf(e);
+  const feeX = isNum(mgX) ? roundTripFee(e, frX) : NaN;
   const row = k => {
     const v = q[k], r = EXIT_REASON[k];
     const cls = !isNum(v.roe) ? 'flat' : v.roe > 0 ? 'up' : v.roe < 0 ? 'down' : 'flat';
+    const netU = isNum(mgX) && isNum(v.roe) && isNum(feeX) ? Math.round((mgX * v.roe / 100 - feeX) * 100) / 100 : NaN;
     return '<button class="sh-opt" data-exit="' + k + '" type="button">' +
       '<span class="sh-opt-l"><b>' + r.kr + '</b><span>' + r.desc + '</span></span>' +
       '<span class="sh-opt-r"><b class="' + cls + '">' + roeTxt(v.roe) + '</b>' +
-      '<span>청산 ' + pxOf(v.px, sym) + '</span></span></button>';
+      '<span>청산 ' + pxOf(v.px, sym) + (isNum(netU) ? ' · 순 ' + (netU > 0 ? '+' : '') + netU.toFixed(2) + ' U' : '') + '</span></span></button>';
   };
   const cur = livePriceOf(sym);
   openSheet(
     '<div class="sh-grip"></div>' +
     '<div class="sh-t">📕 ' + symOf(sym).code + ' ' + (e.side === 'long' ? '롱' : '숏') + ' ' + (e.lev || 5) + '배 청산 기록</div>' +
-    '<div class="sh-sub">사유를 고르면 실현 ROE를 계산해 <b>종료됨</b>으로 보존합니다. 기록은 지우지 않습니다.</div>' +
+    '<div class="sh-sub">사유를 고르면 실현 ROE를 계산해 <b>종료됨</b>으로 보존합니다. 왕복 수수료 <b>' + FEE_MODE_LABEL[fr0 === FEE_RATES.maker ? 'maker' : 'taker'] + '</b>' +
+      (isNum(feeX) ? ' <b>-' + feeX.toFixed(2) + ' USDT</b>' : '') + '를 빼낸 순손익도 함께 남깁니다.</div>' +
     '<div class="sh-cur">현재가 <b>' + pxOf(cur, sym) + '</b> · 진입 <b>' + pxOf(e.entry, sym) + '</b> · 보유 <b>' + heldTime(e.at) + '</b></div>' +
     '<div class="sh-opts">' + EXIT_ORDER.map(row).join('') + '</div>' +
     '<button class="btn ghost sh-cancel" id="shCancel" type="button">취소 (계속 보유)</button>'
@@ -6133,6 +6254,11 @@ function closePositionRecord(id, reason){
   e.exitReason = key;
   e.exitPrice = v.px;
   e.roe = v.roe;
+  /* 바이낸스 선물 왕복 수수료 — 이번 청산부터 반영(수수료율이 없던 기록은 시장가 기준) */
+  if (storedFeeRate(e) == null){ e.feeMode = feeModeOf(e.feeMode); e.feeRate = feeRateOfMode(e.feeMode); }
+  e.fee = roundTripFee(e, storedFeeRate(e));
+  e.pnl = isNum(marginOf(e)) && isNum(v.roe) ? Math.round(marginOf(e) * v.roe / 100 * 100) / 100 : NaN;
+  e.pnlNet = isNum(e.pnl) && isNum(e.fee) ? Math.round((e.pnl - e.fee) * 100) / 100 : NaN;
   const p = state.pos && state.pos[e.sym];
   if (p && (!p.logId || p.logId === e.id)){ delete state.pos[e.sym]; savePos(); }
   saveTradeLog();
@@ -6141,15 +6267,20 @@ function closePositionRecord(id, reason){
   renderPosition();
   renderJournal();
   refreshAutoMargin();
-  toast('📕 청산 기록 저장', EXIT_REASON[key].kr + ' · 실현 ROE ' + roeTxt(e.roe) + ' — 매매기록에 종료됨으로 남겼습니다.');
+  toast('📕 청산 기록 저장', EXIT_REASON[key].kr + ' · 실현 ROE ' + roeTxt(e.roe) +
+    (isNum(e.fee) ? ' · 수수료 -' + e.fee.toFixed(2) + ' → 순손익 ' + (isNum(e.pnlNet) ? (e.pnlNet > 0 ? '+' : '') + e.pnlNet.toFixed(2) : '—') + ' USDT' : '') +
+    ' — 매매기록에 종료됨으로 남겼습니다.');
 }
 
 /* 2페이지 렌더 */
-function renderJournalStats(){
+const JRESULT = [['all', '전체'], ['win', '승'], ['loss', '패'], ['open', '진행중'], ['closed', '종료']];
+const JRESULT_LABEL = { all:'결과 전체', win:'승', loss:'패', open:'진행중' };
+function renderJournalStats(cardsArg){
   const el = $('#jStats');
   if (!el) return;
-  const open = tradeLog.filter(e => e.status === 'open');
-  const closed = tradeLog.filter(e => e.status === 'closed');
+  const cards = Array.isArray(cardsArg) ? cardsArg : journalCards();
+  const open = cards.filter(e => e.status === 'open');
+  const closed = cards.filter(e => e.status === 'closed');
   const roes = closed.map(e => e.roe).filter(isNum);
   /* 승률은 본전(ROE 0)을 빼고 승/(승+패)로 계산합니다 */
   const wins = roes.filter(v => v > 0).length;
@@ -6158,14 +6289,19 @@ function renderJournalStats(){
   const decided = wins + losses;
   const rate = decided ? wins / decided * 100 : NaN;
   const avg = roes.length ? roes.reduce((a, b) => a + b, 0) / roes.length : NaN;
+  /* 총 손익은 수수료를 뺀 순손익 기준(수수료 정보가 없는 옛 기록은 그대로) */
+  const pnlSum = closed.reduce((a, e) => { const v = netPnlUsd(e, e.roe); return a + (isNum(v) ? v : 0); }, 0);
   const avgCls = !isNum(avg) ? '' : avg > 0 ? 'up' : avg < 0 ? 'down' : '';
-  const cell = (lab, val, sub, cls, wide) => '<div class="jstat' + (wide ? ' wide' : '') + '"><label>' + lab + '</label><b class="' + (cls || '') + '">' + val + '</b><small>' + sub + '</small></div>';
+  const pnlCls = !closed.length ? '' : pnlSum > 0 ? 'up' : pnlSum < 0 ? 'down' : '';
+  const filtered = jFilter.result !== 'all' || jFilter.sym !== 'ALL';
+  const cell = (lab, val, sub, cls, extra) => '<div class="jstat"><label>' + lab + '</label><b class="' + (cls || '') + (extra ? ' ' + extra : '') + '">' + val + '</b><small>' + sub + '</small></div>';
   el.innerHTML =
-    cell('총 매매', tradeLog.length + '건', '이 기기 기록', '') +
+    cell('총 매매', cards.length + '건', filtered ? (jFilter.result !== 'all' ? JRESULT_LABEL[jFilter.result] : '필터 적용') + ' 기준' : '이 기기 기록', '') +
     cell('진행 중', open.length + '건', open.length ? '최장 ' + heldTime(Math.min.apply(null, open.map(e => e.at))) : '없음', '') +
     cell('종료(승/패)', closed.length + '건', wins + '승 ' + losses + '패' + (evens ? ' · 본전 ' + evens : ''), '') +
     cell('승률', isNum(rate) ? rate.toFixed(1) + '%' : '—', decided ? wins + '승 ' + losses + '패 기준' : '종료 기록 없음', '') +
-    cell('평균 ROE', isNum(avg) ? roeTxt(avg) : '—', roes.length ? roes.length + '건 기준' : '종료 기록 없음', avgCls, true);
+    cell('총 손익', isNum(pnlSum) ? (pnlSum > 0 ? '+' : '') + pnlSum.toFixed(2) : '—', closed.length ? '수수료 차감 순손익 USDT' : '종료 기록 없음', pnlCls, 'sm') +
+    cell('평균 ROE', isNum(avg) ? roeTxt(avg) : '—', roes.length ? roes.length + '건 기준' : '종료 기록 없음', avgCls);
 }
 function renderJournalFilters(){
   const pEl = $('#jPeriod');
@@ -6178,13 +6314,22 @@ function renderJournalFilters(){
       return '<button class="jtab' + (on ? ' on' : '') + '" data-jperiod="' + k + '" type="button" aria-pressed="' + on + '">' + l + ' <b>' + n + '</b></button>';
     }).join('');
   }
-  const st = [['all', '전체'], ['open', '진행중'], ['closed', '종료']];
-  const sEl = $('#jStatus');
-  if (sEl) sEl.innerHTML = st.map(p => {
-    const k = p[0], l = p[1];
-    const n = k === 'all' ? tradeLog.length : tradeLog.filter(e => e.status === k).length;
-    return '<button class="jtab' + (jFilter.status === k ? ' on' : '') + '" data-jstatus="' + k + '" type="button">' + l + ' <b>' + n + '</b></button>';
-  }).join('');
+  /* 승 / 패 / 진행중 — 결과만 골라 보기 */
+  const rEl = $('#jResult');
+  if (rEl){
+    const cnt = {
+      all: tradeLog.length,
+      win: tradeLog.filter(e => e.status === 'closed' && isNum(e.roe) && e.roe > 0).length,
+      loss: tradeLog.filter(e => e.status === 'closed' && isNum(e.roe) && e.roe < 0).length,
+      open: tradeLog.filter(e => e.status === 'open').length,
+      closed: tradeLog.filter(e => e.status === 'closed').length
+    };
+    rEl.innerHTML = JRESULT.map(p => {
+      const k = p[0], on = jFilter.result === k;
+      const tone = k === 'win' ? ' win' : k === 'loss' ? ' loss' : k === 'open' ? ' openc' : '';
+      return '<button class="jtab' + tone + (on ? ' on' : '') + '" data-jresult="' + k + '" type="button" aria-pressed="' + on + '">' + p[1] + ' <b>' + cnt[k] + '</b></button>';
+    }).join('');
+  }
   const yEl = $('#jSyms');
   if (yEl){
     const syms = [['ALL', '전체']].concat(SYMBOLS.filter(s => tradeLog.some(e => e.sym === s.id)).map(s => [s.id, s.code]));
@@ -6264,8 +6409,11 @@ function jGroupHead(g){
 }
 function journalCards(){
   const list = tradeLog.filter(e => {
-    if (jFilter.status !== 'all' && e.status !== jFilter.status) return false;
     if (jFilter.sym !== 'ALL' && e.sym !== jFilter.sym) return false;
+    if (jFilter.result === 'open' && e.status !== 'open') return false;
+    if (jFilter.result === 'closed' && e.status !== 'closed') return false;
+    if (jFilter.result === 'win' && !(e.status === 'closed' && isNum(e.roe) && e.roe > 0)) return false;
+    if (jFilter.result === 'loss' && !(e.status === 'closed' && isNum(e.roe) && e.roe < 0)) return false;
     return true;
   });
   return list.sort((a, b) => a.status === b.status ? (b.at - a.at) : (a.status === 'open' ? -1 : 1));
@@ -6601,7 +6749,52 @@ function jMoneyHtml(e, roe){
     '<b class="num">' + (isNum(mg) ? mg.toFixed(2) + ' USDT' : '미지정') + '</b>' +
     '<button class="j-mini" data-jmargin="' + e.id + '" type="button">' + (isNum(mg) ? '수정' : '입력') + '</button>' +
     '<span class="jpy-v ' + cls + '">' + (live ? '미실현 ' : '실현 ') + (isNum(pnl) ? (pnl > 0 ? '+' : '') + pnl.toFixed(2) : '—') + ' USDT</span>' +
+  '</div>' + jFeeHtml(e, roe, pnl);
+}
+/* 수수료 · 순손익 줄 — 수수료율이 저장된 기록만 표시(예전 기록은 그대로) */
+function jFeeHtml(e, roe, grossPnl){
+  if (!hasFeeRecord(e)) return '';
+  const live = e.status === 'open';
+  const f = feeUsdOf(e);
+  const net = isNum(grossPnl) && isNum(f) ? Math.round((grossPnl - f) * 100) / 100 : NaN;
+  const cls = !isNum(net) ? 'flat' : net > 0 ? 'up' : net < 0 ? 'down' : 'flat';
+  const rate = storedFeeRate(e);
+  return '<div class="jfee">' +
+    '<span class="jfee-k">' + (live ? '예상 수수료' : '수수료') + '</span>' +
+    '<b class="num">-' + (isNum(f) ? f.toFixed(2) : '—') + '</b><span>USDT</span>' +
+    '<span class="jfee-m">' + FEE_MODE_LABEL[rate === FEE_RATES.maker ? 'maker' : 'taker'] + '</span>' +
+    '<button class="j-mini" data-jfee="' + e.id + '" type="button">수정</button>' +
+    '<span class="jfee-n">' + (live ? '예상 순손익 ' : '순손익 ') + '<b class="' + cls + '">' +
+      (isNum(net) ? (net > 0 ? '+' : '') + net.toFixed(2) : '—') + '</b> USDT</span>' +
   '</div>';
+}
+function startFeeEdit(btn){
+  const id = btn.dataset.jfee;
+  const e = tradeLog.find(x => x.id === id);
+  const row = btn.closest('.jfee');
+  if (!e || !row) return;
+  const rate = storedFeeRate(e);
+  row.innerHTML = '<span class="jfee-k">수수료율</span>' +
+    '<button class="j-mini' + (rate === FEE_RATES.taker ? ' ok' : '') + '" data-jfeesave="' + id + '" data-rate="' + FEE_RATES.taker + '" type="button">시장가 0.10%</button>' +
+    '<button class="j-mini' + (rate === FEE_RATES.maker ? ' ok' : '') + '" data-jfeesave="' + id + '" data-rate="' + FEE_RATES.maker + '" type="button">지정가 0.04%</button>' +
+    '<button class="j-mini" data-jmemocancel="1" type="button">취소</button>';
+}
+function saveFee(id, rate){
+  const e = tradeLog.find(x => x.id === id);
+  if (!e) return;
+  const r = parseFloat(rate);
+  if (!isNum(r) || r <= 0 || r >= 0.01){ toast('수수료율 확인', '시장가 0.10% 또는 지정가 0.04% 중에서 고르세요.'); return; }
+  e.feeMode = r === FEE_RATES.maker ? 'maker' : 'taker';
+  e.feeRate = r;
+  e.fee = roundTripFee(e, r);
+  if (e.status === 'closed' && isNum(e.roe)){
+    e.pnl = pnlUsd(e, e.roe);
+    e.pnlNet = isNum(e.pnl) && isNum(e.fee) ? Math.round((e.pnl - e.fee) * 100) / 100 : NaN;
+  }
+  saveTradeLog();
+  renderJournal();
+  refreshAutoMargin();
+  toast('수수료 반영', FEE_MODE_LABEL[e.feeMode] + ' 왕복 · 수수료 ' + (isNum(e.fee) ? '-' + e.fee.toFixed(2) : '—') + ' USDT로 순손익을 다시 계산했습니다.');
 }
 function startMarginEdit(btn){
   const id = btn.dataset.jmargin;
@@ -6622,7 +6815,11 @@ function saveMargin(id, row){
   const n = parseFloat(inp && inp.value);
   if (!isNum(n) || n <= 0){ toast('증거금 확인', '0보다 큰 USDT 금액을 입력하세요.'); return; }
   e.margin = Math.round(n * 100) / 100;
-  if (e.status === 'closed' && isNum(e.roe)) e.pnl = pnlUsd(e, e.roe);
+  if (hasFeeRecord(e)) e.fee = roundTripFee(e);
+  if (e.status === 'closed' && isNum(e.roe)){
+    e.pnl = pnlUsd(e, e.roe);
+    e.pnlNet = isNum(e.pnl) && isNum(e.fee) ? Math.round((e.pnl - e.fee) * 100) / 100 : NaN;
+  }
   saveTradeLog();
   renderJournal();
   refreshAutoMargin();
@@ -6639,12 +6836,12 @@ function renderJournal(){
   if (ae && ae.classList && ae.classList.contains('j-memo-inp')) return;  /* 메모 입력 중에는 다시 그리지 않음 */
   if (ae && ae.tagName === 'INPUT' && ae.closest && ae.closest('#jAsset')) return;   /* 자산현황 입력 중에만 다시 그리지 않음 */
   renderAssetCard();
-  renderJournalStats();
-  renderJournalFilters();
   const cards = journalCards();
+  renderJournalStats(cards);
+  renderJournalFilters();
   if (!cards.length){
     list.innerHTML = tradeLog.length
-      ? '<div class="j-empty"><b>이 조건에 맞는 기록이 없습니다</b>기간·상태·종목 필터를 바꾸면 다른 기록이 보입니다.</div>'
+      ? '<div class="j-empty"><b>이 조건에 맞는 기록이 없습니다</b>기간·상태·결과·종목 필터를 바꾸면 다른 기록이 보입니다.</div>'
       : '<div class="j-empty"><b>아직 기록이 없습니다</b>1페이지에서 <strong>🎯 이 타점 진입 기록</strong>을 누르면 그 시점의 근거 스냅샷과 함께 여기에 남습니다.</div>';
   } else if (jFilter.period === 'all'){
     list.innerHTML = cards.map(jCard).join('');
@@ -6715,10 +6912,10 @@ function bindJournal(){
   if (!page || page.dataset.bound === '1') return;
   page.dataset.bound = '1';
   page.addEventListener('click', ev => {
-    const t = ev.target.closest('[data-jperiod],[data-jstatus],[data-jsym],[data-jexit],[data-jchart],[data-jdel],[data-jmemo],[data-jmemosave],[data-jmemocancel],[data-jmargin],[data-jmarginsave],[data-jat],[data-jatsave],[data-jatcancel],[data-jrev],[data-wdel]');
+    const t = ev.target.closest('[data-jperiod],[data-jresult],[data-jsym],[data-jexit],[data-jchart],[data-jdel],[data-jmemo],[data-jmemosave],[data-jmemocancel],[data-jmargin],[data-jmarginsave],[data-jfee],[data-jfeesave],[data-jat],[data-jatsave],[data-jatcancel],[data-jrev],[data-wdel]');
     if (!t) return;
     if (t.hasAttribute('data-jperiod')){ jFilter.period = t.dataset.jperiod; store(JPERIOD_KEY, jFilter.period); renderJournal(); return; }
-    if (t.hasAttribute('data-jstatus')){ jFilter.status = t.dataset.jstatus; renderJournal(); return; }
+    if (t.hasAttribute('data-jresult')){ jFilter.result = t.dataset.jresult; renderJournal(); return; }
     if (t.hasAttribute('data-jsym')){ jFilter.sym = t.dataset.jsym; renderJournal(); return; }
     if (t.hasAttribute('data-jexit')){ openExitSheet(t.dataset.jexit); return; }
     if (t.hasAttribute('data-jchart')){ openReplayChart(t.dataset.jchart); return; }
@@ -6728,6 +6925,8 @@ function bindJournal(){
     if (t.hasAttribute('data-jdel')){ armDelete(t); return; }
     if (t.hasAttribute('data-jmargin')){ startMarginEdit(t); return; }
     if (t.hasAttribute('data-jmarginsave')){ saveMargin(t.dataset.jmarginsave, t.closest('.jpy')); return; }
+    if (t.hasAttribute('data-jfee')){ startFeeEdit(t); return; }
+    if (t.hasAttribute('data-jfeesave')){ saveFee(t.dataset.jfeesave, t.dataset.rate); return; }
     if (t.hasAttribute('data-jat')){ startAtEdit(t); return; }
     if (t.hasAttribute('data-jatsave')){ saveAt(t.dataset.jatsave, t.closest('.jwhen')); return; }
     if (t.hasAttribute('data-jatcancel')){ renderJournal(); return; }
