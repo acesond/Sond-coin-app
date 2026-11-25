@@ -336,6 +336,23 @@ button.toggle b{font-variant-numeric:tabular-nums; color:#67e8f9; font-weight:80
 .pgbar .pg.on .pg-n{background:rgba(91,140,255,.34); border-color:rgba(91,140,255,.55); color:#e3ecff}
 .page[hidden]{display:none}
 
+/* 구글 시트 동기화 상태 배지 (상단 · 매매기록 머리) */
+.syncbar{display:flex; justify-content:flex-end; margin:4px 2px 0}
+.sync-pill{display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line2); background:#0c1522; color:var(--dim2); font-family:inherit; font-size:10px; font-weight:700; letter-spacing:-.1px; padding:3px 8px; border-radius:999px; cursor:pointer; white-space:nowrap; transition:.15s}
+.sync-pill:active{transform:scale(.97)}
+.sync-pill i{width:6px; height:6px; border-radius:50%; background:#64748b; display:inline-block; flex:none}
+.sync-pill.sm{font-size:9.5px; padding:2px 7px; gap:4px}
+.sync-pill.sm i{width:5px; height:5px}
+.sync-pill.ok{color:#9ce6b4; border-color:rgba(34,197,94,.42)}
+.sync-pill.ok i{background:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,.13)}
+.sync-pill.busy{color:#c7d8ff; border-color:rgba(91,140,255,.5)}
+.sync-pill.busy i{background:#5b8cff; animation:sypulse 1s ease-in-out infinite}
+.sync-pill.err{color:#fca5a5; border-color:rgba(239,68,68,.55)}
+.sync-pill.err i{background:#ef4444}
+.sync-pill.off i{background:#475569}
+@keyframes sypulse{50%{opacity:.25}}
+.sec-title .sec-right{display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:flex-end}
+
 /* 파동 상세 해설 */
 .nw-waves{margin-top:10px; padding-top:9px; border-top:1px dashed var(--line); display:flex; flex-direction:column; gap:6px}
 .nw-wave-h{font-size:10.5px; font-weight:800; color:#cfe0ff; display:flex; align-items:baseline; justify-content:space-between; gap:6px; margin-bottom:1px}
@@ -980,6 +997,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
     <button class="pg on" id="pgLive" type="button" role="tab" aria-selected="true" data-page="live">📊 실시간 분석</button>
     <button class="pg" id="pgJournal" type="button" role="tab" aria-selected="false" data-page="journal">📒 매매기록 <span class="pg-n" id="pgJournalN">0</span></button>
   </div>
+  <div class="syncbar"><button class="sync-pill idle" id="syncPillTop" type="button"><i></i><span>구글 시트 연결 대기</span></button></div>
 
   <div class="page" id="page-live">
 
@@ -1238,7 +1256,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
   <!-- ===== 2페이지 · 매매기록 ===== -->
   <div class="page" id="page-journal" hidden>
     <section id="journalSec">
-      <div class="sec-title"><h2><i></i>📒 매매기록</h2><span class="hint" id="jHint">이 기기에 저장</span></div>
+      <div class="sec-title"><h2><i></i>📒 매매기록</h2><span class="sec-right"><button class="sync-pill sm idle" id="syncPillJournal" type="button"><i></i><span>구글 시트 연결 대기</span></button><span class="hint" id="jHint">이 기기에 저장</span></span></div>
       <div class="ass-card" id="jAsset"></div>
       <div class="card jstat-card" id="jStats"></div>
       <div class="jfilter">
@@ -1247,7 +1265,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
         <div class="jsyms" id="jSyms" role="group" aria-label="종목 필터"></div>
       </div>
       <div id="jList"></div>
-      <p class="jnote">진입할 때의 <b>근거 스냅샷</b>(가설·3중 점검·NEoWave·RSI)을 함께 저장하고, 청산할 때 실현 ROE를 계산해 <b>종료됨</b>으로 남깁니다. 기록은 이 기기 브라우저(localStorage)에만 보관되며, 브라우저 기록을 지우거나 다른 기기에서 열면 보이지 않습니다. 이 앱은 주문을 실행하지 않으므로 표시된 ROE는 계산값입니다.</p>
+      <p class="jnote">진입할 때의 <b>근거 스냅샷</b>(가설·3중 점검·NEoWave·RSI)을 함께 저장하고, 청산할 때 실현 ROE를 계산해 <b>종료됨</b>으로 남깁니다. 기록은 <span id="jSyncNote">이 기기 브라우저(localStorage)에 저장하고 구글 시트와 자동으로 맞춰 폰·PC에서 함께 봅니다.</span> 이 앱은 주문을 실행하지 않으므로 표시된 ROE는 계산값입니다.</p>
     </section>
   </div><!-- /page-journal -->
 </div>
@@ -5416,7 +5434,7 @@ function loadAssetState(){
     }))
   };
 }
-function saveAssetState(){ store(ASSET_KEY, assetState); }
+function saveAssetState(){ store(ASSET_KEY, assetState); if (!syncApplying) syncSchedule(); }
 function totalWithdrawals(){ return assetState.withdrawals.reduce((a, w) => a + (+w.usd || 0), 0); }
 function marginOf(e){ return e && isNum(parseFloat(e.margin)) && parseFloat(e.margin) > 0 ? Math.round(parseFloat(e.margin) * 100) / 100 : NaN; }
 function pnlUsd(e, roe){ const m = marginOf(e); return isNum(m) && isNum(roe) ? m * roe / 100 : NaN; }
@@ -5492,7 +5510,7 @@ function renderAssetCard(){
       ws.map(w => '<div class="ass-wd-i"><span class="ass-wd-t">' + kst(w.at, true) + ' · <span>' + escHtml(w.memo || '메모 없음') + '</span></span>' +
         '<span class="ass-wd-n">-' + (+w.usd).toFixed(2) + '</span>' +
         '<button class="j-mini warn" data-wdel="' + w.id + '" type="button">삭제</button></div>').join('') + '</div>' : '') +
-    '<div class="ass-note">초기 금액·출금 내역은 이 기기에만 저장됩니다. 실현 손익은 기록마다 입력한 <b>투입 증거금 × 실현 ROE</b>로 계산하며, 진행 중 포지션의 미실현 손익은 현재가 기준 참고값입니다.</div>';
+    '<div class="ass-note">초기 금액·출금 내역은 ' + (syncEnabled() ? '구글 시트와 함께 저장됩니다.' : '이 기기에만 저장됩니다.') + ' 실현 손익은 기록마다 입력한 <b>투입 증거금 × 실현 ROE</b>로 계산하며, 진행 중 포지션의 미실현 손익은 현재가 기준 참고값입니다.</div>';
   const initEl = $('#assInit'), saveEl = $('#assSave'), wdEl = $('#assWd'), wmEl = $('#assWdMemo'), addEl = $('#assWdAdd');
   if (saveEl) saveEl.addEventListener('click', () => setInitialAmount(initEl && initEl.value));
   if (initEl) initEl.addEventListener('keydown', ev => { if (ev.key === 'Enter'){ ev.preventDefault(); setInitialAmount(initEl.value); } });
@@ -5645,14 +5663,254 @@ function loadTradeLog(){
   if (mchanged) store(LOG_KEY, tradeLog);
   seedTrades();
 }
-function saveTradeLog(){ store(LOG_KEY, tradeLog); updateJournalBadges(); }
+function saveTradeLog(){ store(LOG_KEY, tradeLog); updateJournalBadges(); syncSchedule(); }
 function updateJournalBadges(){
   const n = $('#pgJournalN');
   if (n) n.textContent = tradeLog.length;
   const h = $('#jHint');
   if (h) h.textContent = tradeLog.length
     ? '총 ' + tradeLog.length + '건 · 진행 중 ' + tradeLog.filter(e => e.status === 'open').length + '건'
-    : '이 기기에 저장';
+    : (syncEnabled() ? '이 기기 + 구글 시트' : '이 기기에 저장');
+}
+
+/* ========================= 구글 시트 자동 동기화 =========================
+   · 앱을 열면 시트에서 최신 상태를 받아(pull) 이 기기 기록과 합친 뒤 올립니다(push).
+   · 진입·익절·손절·삭제·메모·자산 수정 때마다 1.2초 모아서 자동으로 올립니다.
+   · 서버 규격: apps-script-sync.gs — 읽기 GET(JSON, 막히면 JSONP), 쓰기 POST text/plain
+   · 시트 원본은 _JournalJSON + _Sync 이고 매매기록·요약·출금내역은 서버가 다시 그립니다. */
+const SYNC_URL = 'https://script.google.com/macros/s/AKfycbzrR9WYm67ggHFrCdu_b7aNxebxhs1OdMiMCQD21srCThXYU1tCmkTQC0cruB3bQncf/exec';
+const SYNC_TS_KEY = 'maeyo.sync.updatedAt.v1';      /* 마지막으로 서버와 맞춘 updatedAt */
+const SYNC_STAT_KEY = 'maeyo.sync.stat.v1';         /* 마지막 동기화 시각·상태 */
+let syncApplying = false;   /* 서버 값을 받아 적용하는 중 (되쏘기 방지) */
+let syncBusy = false;
+let syncTimer = null;
+let syncState = { kind: 'idle', at: 0, msg: '' };
+
+function syncEnabled(){ return /^https:\/\/script\.google\.com\//.test(SYNC_URL); }
+function syncLastTs(){ const v = store(SYNC_TS_KEY); return isNum(v) ? v : 0; }
+function syncDelSeedIds(){
+  const v = store(SEED_DEL_KEY);
+  return new Set(Array.isArray(v) ? v.map(String) : []);
+}
+function syncHhmm(ts){
+  if (!isNum(ts)) return '';
+  const d = new Date(ts), p = n => (n < 10 ? '0' : '') + n;
+  return p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function syncRestore(){
+  const v = store(SYNC_STAT_KEY);
+  if (v && typeof v === 'object'){
+    if (isNum(v.at)) syncState.at = v.at;
+    if (v.kind === 'err') syncState.kind = 'err';
+  }
+}
+function syncMark(kind, msg){
+  syncState.kind = kind;
+  syncState.msg = msg || '';
+  if (kind === 'ok') syncState.at = Date.now();
+  if (kind === 'ok' || kind === 'err') store(SYNC_STAT_KEY, { at: syncState.at, kind: kind });
+  renderSyncBadge();
+}
+function renderSyncBadge(){
+  const top = $('#syncPillTop'), jr = $('#syncPillJournal');
+  let kind = syncState.kind, txt;
+  if (!syncEnabled()){ kind = 'off'; txt = '시트 동기화 꺼짐'; }
+  else if (syncBusy){ kind = 'busy'; txt = '구글 시트 동기화 중…'; }
+  else if (kind === 'err'){ txt = '시트 연결 실패 · 눌러서 재시도'; }
+  else if (syncState.at){ kind = 'ok'; txt = '시트 동기화됨 · ' + syncHhmm(syncState.at); }
+  else { kind = 'idle'; txt = '구글 시트 연결 대기 · 눌러서 지금'; }
+  [top, jr].forEach(el => {
+    if (!el) return;
+    el.className = 'sync-pill ' + kind + (el === jr ? ' sm' : '');
+    el.innerHTML = '<i></i><span>' + txt + '</span>';
+    el.title = (kind === 'err' && syncState.msg) ? ('마지막 오류: ' + syncState.msg) : '구글 시트와 지금 맞추기';
+  });
+  const jn = $('#jSyncNote');
+  if (jn) jn.textContent = syncEnabled()
+    ? '이 기기 브라우저(localStorage)에 저장하고 구글 시트와 자동으로 맞춰 폰·PC에서 함께 봅니다.'
+    : '이 기기 브라우저(localStorage)에만 보관되며, 브라우저 기록을 지우거나 다른 기기에서 열면 보이지 않습니다.';
+}
+
+/* ---------- 통신 ---------- */
+async function syncFetchJson(url, opt, ms){
+  const ctl = (typeof AbortController === 'function') ? new AbortController() : null;
+  const timer = setTimeout(() => { if (ctl) ctl.abort(); }, ms || 12000);
+  try {
+    const res = await fetch(url, Object.assign({ redirect: 'follow', cache: 'no-store' }, opt || {},
+                                               ctl ? { signal: ctl.signal } : {}));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const raw = await res.text();
+    let data;
+    try { data = JSON.parse(raw); } catch (e){ throw new Error('응답 해석 실패'); }
+    return data;
+  } finally { clearTimeout(timer); }
+}
+function syncJsonp(params, ms){
+  return new Promise((resolve, reject) => {
+    const cb = '__maeyoSync' + Math.random().toString(36).slice(2, 9);
+    const s = document.createElement('script');
+    let done = false;
+    const timer = setTimeout(() => finish(new Error('시간 초과')), ms || 12000);
+    function finish(err, data){
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      try { delete window[cb]; } catch (_) { window[cb] = undefined; }
+      if (s.parentNode) s.parentNode.removeChild(s);
+      if (err) reject(err); else resolve(data);
+    }
+    window[cb] = d => finish(null, d);
+    s.onerror = () => finish(new Error('네트워크 오류'));
+    const q = Object.keys(params || {}).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k])).join('&');
+    s.src = SYNC_URL + (SYNC_URL.indexOf('?') >= 0 ? '&' : '?') + (q ? q + '&' : '') + 'callback=' + cb + '&t=' + Date.now();
+    document.head.appendChild(s);
+  });
+}
+/* 서버에서 최신 상태 받기 — fetch가 CORS로 막히면 JSONP로 한 번 더 */
+async function syncPullOnce(){
+  let data = null, first = null;
+  try { data = await syncFetchJson(SYNC_URL + '?action=pull&t=' + Date.now(), { method: 'GET' }); }
+  catch (e){ first = e; }
+  if (!data || data.ok !== true){
+    try { data = await syncJsonp({ action: 'pull' }); } catch (e2){ throw (first || e2); }
+  }
+  if (!data || data.ok !== true) throw new Error((data && (data.error || data.reason)) || 'server');
+  return data;
+}
+/* 이 기기 상태 올리기 — 서버 응답 {ok:true,…} 또는 {ok:false,reason:'stale',…} */
+async function syncPushOnce(force){
+  const del = syncDelSeedIds();
+  const journal = tradeLog.filter(e => !(e.seed && del.has(String(e.id))));
+  const body = JSON.stringify({
+    action: 'save', journal: journal,
+    asset: { initial: assetState.initial, withdrawals: assetState.withdrawals },
+    baseUpdatedAt: syncLastTs(), force: !!force
+  });
+  try {
+    return await syncFetchJson(SYNC_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: body
+    }, 15000);
+  } catch (e){
+    /* 브라우저가 응답을 못 읽는 경우(CORS) — 본문만 조용히 보내고 pull로 실제 저장을 확인 */
+    try {
+      await fetch(SYNC_URL, { method: 'POST', mode: 'no-cors', redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: body });
+    } catch (e2){ throw e; }
+    let chk = null;
+    try { chk = await syncPullOnce(); } catch (e3){ throw e; }
+    const have = new Set(((chk && chk.journal) || []).map(x => String(x.id)));
+    const okIds = journal.every(x => have.has(String(x.id)));
+    const okAsset = chk && chk.asset && isNum(parseFloat(chk.asset.initial)) &&
+                    Math.abs(parseFloat(chk.asset.initial) - assetState.initial) < 0.005;
+    if (okIds && okAsset) return { ok: true, updatedAt: chk.updatedAt, journal: chk.journal, asset: chk.asset };
+    return { ok: false, reason: '전송 확인 실패', updatedAt: chk && chk.updatedAt, journal: chk && chk.journal, asset: chk && chk.asset };
+  }
+}
+/* 두 기록 합치기 — id 기준 합집합, 같은 건이면 '청산된 쪽 / 더 늦은 쪽'을 남김 */
+function syncMergeJournal(local, remote){
+  const byId = new Map();
+  (remote || []).forEach(e => { if (e && e.id) byId.set(String(e.id), e); });
+  (local || []).forEach(e => {
+    if (!e || !e.id) return;
+    const k = String(e.id), r = byId.get(k);
+    if (!r){ byId.set(k, e); return; }
+    if (e.status === 'closed' && r.status !== 'closed'){ byId.set(k, e); return; }
+    if (e.status === r.status){
+      const et = Number(e.exitAt) || Number(e.at) || 0;
+      const rt = Number(r.exitAt) || Number(r.at) || 0;
+      if (et > rt) byId.set(k, e);
+    }
+  });
+  return Array.from(byId.values()).sort((a, b) => (Number(b.at) || 0) - (Number(a.at) || 0));
+}
+/* 받은 상태를 이 기기에 반영 (이 기기 기록은 버리지 않고 합칩니다) */
+function syncApply(data){
+  if (!data) return;
+  syncApplying = true;
+  try {
+    if (Array.isArray(data.journal)){
+      const del = syncDelSeedIds();
+      const remote = data.journal.filter(e => e && e.id && !del.has(String(e.id)));
+      tradeLog = syncMergeJournal(tradeLog, remote);
+      store(LOG_KEY, tradeLog);
+    }
+    if (data.asset && isNum(parseFloat(data.asset.initial))){
+      const ws = Array.isArray(data.asset.withdrawals) ? data.asset.withdrawals : [];
+      assetState = {
+        initial: Math.round(parseFloat(data.asset.initial) * 100) / 100,
+        withdrawals: ws.filter(w => w && isNum(parseFloat(w.usd)) && parseFloat(w.usd) > 0).map(w => ({
+          id: w.id || ('wd' + Math.random().toString(36).slice(2, 8)),
+          at: isNum(w.at) ? w.at : Date.now(),
+          usd: Math.round(parseFloat(w.usd) * 100) / 100,
+          memo: String(w.memo || '').slice(0, 40)
+        }))
+      };
+      store(ASSET_KEY, assetState);
+    }
+    if (isNum(data.updatedAt)) store(SYNC_TS_KEY, data.updatedAt);
+  } finally { syncApplying = false; }
+  renderJournal();
+  refreshAutoMargin();
+  updateJournalBadges();
+}
+function syncPushBodyOk(res){
+  if (!res || res.ok !== true) return false;
+  if (Array.isArray(res.journal)) syncApply(res);
+  if (isNum(res.updatedAt)) store(SYNC_TS_KEY, res.updatedAt);
+  return true;
+}
+function syncPushBodyErr(res){ return new Error((res && (res.reason || res.error)) || '저장 실패'); }
+/* 앱 진입·배지 클릭 — 받아서 합치고 올리기 */
+async function syncNow(){
+  if (!syncEnabled()){ syncMark('off'); return; }
+  if (syncBusy) return;
+  syncBusy = true; renderSyncBadge();
+  try {
+    syncApply(await syncPullOnce());
+    let res = await syncPushOnce(false);
+    if (res && res.ok === false && res.reason === 'stale'){
+      syncApply(res);                 /* 다른 기기가 먼저 저장 — 최신 상태를 합친 뒤 */
+      res = await syncPushOnce(true); /* 강제로 한 번 더 올림 */
+    }
+    if (!syncPushBodyOk(res)) throw syncPushBodyErr(res);
+    syncMark('ok');
+  } catch (e){ syncMark('err', e && e.message); }
+  finally { syncBusy = false; renderSyncBadge(); }
+}
+/* 기록·자산이 바뀐 뒤 — 모아서 올리기 */
+async function syncPushNow(){
+  if (!syncEnabled() || syncApplying) return;
+  if (syncBusy){ syncSchedule(); return; }
+  syncBusy = true; renderSyncBadge();
+  try {
+    let res = await syncPushOnce(false);
+    if (res && res.ok === false && res.reason === 'stale'){
+      syncApply(await syncPullOnce());
+      res = await syncPushOnce(true);
+    }
+    if (!syncPushBodyOk(res)) throw syncPushBodyErr(res);
+    syncMark('ok');
+  } catch (e){ syncMark('err', e && e.message); }
+  finally { syncBusy = false; renderSyncBadge(); }
+}
+function syncSchedule(){
+  if (!syncEnabled() || syncApplying) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncPushNow, 1200);
+}
+function syncInit(){
+  syncRestore();
+  renderSyncBadge();
+  ['#syncPillTop', '#syncPillJournal'].forEach(sel => {
+    const el = $(sel);
+    if (el) el.addEventListener('click', () => { clearTimeout(syncTimer); syncNow(); });
+  });
+  window.addEventListener('online', () => { if (syncEnabled()) syncPushNow(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden || !syncEnabled() || syncBusy) return;
+    if (Date.now() - (syncState.at || 0) > 60000) syncNow();
+  });
+  if (syncEnabled()) setTimeout(syncNow, 400);   /* 첫 화면을 그린 뒤 시작 */
 }
 
 /* 진입 시점 근거 스냅샷 */
@@ -7272,6 +7530,7 @@ function init(){
   else state.sym = getOrderedSymbols()[0].id;
   bindJournal();
   renderJournal();
+  syncInit();
   state.fibOn = store(FIB_ON_KEY) === true;
   state.alertOn = !!store(ALERT_ON_KEY);
   setAlertBtn();
