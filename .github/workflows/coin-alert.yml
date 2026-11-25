@@ -1,0 +1,59 @@
+name: coin-alert
+
+# 15분마다 6종목 3중 점검을 다시 계산해 3/3(타점 도달)일 때만 ntfy 푸시를 보냅니다.
+# GitHub Actions 실행이라 피클 일일 사용 한도는 쓰지 않습니다.
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # UTC 기준 15분 간격 (KST :00·:15·:30·:45 무렵)
+  workflow_dispatch:
+    inputs:
+      test:
+        description: 'ntfy 테스트 알림 1건만 보내기'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coin-alert
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 쿨다운 상태 복원 (같은 종목·방향 60분)
+        uses: actions/cache/restore@v4
+        with:
+          path: .alert-state
+          key: ntfy-state-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ntfy-state-
+
+      - name: 3중 점검 스캔 → 3/3 알림
+        env:
+          NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}   # 토픽을 비밀번호로 잠글 때만 사용 (없으면 공개 토픽)
+        run: |
+          mkdir -p .alert-state
+          if [ "${{ inputs.test }}" = "true" ]; then
+            python3 scripts/ntfy_alert.py --test
+          else
+            python3 scripts/ntfy_alert.py --state .alert-state/state.json
+          fi
+
+      - name: 쿨다운 상태 저장
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .alert-state
+          key: ntfy-state-${{ github.run_id }}-${{ github.run_attempt }}
