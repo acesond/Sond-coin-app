@@ -3,13 +3,15 @@
 """손디 코인 웹앱 — 3중 점검 3/3 ntfy 자동 알림 (15분 감시)
 
 웹앱(https://acesond.github.io/Sond-coin-app/)의 진입 근거 3중 점검을 파이썬으로 그대로 옮겨,
-**3/3 타점 도달**(주의 포함)이 뜰 때만 ntfy 토픽으로 푸시를 보냅니다.
+**3/3 타점 도달**이 뜰 때만 ntfy 토픽으로 푸시를 보냅니다.
 
   · ① 자리   — 4H 마지막 레그 0.45~0.68 되돌림 안, 또는 현재가가 가설의 숏/눌림 존 안(±0.09%)
   · ② 라인   — 가장 가까운 가설·4H 스윙 라인 0.6% 이내 (①과 같은 숫자면 1개로 셈)
   · ③ 다이버전스 — 1H·4H RSI 다이버전스(고점/저점이 무효화되지 않은 것만)
-  판정 라벨은 웹앱과 동일하게 「타점 도달 / 주의 / 폐기 / 이탈」까지 계산하고,
-  타점 도달·주의일 때만 알림을 보냅니다.
+  판정 라벨은 웹앱과 동일하게 「타점 도달 / 숏·롱 대기 / 관망 / 폐기 / 이탈」로 계산합니다.
+  **매억남 기본 원칙이 메인 판정**이라 3/3이면 폐기·이탈이 아닌 한 ‘타점 도달’이고,
+  NEoWave 파동 상태(1·4파 겹침·터미널·깊은 조정)·1D 역추세는 판정을 깎지 않고 본문 ‘참고’ 줄로만 남깁니다.
+  타점 도달일 때만 알림을 보냅니다.
 
 데이터: 바이낸스 선물 fapi.binance.com 우선(1D 200봉 · 4H 200봉 · 1H 200봉),
         HTTP 451 등으로 막히면 OKX 퍼블릭 API(BTC-USDT-SWAP …)로 자동 폴백.
@@ -509,7 +511,7 @@ def zone_state(price, sym):
     return {"code": "brk2", "text": "하방 이탈 진행 (" + f(z["brk1"]) + " 이하) — 반등 확인 전 추격 금지"}
 
 
-# ---------------------------------------------------------------- NEoWave 참고(주의 문구용, 판정에는 미반영)
+# ---------------------------------------------------------------- NEoWave 참고(판정에는 미반영)
 def calc_atr(cs, period=14):
     out = [None] * len(cs)
     if len(cs) <= period:
@@ -663,9 +665,11 @@ def build_analysis(sym, price, candles):
         side = "long" if tfs["4H"]["trend"] == "up" else "short"
 
     best = max(n_s, n_l)
-    caution = None
+    # 참고 정보 — 판정을 깎지 않습니다.
+    # 3/3이면 폐기·이탈이 아닌 한 ‘타점 도달’(매억남 기본)이고, NEoWave·1D 역추세는 본문 참고 줄로만.
+    nw_ref = None
+    trend_ref = None
     if best >= 3:
-        reasons = []
         try:
             cs1 = tfs["1H"]["cs"]
             atr = calc_atr(cs1, 14)[-1]
@@ -673,18 +677,15 @@ def build_analysis(sym, price, candles):
                 atr = cs1[-1]["c"] * 0.005
             hint = neowave_reduce_hint(extract_monowaves(cs1, atr))
             if hint:
-                reasons.append("NEoWave(1H) 파동 겹침/조정 구간 — " + hint)
-        except Exception:  # noqa: BLE001 — 참고 문구라 실패해도 알림은 보냅니다
+                nw_ref = "파동 겹침/조정 구간 — " + hint
+        except Exception:  # noqa: BLE001 — 참고 문구라 실패해도 판정은 그대로
             pass
         d1 = tfs["1Dutc"]["trend"]
         if (side == "long" and d1 == "down") or (side == "short" and d1 == "up"):
-            reasons.append("1D " + ("하락" if d1 == "down" else "상승") + " 배열 — 역추세 " + ("롱" if side == "long" else "숏"))
-        if reasons:
-            caution = reasons
+            trend_ref = ("1D " + ("하락" if d1 == "down" else "상승") + " 배열 — 역추세 "
+                         + ("롱" if side == "long" else "숏") + ", 비중만 조절")
 
-    if best >= 3 and caution:
-        label, cls = "주의", "warn"
-    elif best >= 3:
+    if best >= 3:
         label, cls = "타점 도달", ("bad" if side == "short" else "long")
     elif best == 2:
         label, cls = ("숏 대기" if side == "short" else "롱 대기"), ("bad" if side == "short" else "long")
@@ -723,8 +724,9 @@ def build_analysis(sym, price, candles):
         "label": label,
         "cls": cls,
         "best": best,
-        "caution": caution,
-        "alertable": best >= 3 and label in ("타점 도달", "주의"),
+        "nwRef": nw_ref,
+        "trendRef": trend_ref,
+        "alertable": best >= 3 and label == "타점 도달",
     }
 
 
@@ -822,8 +824,10 @@ def alert_body(a, sym_meta, tk):
     rsi = a["rsi"]
     lines.append("RSI 1D {0:.1f} · 4H {1:.1f} · 1H {2:.1f}".format(rsi["1D"], rsi["4H"], rsi["1H"]))
     lines.append("자리 — " + a["zone"]["text"])
-    if a["caution"]:
-        lines.append("⚠ 주의 — " + " / ".join(a["caution"]))
+    if a.get("trendRef"):
+        lines.append("📅 " + a["trendRef"] + " — 판정은 그대로, 비중만 조절")
+    if a.get("nwRef"):
+        lines.append("🌊 NEoWave 참고: " + a["nwRef"] + " — 판정은 3중 점검 기준")
     lines.append("")
     lines.append("⏳ 1H 봉 마감(정각) 확인 후 진입 판단 — 이 알림은 분석 참고용이고 주문은 실행하지 않습니다.")
     return "\n".join(lines)

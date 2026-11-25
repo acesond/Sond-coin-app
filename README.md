@@ -13,13 +13,13 @@
 
 - `index.html` — 단일 파일 앱 (외부 빌드·서버 불필요)
 - `crypto-events.json` — 코인·거시 주요 일정 원본(시장 자극 요약 `stimulus_summary`, 자세히 보기 풀이 `detail`)
-- `scripts/ntfy_alert.py` — 6종목 3중 점검을 파이썬으로 다시 계산해 3/3(주의 포함)일 때만 ntfy 푸시를 보내는 감시 스크립트
+- `scripts/ntfy_alert.py` — 6종목 3중 점검을 파이썬으로 다시 계산해 3/3 타점 도달일 때만 ntfy 푸시를 보내는 감시 스크립트 (NEoWave·1D 역추세는 본문 참고 줄로만)
 - `.github/workflows/coin-alert.yml` — 15분마다 위 스크립트를 실행하는 GitHub Actions 워크플로 (`actions/cache`에 60분 쿨다운 상태 저장)
 
 ## 자동 알림 (ntfy)
 
 - 토픽: `https://ntfy.sh/sond-coin-9842k` (ntfy 앱에서 이 토픽을 구독하면 폰으로 푸시가 옵니다)
-- 알림 조건: ① 자리 · ② 라인 · ③ 다이버전스가 모두 충족된 **3/3**(웹앱의 `타점 도달`·`주의`)일 때만. 같은 종목·같은 방향은 60분 쿨다운.
+- 알림 조건: ① 자리 · ② 라인 · ③ 다이버전스가 모두 충족된 **3/3 타점 도달**일 때만. 같은 종목·같은 방향은 60분 쿨다운. 매억남 기본 원칙이 메인 판정이라 NEoWave 파동 겹침·1D 역추세로 판정을 깎지 않고 참고 줄로만 남깁니다.
 - 데이터: 바이낸스 선물(`fapi.binance.com`) 우선, HTTP 451 등으로 막히면 OKX 퍼블릭 API로 자동 폴백.
 - 수동 실행: `python3 scripts/ntfy_alert.py --dry-run` (발송 없이 판정만) · `--test` (테스트 알림 1건) · `--json out.json`
 - 가설을 새로 배포하면 `scripts/ntfy_alert.py`의 `HYP_DATA`(LEVELS·HYP·ZONE_DEF)를 같은 값으로 바꿔 커밋해야 알림 기준이 맞습니다.

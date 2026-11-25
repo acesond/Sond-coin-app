@@ -1000,7 +1000,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
     <span><i class="d2"></i>2/3 대기</span>
     <span class="st-upd" id="stUpd">6종목 점검 중</span>
   </div>
-  <div class="chip-easy" id="chipEasy">종목 순서는 <b>진입 중 포지션 → 타점 도달 3/3 → 바이낸스 선물 24시간 거래대금 순(6종목)</b>입니다. 빨간 점 = 자리·라인·다이버전스가 <b>모두</b> 겹침(3/3, 타점) · 주황 점 = 하나 모자람(2/3, 대기) 또는 3/3이지만 파동 겹침·1D 역추세 주의. 자리와 라인이 같은 레벨이면 근거 1개로 셉니다. 3/3이어도 손익비 3:1이 안 되면 진입하지 않습니다.</div>
+  <div class="chip-easy" id="chipEasy">종목 순서는 <b>진입 중 포지션 → 타점 도달 3/3 → 바이낸스 선물 24시간 거래대금 순(6종목)</b>입니다. 빨간 점 = 자리·라인·다이버전스가 <b>모두</b> 겹침(3/3, 타점) — 매억남 기본 판정이라 NEoWave·1D 역추세로 깎지 않습니다 · 주황 점 = 하나 모자람(2/3, 대기). 자리와 라인이 같은 레벨이면 근거 1개로 셉니다. 3/3이어도 손익비 3:1이 안 되면 진입하지 않고, 확인봉 무효면 들어가지 않습니다. NEoWave·1D 역추세는 참고 줄로만 안내합니다.</div>
 
   <!-- ===== 차트 ===== -->
   <section id="chartSec">
@@ -1053,7 +1053,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
 
   <!-- ===== NEoWave 규칙 판별 ===== -->
   <section id="neowaveSec">
-    <div class="sec-title"><h2><i></i>NEoWave 규칙 판별</h2><span class="hint">글렌 닐리 모노웨이브</span></div>
+    <div class="sec-title"><h2><i></i>NEoWave 규칙 판별</h2><span class="hint">글렌 닐리 모노웨이브 · 참고용</span></div>
     <div class="card">
       <div class="nw-head">
         <div class="nw-head-t">
@@ -2102,11 +2102,11 @@ function integTipText(r){
   if (s.indexOf('잠정') >= 0) return '아직 통과지만 3파가 1파보다 짧습니다 — 5파가 더 길어지면 위반으로 바뀌니 확인하며 봅니다.';
   return '모노웨이브 5개가 쌓여야 세 규칙을 검사합니다 — 지금은 참고만 하세요.';
 }
-/* ---- 실전 운용 힌트 — 3중 점검 판정은 그대로 두고, NEoWave 파동 상태만으로 '비중을 줄이자 / 빨리 익절하자' 한 줄 ---- */
+/* ---- 실전 운용 힌트 — 매억남 3중 점검 판정은 그대로 두고, NEoWave 파동 상태는 ‘참고’ 한 줄로만 ---- */
 function neowaveHint(nw, waveCount){
   const wait = {
     level: 'wait', icon: 'ℹ️', title: '판별 대기',
-    text: '기본 2% 리스크(표준 비중) 유지 · 파동이 2개 이상 쌓이면 비중·익절 가이드가 표시됩니다',
+    text: '매억남 기본 2% 리스크 유지 · 파동이 2개 이상 쌓이면 참고 문구가 표시됩니다',
     why: '모노웨이브 ' + (waveCount || 0) + '개 · 되돌림·시간·무결성 계산 전'
   };
   if (!nw || !(waveCount >= 2)) return wait;
@@ -2124,8 +2124,8 @@ function neowaveHint(nw, waveCount){
     if (terminal) why.push('터미널 후보');
     if (complexAdj) why.push('되돌림 ' + pct(nw.retracePct) + ' 깊은 조정');
     if (timeLong) why.push('시간 ' + (isNum(nw.timeRatioPct) ? (+nw.timeRatioPct).toFixed(0) + '%' : '—') + ' 연장');
-    return { level: 'reduce', icon: '⚠️', title: '파동 겹침/조정 구간',
-      text: '권장 비중 절반(50%) 축소 · 1차 목표에서 빠른 익절 및 본절 이동 유리',
+    return { level: 'reduce', icon: '🌊', title: '파동 겹침/조정 구간 (참고)',
+      text: '참고용 — 매억남 기본 2% 리스크·3중 점검 판정은 그대로 · 1차 목표 익절·본절 이동은 선택',
       why: '근거: ' + why.join(' · ') };
   }
   const why2 = [];
@@ -2134,8 +2134,8 @@ function neowaveHint(nw, waveCount){
   if (integ.indexOf('잠정') >= 0) why2.push('무결성 잠정 통과');
   if (nw.slopeId === '가속') why2.push('조정 속도 ' + (isNum(nw.slopeRatio) ? (+nw.slopeRatio).toFixed(2) : '—') + '배 가속');
   if (why2.length){
-    return { level: 'caution', icon: '⏳', title: '파동 불안정',
-      text: '분할 진입 · 1차 익절 비중 확대 권장',
+    return { level: 'caution', icon: '🌊', title: '파동 불안정 (참고)',
+      text: '참고용 — 기본 2% 유지 · 분할 진입은 선택',
       why: '근거: ' + why2.join(' · ') };
   }
   const why3 = [];
@@ -2151,14 +2151,13 @@ function renderNwHint(h, tier){
   const el = $('#nwHint');
   if (!el || !h) return;
   const pctTxt = tier ? Math.round(tier.pct * 100) + '%' : '';
-  const chip = tier ? pctTxt + ' 리스크'
-    : { reduce: '비중 50% 축소', caution: '분할 진입', ok: '표준 비중', wait: '판별 대기' }[h.level] || '';
+  const chip = tier ? pctTxt + ' 리스크 고정'
+    : { reduce: '참고 · 2% 유지', caution: '참고 · 2% 유지', ok: '참고 · 2% 유지', wait: '판별 대기' }[h.level] || '';
   el.className = 'nw-hint ' + h.level;
   let line = '';
   if (tier){
-    const upgrade = tier.key === 'a' ? ' · 기본 2% → 3%' : '';
-    line = '<div class="nw-hint-r">계산기 적용: <b>' + pctTxt + ' 리스크</b>(' + escHtml(tier.label) + upgrade + ') · 증거금 ' +
-      (state.marginAuto ? '자동 입력' : '수동 고정') + '</div>';
+    line = '<div class="nw-hint-r">계산기 적용: <b>' + pctTxt + ' 리스크</b>(' + escHtml(tier.label) + ') · 증거금 ' +
+      (state.marginAuto ? '자동 입력' : '수동 고정') + ' — 이 패널은 참고만, 판정은 위 3중 점검 ' + (tier.n || 0) + '/3</div>';
   }
   el.innerHTML =
     '<div class="nw-hint-h"><span>💡 실전 운용 힌트</span><span class="nw-hint-c">' + chip + '</span></div>' +
@@ -2437,26 +2436,26 @@ function buildAnalysis(c){
 
   let vLabel = '관망', vCls = 'neutral', vTitle = '관망 — 지금은 자리가 아니다';
   const best = Math.max(nS, nL);
-  /* 주의 조건 — 근거가 3/3이어도 1H 파동이 겹침·조정 구간(NEoWave ‘비중 축소’)이거나
-     1D 큰 방향과 반대면 ‘타점 도달’로 올리지 않습니다 */
-  let caution = null;
+  /* 참고 정보 — 매억남 기본 원칙이 메인 판정입니다.
+     근거 3/3이면 폐기·이탈이 아닌 한 ‘타점 도달 3/3’이고,
+     NEoWave 파동 상태와 1D 역추세는 판정을 깎지 않고 ‘참고’ 줄로만 짧게 붙입니다.
+     (리스크·증거금도 NEoWave 때문에 줄이지 않고 기본 2% 고정) */
+  let nwRef = null, trendRef = null;
   if (best >= 3) {
-    const reasons = [];
-    const cs1 = tfs['1H'].cs;
-    const w1 = extractMonowaves(cs1, mwAtr(cs1));
-    const nh = neowaveHint(analyzeNeowave(w1), w1.length);
-    if (nh.level === 'reduce') reasons.push('NEoWave(1H) ' + nh.title + ' — ' + String(nh.why || '').replace(/^근거:\s*/, ''));
+    try {
+      const cs1 = tfs['1H'].cs;
+      const w1 = extractMonowaves(cs1, mwAtr(cs1));
+      const nh = neowaveHint(analyzeNeowave(w1), w1.length);
+      if (nh.level === 'reduce' || nh.level === 'caution')
+        nwRef = nh.title + (nh.why ? ' — ' + String(nh.why).replace(/^근거:\s*/, '') : '');
+    } catch (e) { /* 참고 문구라 실패해도 판정은 그대로 */ }
     const d1 = tfs['1Dutc'].trend;
     if ((side === 'long' && d1 === 'down') || (side === 'short' && d1 === 'up'))
-      reasons.push('1D ' + (d1 === 'down' ? '하락' : '상승') + ' 배열 — 역추세 ' + (side === 'long' ? '롱' : '숏'));
-    if (reasons.length) caution = { reasons };
+      trendRef = '1D ' + (d1 === 'down' ? '하락' : '상승') + ' 배열 — 역추세 ' + (side === 'long' ? '롱' : '숏') + ', 비중만 조절';
   }
-  if (best >= 3 && caution) {
-    vLabel = '주의'; vCls = 'warn';
-    vTitle = (side === 'short' ? '숏' : '롱') + ' 근거 3/3이지만 주의 — ' + caution.reasons.join(' / ');
-  } else if (best >= 3) {
+  if (best >= 3) {
     vLabel = '타점 도달'; vCls = side === 'short' ? 'bad' : 'long';
-    vTitle = (side === 'short' ? '숏' : '롱') + ' 타점 도달 — 근거 3/3';
+    vTitle = (side === 'short' ? '숏' : '롱') + ' 타점 도달 — 근거 3/3 (매억남 기준)';
   } else if (best === 2) {
     vLabel = side === 'short' ? '숏 대기' : '롱 대기';
     vCls = side === 'short' ? 'bad' : 'long';
@@ -2559,7 +2558,7 @@ function buildAnalysis(c){
             : '4H·1H 상승 다이버전스 없음' }
       ]
     },
-    nS, nL, side, vLabel, vCls, vTitle, caution, dup:{ short:dupShort, long:dupLong },
+    nS, nL, side, vLabel, vCls, vTitle, nwRef, trendRef, caution:null, dup:{ short:dupShort, long:dupLong },
     summary: lines, nextHint,
     counters: { anyDiv, divT4:t4.div, divT1:t1.div }
   };
@@ -2631,6 +2630,11 @@ function entryTiming(a, c1h){
     short:'마감 대기', compact:compact || ('⏳ ' + nh.at + ' 마감 대기'), label:label, detail:detail });
   const goNow = (label, detail, compact) => Object.assign(base, { state:'go', cls:'go', branch, branchKr,
     short:'지금 진입', compact:compact || '✅ 지금 진입 가능', label:label, detail:detail });
+  /* 참고 줄 — 메인 판정(타점 도달 3/3)은 그대로 두고 NEoWave·1D 역추세만 덧붙입니다 */
+  base.refNote = [
+    (a.nwRef ? '🌊 NEoWave 참고: ' + a.nwRef : ''),
+    (a.trendRef ? '📅 ' + a.trendRef : '')
+  ].filter(Boolean).join(' · ');
 
   /* ── 현재가 기준 손익비 — 가설의 진입·손절·목표를 쓰되 ‘진입가’ 대신 지금 가격으로 다시 계산 ── */
   const rr = (function(){
@@ -2652,13 +2656,6 @@ function entryTiming(a, c1h){
   base.rrTxt = rr ? rrTxt() : '';
   base.rrOk = rr ? !rrBlocked() : null;
   base.rrNow = rr ? '현재가 ' + fx(price) + ' 기준 손익비 ' + rrTxt() + (rrBlocked() ? ' — 3:1 미달' : ' — 3:1 이상') + ' · 진입가 ' + fx(rr.entry) + '에서는 ' + rr.rrEntry + ':1' : '';
-
-  /* ── 근거 3/3이어도 주의 조건(파동 겹침·조정 구간 / 1D 역추세)이 있으면 ‘지금 진입 가능’으로 올리지 않습니다 ── */
-  if (best >= 3 && a.caution){
-    return Object.assign(base, { state:'wait', cls:'wait', branch, branchKr, short:'주의', compact:'⚠ 주의 — 진입 보류',
-      label:'⚠ 근거 3/3이지만 주의 조건 — 지금 진입 가능으로 올리지 않습니다',
-      detail: a.caution.reasons.join(' · ') + '. ' + lastTxt + curTxt + '. 들어간다면 절반 비중 이하로, 확인 캔들과 손익비 3:1을 먼저 보세요.' });
-  }
 
   /* ── 근거 2/3 — 한 개 더 + 정각 마감 대기 ── */
   if (best === 2){
@@ -2946,11 +2943,10 @@ function statusOfAnalysis(a){
   if (!a) return null;
   const best = Math.max(a.nS, a.nL);
   const voided = !!(a.zone && a.zone.code === 'void');                /* 가설 폐기 → 관망 */
-  const cautious = !!(a.caution && best >= 3);                         /* 3/3이지만 파동·추세 주의 → 빨강 대신 주황 */
-  const level = (voided || best < 2) ? 0 : (best >= 3 && !cautious ? 3 : 2);        /* 3=빨강 · 2=주황 · 0=기본 */
+  /* 매억남 기본 — 3/3이면 폐기·이탈이 아닌 한 ‘타점 도달’(빨강). NEoWave·1D 역추세는 판정을 깎지 않습니다 */
+  const level = (voided || best < 2) ? 0 : (best >= 3 ? 3 : 2);        /* 3=빨강 · 2=주황 · 0=기본 */
   const sideKr = a.side === 'short' ? '숏' : '롱';
   const label = voided ? '관망 — 가설 폐기 구간 ' + best + '/3'
-    : cautious ? sideKr + ' 3/3 주의 — ' + (a.caution.reasons[0] || '').split(' — ')[0]
     : level === 3 ? sideKr + ' 타점 도달 3/3'
     : level === 2 ? sideKr + ' 2/3 대기'
     : '관망 ' + best + '/3';
@@ -3647,6 +3643,7 @@ function renderVTiming(tm){
     '<span class="vt-k">진입 타이밍 · ' + (tm.branchKr || '관망') + (tm.cls && tm.cls !== 'hold' && tm.at ? ' · 다음 1H 마감 ' + tm.at : '') + '</span>' +
     tm.label +
     '<span class="vt-d">' + (tm.detail || '') + '</span>' +
+    (tm.refNote ? '<span class="vt-d vt-ref" style="color:var(--dim2)">' + tm.refNote + '</span>' : '') +
     (tm.rrNow ? '<span class="vt-d vt-rr ' + (tm.rrOk ? 'ok' : 'bad') + '">' + (tm.rrOk ? '✓ ' : '✗ ') + tm.rrNow + '</span>' : '') +
   '</span>';
 }
@@ -3711,7 +3708,8 @@ function renderAnalysis(a){
      n === 1 ? '2개는 보류, 1개는 진입이 아니다. 관망.' : '아무 근거도 겹치지 않는다. 지금은 하지 않는 구간.') +
     '<br><span style="color:var(--dim2)">반대(' + otherName + ') 근거는 ' + otherN + '/3.</span>' +
     ((a.dup && a.dup[a.side]) ? '<br><span style="color:#ffd79a">≈ 자리와 라인이 같은 레벨이라 근거 1개로 셉니다 — 독립 근거는 그만큼 적습니다.</span>' : '') +
-    (a.caution ? '<br><span style="color:#ffd79a">⚠ 주의 — ' + a.caution.reasons.join(' · ') + '</span>' : '') +
+    (a.trendRef ? '<br><span style="color:var(--dim2)">📅 ' + a.trendRef + ' — 판정은 그대로, 비중만 조절.</span>' : '') +
+    (a.nwRef ? '<br><span style="color:var(--dim2)">🌊 NEoWave 참고: ' + a.nwRef + ' — 판정은 3중 점검 기준.</span>' : '') +
     (a.nextHint ? '<br>' + a.nextHint : '');
   renderEvViz(a);
   renderEvHyp(a);
@@ -3734,12 +3732,16 @@ function verdictEasy(a){
     return '<b>가설 폐기 구간</b> · 원래 가설의 손절선을 넘어섰습니다. 되돌림을 기다리지 말고 새 추세가 맞는지 먼저 보세요.';
   }
   let t;
-  if (n >= 3 && a.caution) t = '근거는 3개 겹쳤지만 <b>주의 조건</b>이 있습니다 — ' + a.caution.reasons.join(' · ') + '. 타점으로 올리지 않고, 들어가더라도 비중을 줄입니다.';
-  else if (n >= 3) t = '자리·라인·다이버전스가 모두 겹쳤습니다. 세 조건이 겹칠 때만 진입하고, 손익비 3:1이 안 되면 건너뜁니다.';
+  if (n >= 3) t = '자리·라인·다이버전스가 모두 겹쳤습니다(매억남 기준 타점). 손익비 3:1이 안 되면 건너뜁니다.'; 
   else if (n === 2) t = '하나 모자랍니다. 빠진 조건(다이버전스·거래량·전환 캔들)이 채워질 때까지 기다리는 자리입니다.';
   else if (n === 1) t = '한 개만 겹쳤습니다. 진입 신호가 아니라 지켜보는 구간입니다.';
   else t = '겹친 조건이 없습니다. 지금은 아무것도 하지 않는 구간입니다.';
-  return '<b>' + side + ' 기준 ' + n + '/3</b> · ' + t;
+  const refs = [
+    (a.trendRef ? '📅 ' + a.trendRef : ''),
+    (a.nwRef ? '🌊 NEoWave 참고: ' + a.nwRef : '')
+  ].filter(Boolean).join('<br>');
+  return '<b>' + side + ' 기준 ' + n + '/3</b> · ' + t +
+    (refs ? '<br><span style="color:var(--dim2);font-size:11px">' + refs + '</span>' : '');
 }
 function watchItems(){
   const price = currentPrice();
@@ -4328,37 +4330,27 @@ function loadPlanToForm(slot){
   $('#planSec').scrollIntoView({ behavior:'smooth', block:'start' });
   drawChart();
 }
-/* ---------- 자산 대비 적정 증거금 (NEoWave·3중 점검 연동 리스크) ----------
-   권장 증거금 = (현재 자산 × 리스크%) / (손절폭 × 레버리지)
-   · A급 자리(3중 점검 3/3 + 파동 깔끔·무결성 통과) 3% · 상한 자산 40%
-   · 축소 구간(NEoWave 1·4파 겹침·터미널·복합조정/경고) 1%(절반) · 상한 자산 30%
-   · 그 외 표준 2% · 상한 자산 30%
+/* ---------- 자산 대비 적정 증거금 (매억남 기본 2% 고정) ----------
+   권장 증거금 = (현재 자산 × 2%) / (손절폭 × 레버리지)
+   · 매억남 기본 원칙을 따라 리스크는 항상 표준 2% · 상한 자산 30%. NEoWave 파동 상태(겹침·조정)는
+     판정도 리스크도 깎지 않고 ‘🌊 NEoWave 참고’ 줄로만 안내합니다(A급 3%·축소 1% 가산은 쓰지 않음).
    · 손절폭 = |진입가 − 손절가| / 진입가 (비율) · 최소 10 USDT · 정수 반올림
    · 사용자가 증거금을 직접 고치면 그 값이 우선(수동 고정), [자산 기준 재계산]으로 되돌립니다. */
 const RISK_TIERS = {
-  a:      { key:'a',      pct:0.03, cap:0.40, label:'A급 자리 · 비중 상향' },
-  reduce: { key:'reduce', pct:0.01, cap:0.30, label:'파동 겹침 · 비중 절반 축소' },
-  std:    { key:'std',    pct:0.02, cap:0.30, label:'표준' }
+  std:    { key:'std',    pct:0.02, cap:0.30, label:'표준 2% · 매억남 기본' }
 };
 const MARGIN_MIN_USDT = 10;
 function stopWidthPct(p){
   return isNum(p.entry) && isNum(p.stop) && p.entry > 0 ? Math.abs(p.entry - p.stop) / p.entry * 100 : NaN;
 }
-/* 지금 타점 방향 기준 적용 리스크 티어 — 3중 점검 개수 + NEoWave 파동 상태 */
+/* 지금 타점 방향 기준 리스크 티어 — 매억남 기본 2% 고정 (NEoWave는 참고 문구로만) */
 function riskTierFor(side){
   const a = state.ana;
   const n = a ? (side === 'long' ? a.nL : a.nS) : 0;
   const mw = state.mw || {};
-  const nw = mw.nw || null;
-  const h = neowaveHint(nw, (mw.waves || []).length);
-  const integ = nw ? (nw.integrityStatus || '') : '';
-  const mk = (base, label) => ({ key: base.key, pct: base.pct, cap: base.cap, label: label, hint: h, n: n, check: !!a });
-  if (h.level === 'reduce') return mk(RISK_TIERS.reduce, RISK_TIERS.reduce.label);
-  if (h.level === 'ok'){
-    if (n >= 3 && integ.indexOf('부합') >= 0) return mk(RISK_TIERS.a, RISK_TIERS.a.label);
-    return mk(RISK_TIERS.std, integ.indexOf('부합') >= 0 && n >= 1 ? '표준 · 3중 점검 ' + n + '/3' : '표준 · 무결성 판정 전');
-  }
-  return mk(RISK_TIERS.std, h.level === 'wait' ? '표준 · 파동 판별 전' : '표준 · 파동 주의');
+  const h = neowaveHint(mw.nw, (mw.waves || []).length);
+  const base = RISK_TIERS.std;
+  return { key: base.key, pct: base.pct, cap: base.cap, label: base.label, hint: h, n: n, check: !!a };
 }
 function riskMarginFor(p){
   const asset = currentAsset();
