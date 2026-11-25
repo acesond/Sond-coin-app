@@ -13,6 +13,11 @@
   NEoWave 파동 상태(1·4파 겹침·터미널·깊은 조정)·1D 역추세는 판정을 깎지 않고 본문 ‘참고’ 줄로만 남깁니다.
   타점 도달일 때만 알림을 보냅니다.
 
+추가: **자동 1 (4H 모노웨이브 추세 재개)** 감시 — 웹앱 «자동 후보»의 후보 1을 그대로 옮겨,
+  4H ATR(14)×2.5 모노웨이브 직전 파동(m1)의 0.5·0.618·0.786 되돌림 자리에 현재가가
+  **±0.8% 이내**로 들어오면(파동 무효선 100% 되돌림을 넘지 않은 경우만) 별도 알림을 보냅니다.
+  수작업 가설 3중 점검과는 다른 종류라 본문에 그 사실을 적고, 쿨다운도 따로 셉니다.
+
 데이터: 바이낸스 선물 fapi.binance.com 우선(1D 200봉 · 4H 200봉 · 1H 200봉),
         HTTP 451 등으로 막히면 OKX 퍼블릭 API(BTC-USDT-SWAP …)로 자동 폴백.
 
@@ -27,6 +32,7 @@
     python3 scripts/ntfy_alert.py --state .alert-state/state.json
 """
 import argparse
+import base64
 import json
 import os
 import sys
@@ -40,6 +46,7 @@ APP_URL = "https://acesond.github.io/Sond-coin-app/"
 KST = timezone(timedelta(hours=9))
 USER_AGENT = "sond-coin-alert/1.0 (+https://github.com/acesond/Sond-coin-app)"
 COOLDOWN_MIN = 60
+AUTO1_NEAR_PCT = 0.8   # 자동 1 진입가 ±0.8% 이내면 타점 도달 (수작업 가설의 ±1.0%와 별개)
 
 BN = "https://fapi.binance.com"
 OKX = "https://www.okx.com"
@@ -566,9 +573,10 @@ def extract_monowaves(cs, atr):
         p1, p2 = pivots[i - 1], pivots[i]
         ln = abs(p2["price"] - p1["price"])
         bars = max(1, p2["idx"] - p1["idx"])
-        waves.append({"len": ln, "bars": bars, "slope": ln / bars,
+        waves.append({"id": f"m{i}", "len": ln, "bars": bars, "slope": ln / bars,
                       "dir": 1 if p2["price"] >= p1["price"] else -1,
-                      "endPrice": p2["price"]})
+                      "startPrice": p1["price"], "endPrice": p2["price"],
+                      "startIdx": p1["idx"], "endIdx": p2["idx"]})
     return waves
 
 
@@ -612,6 +620,86 @@ def neowave_reduce_hint(waves):
     if time_long:
         why.append(f"시간 {ratio:.0f}% 연장")
     return " · ".join(why)
+
+
+# ---------------------------------------------------------------- 자동 1 · 4H 모노웨이브 추세 재개
+# 웹앱 index.html의 autoHypotheses() 후보 1(a1)을 그대로 옮겼습니다.
+#   직전에 완성된 4H 모노웨이브 m1의 방향으로 재개를 노리는 자리 — 0.5 → 0.618 → 0.786
+#   되돌림 중 아직 닿지 않은 가장 얕은 자리가 진입가입니다. 파동 무효선은 m1 시작점(100% 되돌림).
+#   판정(3중 점검)에는 반영되지 않는 참고 후보라, 알림 본문에도 그 사실을 적습니다.
+def auto1_candidate(sym, price, candles):
+    cs = (candles or {}).get("4H") or []
+    if len(cs) < 60:
+        return {"ok": False, "why": "4H 캔들 부족"}
+    if not is_num(price) or price <= 0:
+        return {"ok": False, "why": "현재가 없음"}
+    atr = calc_atr(cs, 14)[-1]
+    if not is_num(atr) or atr <= 0:
+        atr = cs[-1]["c"] * 0.005
+    waves = extract_monowaves(cs, atr)
+    if len(waves) < 3:
+        return {"ok": False, "why": f"4H 모노웨이브 {len(waves)}개 — 3개 미만", "atr": atr}
+    m1 = waves[-2]                       # 직전에 완성된 모노웨이브
+    d1 = m1["dir"]
+    side = "long" if d1 > 0 else "short"
+
+    def lvl(r):                          # m1을 r만큼 되돌린 가격
+        return m1["endPrice"] - d1 * m1["len"] * r
+
+    margin = 0.15 * atr
+    pick = next((r for r in (0.5, 0.618, 0.786) if (price - lvl(r)) * d1 > margin), None)
+    r = 0.786 if pick is None else pick
+    entry = lvl(r)
+    stop = (m1["startPrice"] if r == 0.786 else lvl(0.786)) - d1 * 0.2 * atr
+    voided = (price - m1["startPrice"]) * d1 <= 0     # 100% 되돌림 넘으면 파동 무효
+    t1 = m1["endPrice"]                                  # 1차 = 직전 극값
+    t2 = m1["startPrice"] + d1 * m1["len"] * 1.618     # 2차 = m1 길이 1.618배 확장
+    gap = (price - entry) / entry * 100 if entry else None
+    near = bool(is_num(gap) and abs(gap) <= AUTO1_NEAR_PCT and not voided)
+    risk = abs(entry - stop)
+    return {
+        "ok": True, "sym": sym, "side": side, "dir": d1, "r": r,
+        "entry": entry, "stop": stop, "t1": t1, "t2": t2,
+        "rr1": (abs(t1 - entry) / risk if risk else None),
+        "rr2": (abs(t2 - entry) / risk if risk else None),
+        "atr": atr, "voided": bool(voided), "weak": pick is None,
+        "gapPct": gap, "near": near, "price": price, "waves": len(waves),
+        "m1": {"id": m1["id"], "len": m1["len"], "bars": m1["bars"], "dir": d1,
+               "startPrice": m1["startPrice"], "endPrice": m1["endPrice"]},
+    }
+
+
+def auto1_refs(candles, price):
+    """자동 1 알림 본문의 참고 메모 — 1D·4H·1H 배열/RSI와 1H NEoWave 경고."""
+    out = {"rsi": {}, "trend": {}, "nwRef": None}
+    for bar in ("1Dutc", "4H", "1H"):
+        cs = (candles or {}).get(bar) or []
+        if len(cs) < 60:
+            continue
+        closes = [c["c"] for c in cs]
+        rsi = rsi_series(closes, 14)
+        e20 = ema_series(closes, 20)[-1]
+        e50 = ema_series(closes, 50)[-1]
+        p_ = price if is_num(price) else closes[-1]
+        trend = "mixed"
+        if is_num(e20) and is_num(e50):
+            if p_ < e20 < e50:
+                trend = "down"
+            elif p_ > e20 > e50:
+                trend = "up"
+        out["rsi"][TF_LABEL[bar]] = rsi[-1]
+        out["trend"][TF_LABEL[bar]] = trend
+        if bar == "1H":
+            try:
+                atr = calc_atr(cs, 14)[-1]
+                if not is_num(atr) or atr <= 0:
+                    atr = cs[-1]["c"] * 0.005
+                hint = neowave_reduce_hint(extract_monowaves(cs, atr))
+                if hint:
+                    out["nwRef"] = hint
+            except Exception:  # noqa: BLE001 — 참고 문구라 실패해도 알림은 그대로
+                pass
+    return out
 
 
 # ---------------------------------------------------------------- 3중 점검
@@ -787,10 +875,18 @@ def build_analysis(sym, price, candles):
 
 
 # ---------------------------------------------------------------- ntfy
+def rfc2047(s):
+    """ntfy는 HTTP 헤더 UTF-8을 지원하지만 urllib은 헤더를 latin-1로 인코딩합니다.
+    한글 제목은 RFC 2047 base64 인코딩 단어로 보내야 전송되고, 앱에서는 한글로 풀려 보입니다."""
+    if s.isascii():
+        return s
+    return "=?UTF-8?B?" + base64.b64encode(s.encode("utf-8")).decode("ascii") + "?="
+
+
 def send_ntfy(title, body, click=APP_URL, priority="high", tags="chart_with_upwards_trend,bell",
               dry_run=False):
     headers = {
-        "Title": title,
+        "Title": rfc2047(title),
         "Priority": priority,
         "Tags": tags,
         "Click": click,
@@ -895,6 +991,67 @@ def alert_title(a, sym_meta):
     return f"{sym_meta['code']} {side} {a['best']}/3 - Sond coin"
 
 
+def auto1_title(a, sym_meta):
+    """자동 1 알림 제목 — 수작업 3중 점검 알림과 한눈에 구분되도록 [자동 1]을 붙입니다.
+    한글 제목은 send_ntfy가 RFC 2047로 인코딩해 보냅니다."""
+    side = "SHORT" if a["side"] == "short" else "LONG"
+    return f"[자동 1] {sym_meta['code']} {side} 타점 도달"
+
+
+def auto1_body(a, sym_meta, tk, refs):
+    dp = sym_meta["dp"]
+    p = lambda n: fmt_lv(n, dp)  # noqa: E731
+    px = lambda n: fmt_px(n, dp)  # noqa: E731
+    side_kr = "숏" if a["side"] == "short" else "롱"
+    side_en = "SHORT" if a["side"] == "short" else "LONG"
+    m1 = a["m1"]
+    refs = refs or {}
+    r_pct = f"{a['r'] * 100:.1f}%"
+
+    lines = []
+    lines.append(f"[자동 1] {sym_meta['code']} {side_en} 타점 도달 — 4H {m1['id']} 추세 재개 ({side_kr})")
+    if tk:
+        lines.append(f"{sym_meta['code']} {sym_meta['name']} · 현재가 {px(a['price'])} (24h {fmt_pct(tk['chg'])})  ·  {now_kst():%m/%d %H:%M} KST")
+    else:
+        lines.append(f"{sym_meta['code']} {sym_meta['name']} · 현재가 {px(a['price'])}  ·  {now_kst():%m/%d %H:%M} KST")
+    lines.append("")
+    lines.append(f"진입 {p(a['entry'])} ({r_pct} 되돌림) — 현재가 {a['gapPct']:+.2f}% 차이")
+    rr = ""
+    if is_num(a.get("rr1")):
+        rr += f" · 손익비 1차 {a['rr1']:.2f}:1"
+    if is_num(a.get("rr2")):
+        rr += f" · 2차 {a['rr2']:.2f}:1"
+    lines.append(f"손절 {p(a['stop'])} · 1차 목표 {p(a['t1'])} · 2차 {p(a['t2'])}{rr}")
+    lines.append("")
+    lines.append(f"파동 — 4H {m1['id']} {side_kr} {p(m1['startPrice'])} → {p(m1['endPrice'])} "
+                 f"(길이 {p(m1['len'])}, {m1['bars']}봉) 를 {r_pct} 되돌린 자리 · 무효선 {p(m1['startPrice'])}")
+
+    # 단기 반등·추세 참고 메모
+    trend = refs.get("trend") or {}
+    rsi = refs.get("rsi") or {}
+    t1h = trend.get("1H")
+    want = "up" if a["side"] == "long" else "down"
+    memo = {"up": "1H 상승 배열", "down": "1H 하락 배열"}.get(t1h, "1H 혼조")
+    if t1h == want:
+        memo += " · 단기 추세 같은 방향"
+    elif t1h in ("up", "down"):
+        memo += " · 단기 역방향이라 되돌림 더 깊을 수 있음"
+    rsi_txt = " · ".join(f"{k} {rsi[k]:.1f}" for k in ("1D", "4H", "1H") if is_num(rsi.get(k)))
+    lines.append("참고 — " + memo + ((" · RSI " + rsi_txt) if rsi_txt else ""))
+    d1t = trend.get("1D")
+    if (a["side"] == "long" and d1t == "down") or (a["side"] == "short" and d1t == "up"):
+        lines.append("📅 1D " + ("하락" if d1t == "down" else "상승") + " 배열 — 역추세 " + side_kr + ", 비중만 조절")
+    if refs.get("nwRef"):
+        lines.append("🌊 NEoWave 참고: " + refs["nwRef"] + " — 자동 후보 계산은 그대로")
+    if a.get("weak"):
+        lines.append("⚠️ 되돌림 78.6% 초과 — 재개 근거 약함(웹앱과 같은 태그)")
+
+    lines.append("")
+    lines.append("⏳ 자동 1은 수작업 가설·3중 점검 판정과 별개로, 지금 4H 캔들에서 다시 계산한 참고 후보입니다.")
+    lines.append("   1H 봉 마감(정각) 확인 후 진입 판단 — 이 알림은 분석 참고용이고 주문은 실행하지 않습니다.")
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------- 상태(쿨다운)
 def load_state(path):
     try:
@@ -932,7 +1089,7 @@ def in_cooldown(st, key, now_ts, minutes):
 
 
 # ---------------------------------------------------------------- 실행
-def write_summary(results, sent, source, feed):
+def write_summary(results, sent, source, feed, sent_auto=None):
     """GitHub Actions 실행 요약(GITHUB_STEP_SUMMARY)에 한 줄씩 남깁니다."""
     path = os.environ.get("GITHUB_STEP_SUMMARY")
     if not path:
@@ -940,16 +1097,30 @@ def write_summary(results, sent, source, feed):
     lines = ["### 코인 3중 점검 스캔", "",
              f"- {now_kst():%Y-%m-%d %H:%M} KST · 데이터 {source}" +
              (f" (바이낸스 차단: {feed.binance_why})" if feed.binance_why else ""), "",
-             "| 종목 | 현재가 | 숏 | 롱 | 판정 |", "|---|---|---|---|---|"]
+             "| 종목 | 현재가 | 숏 | 롱 | 판정 | 자동 1 |", "|---|---|---|---|---|---|"]
     for a in results:
         meta = SYM_BY_ID.get(a.get("sym"), {"dp": 2})
         if a.get("error"):
-            lines.append(f"| {a.get('sym')} | — | — | — | 조회 실패: {a['error']} |")
+            lines.append(f"| {a.get('sym')} | — | — | — | 조회 실패: {a['error']} | — |")
         else:
-            lines.append(f"| {a['sym']} | {fmt_px(a['price'], meta['dp'])} | {a['nS']}/3 | {a['nL']}/3 | {a['label']} |")
-    lines += ["", "- 발송: " + (", ".join(s["key"] for s in sent) or "없음")]
+            lines.append(f"| {a['sym']} | {fmt_px(a['price'], meta['dp'])} | {a['nS']}/3 | {a['nL']}/3 | {a['label']} | {auto_cell(a, meta['dp'])} |")
+    lines += ["", "- 발송(3중 점검): " + (", ".join(s["key"] for s in sent) or "없음"),
+             "- 발송(자동 1): " + (", ".join(s["key"] for s in (sent_auto or [])) or "없음")]
     with open(path, "a", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
+
+
+def auto_cell(a, dp):
+    """실행 요약 표의 자동 1 칸."""
+    au = a.get("auto1") or {}
+    if not au.get("ok"):
+        return "—"
+    side = "롱" if au["side"] == "long" else "숏"
+    if au["voided"]:
+        return f"{side} 폐기(무효선 넘음)"
+    gap = au.get("gapPct")
+    txt = f"{side} 진입 {fmt_px(au['entry'], dp)} ({fmt_pct(gap)})"
+    return txt + (" 🔔" if au.get("alertable") else "")
 
 
 def scan(feed, verbose=True):
@@ -963,15 +1134,28 @@ def scan(feed, verbose=True):
             a = build_analysis(sym, price, candles)
             if a is None:
                 raise RuntimeError("봉이 60개 미만 — 분석 불가")
+            auto = auto1_candidate(sym, price, candles)
+            if auto.get("ok"):
+                auto["refs"] = auto1_refs(candles, price)
+                auto["alertable"] = bool(auto.get("near") and not auto.get("voided"))
+            a["auto1"] = auto
             a["ticker"] = tk
             a["source"] = feed.name()
             out.append(a)
             if verbose:
                 print(f"· {sym:<9} {fmt_px(price, meta['dp']):>12}  숏 {a['nS']}/3 · 롱 {a['nL']}/3 → {a['label']}"
                       f" ({a['zone']['code']})", flush=True)
+                if auto.get("ok"):
+                    print(f"   · 자동 1 {('롱' if auto['side'] == 'long' else '숏')}"
+                          f" 진입 {fmt_px(auto['entry'], meta['dp'])}"
+                          f" · 현재가 차이 {fmt_pct(auto['gapPct'])}"
+                          + (" · 폐기(되돌림 100% 초과)" if auto["voided"] else "")
+                          + (" · 🔔 타점 도달" if auto["alertable"] else ""), flush=True)
+                else:
+                    print(f"   · 자동 1 — {auto.get('why', '계산 불가')}", flush=True)
         except Exception as e:  # noqa: BLE001
             print(f"!! {sym} 조회 실패: {e}", flush=True)
-            out.append({"sym": sym, "error": str(e), "alertable": False})
+            out.append({"sym": sym, "error": str(e), "alertable": False, "auto1": {"ok": False}})
     return out
 
 
@@ -1031,6 +1215,39 @@ def main(argv=None):
             "label": a["label"],
         }
 
+    # ---- 자동 1 (4H 모노웨이브 추세 재개) — 수작업 3중 점검과 별도 키로 쿨다운
+    sent_auto, skipped_auto = [], []
+    for a in results:
+        if a.get("error"):
+            continue
+        au = a.get("auto1") or {}
+        if not au.get("alertable"):
+            continue
+        key = f"auto1:{a['sym']}:{au['side']}"
+        left = in_cooldown(st, key, now_ts, args.cooldown)
+        if left > 0:
+            skipped_auto.append((key, round(left, 1)))
+            print(f"· 자동 1 쿨다운 {key} — {left:.0f}분 남음, 발송 생략", flush=True)
+            continue
+        body = auto1_body(au, meta[a["sym"]], a.get("ticker"), au.get("refs"))
+        title = auto1_title(au, meta[a["sym"]])
+        try:
+            r = send_ntfy(title, body, dry_run=args.dry_run, tags="zap,bell")
+        except Exception as e:  # noqa: BLE001
+            print(f"!! 자동 1 알림 발송 실패 {key}: {e}", flush=True)
+            continue
+        sent_auto.append({"key": key, "title": title, "res": r})
+        print(f"🔔 자동 1 알림 발송 {key} — {title}", flush=True)
+        st.setdefault("alerts", {})[key] = {
+            "ts": now_ts,
+            "iso": now_kst().isoformat(timespec="seconds"),
+            "kind": "auto1",
+            "entry": au["entry"],
+            "price": au["price"],
+            "gapPct": au["gapPct"],
+            "label": "자동 1 타점 도달",
+        }
+
     if args.json_out:
         payload = {
             "generated": now_kst().isoformat(timespec="seconds"),
@@ -1038,7 +1255,8 @@ def main(argv=None):
             "binanceBlocked": (None if feed.binance_ok else feed.binance_why),
             "cooldownMin": args.cooldown,
             "sent": [s["key"] for s in sent],
-            "skipped": skipped,
+            "sentAuto": [s["key"] for s in sent_auto],
+            "skipped": skipped + skipped_auto,
             "symbols": [
                 {k: v for k, v in a.items() if k not in ("ticker",)}
                 for a in results
@@ -1054,14 +1272,16 @@ def main(argv=None):
         "scanned": [{"sym": a.get("sym"), "nS": a.get("nS"), "nL": a.get("nL"),
                      "label": a.get("label"), "error": a.get("error")} for a in results],
         "sent": [s["key"] for s in sent],
+        "sentAuto": [s["key"] for s in sent_auto],
     }
     if not args.dry_run:
         save_state(args.state, st)
 
-    write_summary(results, sent, source, feed)
+    write_summary(results, sent, source, feed, sent_auto)
 
     ok = [a for a in results if "error" not in a]
-    print(f"· 3/3 알림 {len(sent)}건 · 판정 {len(ok)}/{len(results)}종목 · 쿨다운 생략 {len(skipped)}건", flush=True)
+    print(f"· 3/3 알림 {len(sent)}건 · 자동 1 알림 {len(sent_auto)}건 · 판정 {len(ok)}/{len(results)}종목"
+          f" · 쿨다운 생략 {len(skipped) + len(skipped_auto)}건", flush=True)
     if not ok:
         print("!! 모든 종목 조회 실패 — 데이터 소스 확인 필요", flush=True)
         return 1
