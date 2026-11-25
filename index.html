@@ -4346,7 +4346,7 @@ function stopWidthPct(p){
 /* 지금 타점 방향 기준 리스크 티어 — 매억남 기본 2% 고정 (NEoWave는 참고 문구로만) */
 function riskTierFor(side){
   const a = state.ana;
-  const n = a ? (side === 'long' ? a.nL : a.nS) : 0;
+  const n = a ? Math.max(a.nS || 0, a.nL || 0) : 0;   /* 방향 구분 없이 지금 겹친 근거 최대치 */
   const mw = state.mw || {};
   const h = neowaveHint(mw.nw, (mw.waves || []).length);
   const base = RISK_TIERS.std;
