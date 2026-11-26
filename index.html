@@ -479,6 +479,31 @@ button.toggle b{font-variant-numeric:tabular-nums; color:#67e8f9; font-weight:80
 .j-ck.y{color:#7ee2a4; background:rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.28)}
 .j-ck.n{color:#9aa9bd; background:rgba(147,162,182,.09); border:1px solid rgba(147,162,182,.2)}
 .j-ck-line{display:block; font-size:9px; color:var(--dim2); line-height:1.4; margin-top:2px}
+/* 진입 근거 스냅샷 안의 «자동 후보»(자동 1·2·3) — 매매기록 카드·매매근거 시트·진입 시트가 같은 모양을 씁니다 */
+.au{margin-top:5px; border-top:1px dashed rgba(30,42,60,.9); padding-top:5px}
+.au-h{display:flex; align-items:baseline; gap:5px; font-size:8.5px; font-weight:800; color:#9fb6d8; letter-spacing:.02em}
+.au-h span{margin-left:auto; font-size:8px; font-weight:700; color:var(--dim2); letter-spacing:0}
+.au-i{margin-top:4px; padding-top:4px; border-top:1px solid rgba(30,42,60,.55)}
+.au-h + .au-i{margin-top:3px; border-top:0; padding-top:0}
+.au-i.off{opacity:.55}
+.au-top{display:flex; align-items:center; gap:4px; font-size:9px; line-height:1.35; min-width:0}
+.au-top b{color:#dbe6f5; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.au-side{flex:0 0 auto; font-size:8px; font-weight:800; padding:0 4px; border-radius:4px; border:1px solid; line-height:1.4}
+.au-side.long{color:#7ee2a4; background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.28)}
+.au-side.short{color:#ff9fae; background:rgba(244,63,94,.12); border-color:rgba(244,63,94,.28)}
+.au-void{flex:0 0 auto; font-size:8px; font-weight:800; padding:0 4px; border-radius:4px; color:#ffd79a; background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.3)}
+.au-rr{margin-left:auto; flex:0 0 auto; font-size:8.5px; font-weight:700; color:var(--dim2); font-variant-numeric:tabular-nums}
+.au-px{display:grid; grid-template-columns:1fr 1fr; gap:0 6px; margin-top:2px; font-size:8.5px; line-height:1.45; color:var(--dim2); font-variant-numeric:tabular-nums}
+.au-px b{color:#cfdcec; font-weight:700}
+.au-tg{display:flex; flex-wrap:wrap; gap:3px; margin-top:2px}
+.au-tg span{font-size:8px; font-weight:700; padding:0 4px; border-radius:4px; color:#9aa9bd; background:rgba(147,162,182,.08); border:1px solid rgba(147,162,182,.22); white-space:nowrap}
+.au-tg span.long{color:#7ee2a4; background:rgba(34,197,94,.1); border-color:rgba(34,197,94,.26)}
+.au-tg span.warn{color:#ffd79a; background:rgba(245,158,11,.1); border-color:rgba(245,158,11,.28)}
+.au-tg span.short{color:#ff9fae; background:rgba(244,63,94,.1); border-color:rgba(244,63,94,.26)}
+.au-why{display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; font-size:8.5px; color:var(--dim2); line-height:1.42; margin-top:2px}
+.au-none{font-size:8.5px; color:var(--dim2); line-height:1.4; margin-top:2px}
+.sh-autos{margin:9px 0 0; border:1px solid rgba(30,42,60,.9); background:#0b1320; border-radius:9px; padding:6px 8px 7px}
+.sh-autos .au{margin-top:4px; border-top:0; padding-top:0}
 .j-memo{margin-top:7px; display:flex; align-items:center; gap:6px; font-size:9.5px; color:var(--dim); border-top:1px dashed var(--line); padding-top:6px}
 .j-memo .j-memo-t{flex:1; min-width:0; line-height:1.45}
 .j-memo .j-memo-t b{color:#c8d6e8; font-weight:700}
@@ -6179,6 +6204,70 @@ function syncInit(){
   if (syncEnabled()) setTimeout(syncNow, 400);   /* 첫 화면을 그린 뒤 시작 */
 }
 
+/* ------------------------- 자동 후보 스냅샷 -------------------------
+   «자동 1·2·3»(autoHypotheses)은 매 갱신마다 4H 캔들로 새로 계산되므로,
+   저장하지 않으면 그 진입 시점의 값은 다시 볼 수 없습니다.
+   진입 근거 스냅샷 안에 당시 값을 그대로 남겨, 나중에 «무엇을 보고 들어갔는지»를 복기합니다.
+   · 저장하는 값: 방향·진입·손절·1차·2차 목표·손익비·상태 태그·핵심 요약·기준 봉 시각
+   · 판정(3중 점검)·진입 타이밍에는 종전처럼 반영하지 않는 참고용입니다. */
+function autoEntrySnapshot(){
+  let r = null;
+  try { r = autoHypotheses(); } catch (e){ r = { ok:false, why:'자동 후보를 계산하지 못했습니다' }; }
+  if (!r || !r.ok) return { at: 0, atr: null, waves: 0, list: [], why: (r && r.why) || '자동 후보를 계산하지 못했습니다' };
+  const rd = v => isNum(v) ? Math.round(v * 1e8) / 1e8 : null;
+  const list = (r.list || []).map(h => {
+    const risk = Math.abs(h.entry - h.stop);
+    const rr = v => (isNum(v) && risk > 0) ? Math.round(Math.abs(v - h.entry) / risk * 100) / 100 : null;
+    return {
+      id: h.id, title: h.title, side: h.side,
+      entry: rd(h.entry), stop: rd(h.stop), t1: rd(h.t1), t2: rd(h.t2),
+      r1: rr(h.t1), r2: rr(h.t2),
+      voided: !!h.voided,
+      tags: (h.tags || []).map(t => ({ t: String(t.t || ''), cls: String(t.cls || '') })),
+      why: String(h.why || '')
+    };
+  });
+  return { at: isNum(r.at) ? r.at : 0, atr: rd(r.atr), waves: (r.waves || []).length, list: list, why: '' };
+}
+/* 자동 후보 짧은 이름 — «자동 1 · 추세 재개 숏 (m7 방향)» → «자동 1 · 추세 재개» */
+function autoShortName(c){
+  let s = String((c && c.title) || '').split(' · ').slice(0, 2).join(' · ');
+  s = s.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s*(롱|숏)\s*$/, '').trim();
+  return s || String((c && c.id) || '자동');
+}
+/* 저장된 자동 후보를 그리는 공통 렌더러 — opt로 제목/부제를 바꿉니다 */
+function autoSnapHtml(a, sym, opt){
+  if (!a) return '';
+  const o = opt || {};
+  const list = Array.isArray(a.list) ? a.list : [];
+  const sub = o.sub || '진입 시점 계산값 · 판정엔 미반영';
+  let h = '<div class="au"><div class="au-h">' + (o.title || '🤖 자동 후보') +
+    (isNum(a.at) && a.at > 0 ? ' · 4H ' + kst(a.at, true) + ' 기준' : '') +
+    '<span>' + escHtml(sub) + '</span></div>';
+  if (!list.length){
+    return h + '<div class="au-none">' + escHtml(a.why || '이 진입 시점에는 자동 후보를 계산하지 못했습니다') + '</div></div>';
+  }
+  h += list.map(c => {
+    const tags = (c.tags || []).filter(t => t && t.t && !/폐기/.test(t.t)).slice(0, 2);
+    const rrTxt = isNum(c.r1) ? c.r1.toFixed(2) + ':1' + (isNum(c.r2) ? ' / ' + c.r2.toFixed(2) + ':1' : '') : '—';
+    return '<div class="au-i' + (c.voided ? ' off' : '') + '">' +
+      '<div class="au-top"><b>' + escHtml(autoShortName(c)) + '</b>' +
+        '<span class="au-side ' + (c.side === 'long' ? 'long' : 'short') + '">' + (c.side === 'long' ? '롱' : '숏') + '</span>' +
+        (c.voided ? '<span class="au-void">폐기</span>' : '') +
+        '<span class="au-rr">손익비 ' + rrTxt + '</span></div>' +
+      '<div class="au-px">' +
+        '<span>진입 <b>' + pxOf(c.entry, sym) + '</b></span>' +
+        '<span>손절 <b>' + pxOf(c.stop, sym) + '</b></span>' +
+        '<span>1차 <b>' + pxOf(c.t1, sym) + '</b></span>' +
+        '<span>2차 <b>' + pxOf(c.t2, sym) + '</b></span>' +
+      '</div>' +
+      (tags.length ? '<div class="au-tg">' + tags.map(t => '<span class="' + escHtml(t.cls) + '">' + escHtml(t.t) + '</span>').join('') + '</div>' : '') +
+      (c.why ? '<div class="au-why">' + escHtml(c.why) + '</div>' : '') +
+    '</div>';
+  }).join('');
+  return h + '</div>';
+}
+
 /* 진입 시점 근거 스냅샷 */
 function entrySnapshot(planArg){
   const a = state.ana;
@@ -6217,7 +6306,8 @@ function entrySnapshot(planArg){
       integ: nw.integrityStatus, tags: { w2: nw.rules.w2, overlap: nw.rules.overlap, w3: nw.rules.w3 },
       n: (mw.waves || []).length, bar: barLab
     } : null,
-    rsi: rsi
+    rsi: rsi,
+    auto: autoEntrySnapshot()
   };
 }
 
@@ -6282,6 +6372,7 @@ function openEntrySheet(){
     '<div class="sh-t">🎯 ' + symOf(state.sym).code + ' ' + sideKr + ' ' + lev + '배 진입 기록</div>' +
     '<div class="sh-sub">계산기에 입력한 <b>이 타점 값 그대로</b>와 지금 이 시점의 근거를 저장합니다. 청산하면 실현 ROE와 함께 2페이지에 남습니다.</div>' +
     '<div class="sh-list">' + rows.map(r => '<div class="sh-row' + (r[2] ? ' ' + r[2] : '') + '"><span class="sh-k">' + r[0] + '</span><span class="sh-v">' + r[1] + '</span></div>').join('') + '</div>' +
+    '<div class="sh-autos">' + autoSnapHtml(snap.auto, state.sym, { title:'🤖 자동 후보도 함께 저장', sub:'지금 4H 기준 계산값' }) + '</div>' +
     '<label class="sh-lbl" for="shMargin">투입 증거금 (USDT — 실현 손익 계산에 쓰입니다)</label>' +
     '<input class="sh-inp" id="shMargin" type="number" inputmode="decimal" step="any" min="0" value="' + mgDef + '">' +
     '<label class="sh-lbl" for="shAt">진입 시간 (KST — 이미 들어간 매매는 실제 진입 시각으로)</label>' +
@@ -6604,6 +6695,7 @@ function jSnapHtml(e){
     h += '<div class="j-row"><span class="j-k">RSI</span><span class="j-v">' +
       ['1D', '4H', '1H'].map(k => k + ' <b>' + (isNum(rsi[k]) ? rsi[k].toFixed(1) : '—') + '</b>').join(' · ') + '</span></div>';
   }
+  if (s.auto) h += autoSnapHtml(s.auto, e.sym);
   return h + '</div>';
 }
 /* ===== 진입 시간 수정 (매매기록 카드는 진행 중·종료 모두) ===== */
@@ -6759,6 +6851,17 @@ async function buildLossReview(e){
     }
   } else {
     f1.push('진입 근거 스냅샷이 없어 점검값을 되살릴 수 없습니다');
+  }
+  /* 진입 시점 «자동 후보»가 어느 방향을 가리키고 있었는지 — 저장된 스냅샷만 씁니다 */
+  const au = s.auto;
+  if (au && Array.isArray(au.list) && au.list.length){
+    const sameN = au.list.filter(h => h.side === e.side).length;
+    const dirKr = long ? '롱' : '숏';
+    f1.push('진입 시 자동 후보 ' + au.list.length + '개 중 <b>' + sameN + '개</b>가 같은 방향(' + dirKr + ') — ' +
+      (sameN === 0 ? '자동 신호는 전부 반대였습니다'
+        : sameN === au.list.length ? '방향은 자동 후보와 같았습니다'
+        : '자동 신호가 엇갈린 자리였습니다'));
+    if (sameN === 0) flags.push('자동 후보 전부 역방향');
   }
   if (nw){
     const overlap = /겹침/.test(nw.integ || '') || (nw.tags && nw.tags.overlap === 'fail');
@@ -7260,6 +7363,7 @@ function rplReasonHtml(e){
       (['1D', '4H', '1H'].some(k => isNum(rsi[k]))
         ? ['1D', '4H', '1H'].map(k => k + ' <b>' + (isNum(rsi[k]) ? rsi[k].toFixed(1) : '—') + '</b>').join(' · ') + ' · ' + escHtml(s.bar || '') + ' 기준'
         : miss) + '</span></div>';
+    if (s.auto) h += autoSnapHtml(s.auto, e.sym);
   }
   h += '<div class="rc-rs-memo"><span class="rc-rs-k">메모</span><span class="rc-rs-v">' +
     (e.memo ? escHtml(e.memo) : '<span class="rc-rs-none">메모 없음</span>') + '</span></div>';
