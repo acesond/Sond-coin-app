@@ -755,6 +755,13 @@ body.sheet-open{overflow:hidden}
 .v-main{min-width:0}
 .v-main h3{margin:0 0 3px; font-size:16.5px; letter-spacing:-.4px}
 .v-main p{margin:0; font-size:11.5px; color:var(--dim); line-height:1.5}
+/* 자동 1 판정 카드 — 누르면 그 타점을 타점 계획으로 불러오고 내려갑니다 */
+#auto1Card{cursor:pointer; -webkit-tap-highlight-color:rgba(91,140,255,.18)}
+#auto1Card:active{transform:scale(.996)}
+#auto1Card:focus-visible{outline:2px solid rgba(91,140,255,.65); outline-offset:2px}
+#auto1Card .a1-go{display:flex; align-items:center; justify-content:center; gap:5px; margin-top:9px; padding:7px 8px; border-radius:9px;
+  border:1px dashed rgba(91,140,255,.42); background:rgba(91,140,255,.08); color:#cfe0ff; font-size:10.5px; font-weight:800; letter-spacing:-.2px; text-align:center; line-height:1.35}
+#auto1Card:active .a1-go{background:rgba(91,140,255,.18)}
 .tf-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px solid rgba(30,42,60,.65)}
 .tf-row:first-child{border-top:0}
 .tf-name{width:38px; flex:none; font-size:12px; font-weight:800; color:#c3d2e6}
@@ -1134,6 +1141,24 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
       <div id="vHyp"></div>
       <div id="vSummary" class="ev-sum" style="border-top:0;padding-top:0;margin-top:0"></div>
     </div>
+
+   <!-- ===== 자동 1 판정 — 수작업 판정 카드와 같은 3중 점검 (화면 참고용) ===== -->
+    <div class="sec-title" style="margin:16px 3px 8px"><h2><i></i>🤖 자동 1 판정</h2><span class="hint" id="a1Age">4H 모노웨이브 · 1H 타이밍 · 실시간</span></div>
+    <div class="card" id="auto1Card" role="button" tabindex="0" aria-label="자동 1 판정 — 누르면 이 타점을 타점 계획에 불러오고 아래로 이동합니다">
+      <div class="verdict">
+        <div class="v-badge" id="a1Badge">계산 중</div>
+        <div class="v-main">
+          <h3 id="a1Title">자동 1 후보 계산 중…</h3>
+          <p id="a1Sub">4H 모노웨이브 직전 파동(m1)의 되돌림 자리로 판정합니다.</p>
+        </div>
+      </div>
+      <div class="v-easy" id="a1Easy">자동 1은 4H 캔들에서 다시 계산하는 참고 후보입니다. 자리·라인·다이버전스가 모두 겹치고 진입 구간(±1.0%)에 들어와야 타점입니다.</div>
+      <div id="a1Nums" style="margin-top:9px"></div>
+      <div class="ev" id="a1Checks" style="margin-top:9px"></div>
+      <div class="ev-sum" id="a1Sum"></div>
+      <div class="a1-go" id="a1GoHint">⤓ 누르면 아래 타점 계획으로 이동 · 자동 1 값을 그대로 넣습니다</div>
+    </div>
+
     <div class="card tight" id="tfList"></div>
     <div class="card">
       <div class="sec-title" style="margin:0 0 9px"><h2><i></i>감시선 · 자동 감시 기준</h2><span class="hint">15분 감시 액션과 동일</span></div>
@@ -3836,6 +3861,7 @@ function renderAnalysis(a){
   const ve = $('#vEasy');
   if (ve) ve.innerHTML = verdictEasy(a);
   renderVTiming(a.timing);
+  renderAuto1Verdict(a);
   $('#vHyp').innerHTML = hypBindHtml(a);
   $('#vSummary').innerHTML = a.summary.map(l => '<div style="margin-bottom:3px">' + l + '</div>').join('');
 
@@ -4247,6 +4273,7 @@ function autoHypotheses(c){
     out.push({
       id:'a1', side, kind:side, title:'자동 1 · 추세 재개 ' + (side === 'long' ? '롱' : '숏') + ' (' + m1.id + ' 방향)',
       entry, stop, t1:m1.endPrice, t2:m1.startPrice + d1 * m1.len * 1.618, tags, voided,
+      r:r, weak:!pick, m1id:m1.id, m1start:m1.startPrice, m1end:m1.endPrice,
       why:'4H ' + m1.id + '(' + f(m1.startPrice) + ' → ' + f(m1.endPrice) + ')을 ' + r + ' 되돌린 ' + f(entry) + '에서 재개를 노리는 자리. ' +
         '손절은 ' + (r === 0.786 ? m1.id + ' 시작점' : '0.786 되돌림(' + f(lvl(0.786)) + ')') + ' 너머 0.2ATR, 1차는 직전 극값, 2차는 ' + m1.id + ' 길이의 1.618배 확장. ' +
         '파동 무효선은 ' + m1.id + ' 시작점 ' + f(m1.startPrice) + '(되돌림 100%) 입니다.'
@@ -4292,6 +4319,241 @@ function autoHypotheses(c){
 
   const last = cs[cs.length - 1];
   return { ok:true, list:out, waves, atr, nw, m1, at:last ? last.t : 0 };
+}
+/* ------------------------- 자동 1 판정 — 수작업 판정 카드와 같은 3중 점검 -------------------------
+   자동 1(4H 모노웨이브 «추세 재개» 후보)을 화면에서 바로 판정하는 참고 카드입니다.
+   · 자리      — 현재가가 자동 1 진입가 ±1.0% 안 (수작업 가설 ZONE_MATCH_TOL과 같은 기준)
+   · 라인      — 그 진입가가 4H 핵심 레벨(현재 4H 레그 0.5·0.618·0.786, 4H 스윙·가설선,
+                  모노웨이브 되돌림)에 ±1.2%로 맞닿아 있는지. 78.6%를 넘어선 약한 자리는 근거로 세지 않습니다.
+   · 다이버전스 — 1H RSI 다이버전스(롱=상승·숏=하락) 또는 직전 1H 확정봉의 확인(꼬리·방향봉)
+   안전장치 — 파동 무효(되돌림 100%)·손절선 이탈·1차 목표 경과는 타점이 아니라 무효/만료,
+              3/3이어도 진입 구간(±1.0%) 밖이면 «대기», 현재가 기준 2차 손익비가 3:1 미만이면 «손익비 미달».
+   메인 판정(#verdictCard)·ntfy 알림·시트 기록은 수작업 가설 기준 그대로이고 이 카드는 화면 참고용입니다. */
+const AUTO1_TOL = 1.0;        /* 진입 구간 ±1.0% — 수작업 가설과 같은 기준 */
+const AUTO1_LINE_TOL = 1.2;   /* 라인 일치 ±1.2% */
+function auto1LineRefs(auto, a){
+  const out = [];
+  const m1 = auto ? auto.m1 : null;
+  if (m1 && isNum(m1.len) && m1.len > 0){
+    const lv = r => m1.endPrice - m1.dir * m1.len * r;
+    [0.5, 0.618, 0.786].forEach(r => out.push({ p:lv(r), own:true, label:'모노웨이브 ' + m1.id + ' ' + r + ' 되돌림' }));
+    out.push({ p:m1.endPrice, label:'모노웨이브 ' + m1.id + ' 끝(직전 극값)' });
+    out.push({ p:m1.startPrice, label:'모노웨이브 ' + m1.id + ' 시작(무효선)' });
+  }
+  if (a && a.leg4) [0.5, 0.618, 0.786].forEach(r => out.push({ p:a.leg4.level(r), label:'4H 현재 레그 ' + r + ' 되돌림' }));
+  try {
+    levelsFor().forEach(l => {
+      if (isNum(l.p)) out.push({ p:l.p, label:String(l.label || (l.side === 'short' ? '4H 저항선' : '4H 지지선')).split(' · ')[0] });
+    });
+  } catch (e) { /* 라인 목록을 못 만들어도 자체 되돌림 근거로 판정합니다 */ }
+  return out;
+}
+function auto1Verdict(c, a){
+  c = c || state;
+  const sym = c.sym || state.sym;
+  const price = currentPrice(c);
+  const auto = autoHypotheses(c);
+  if (!auto || !auto.ok || !auto.list || !auto.list.length)
+    return { ok:false, sym, price, auto, why:(auto && auto.why) || '자동 1 후보를 계산하지 못했습니다' };
+  const h = auto.list[0];
+  const side = h.side === 'long' ? 'long' : 'short';
+  const sideKr = side === 'long' ? '롱' : '숏';
+  const ana = (a && a.tfs) ? a : ((state.ana && state.ana.sym === sym) ? state.ana : null);
+  const t1h = (ana && ana.tfs && ana.tfs['1H']) ? ana.tfs['1H'] : null;
+  const m1 = auto.m1 || null;
+  const gapPct = (isNum(price) && isNum(h.entry) && h.entry > 0) ? (price - h.entry) / h.entry * 100 : NaN;
+  const absGap = Math.abs(gapPct);
+  const inZone = isNum(absGap) && absGap <= AUTO1_TOL;
+  const beyondStop = isNum(price) && isNum(h.stop) && (side === 'long' ? price <= h.stop : price >= h.stop);
+  const pastT1 = isNum(price) && isNum(h.t1) && (side === 'long' ? price >= h.t1 : price <= h.t1);
+  const r = isNum(h.r) ? h.r : ((m1 && m1.len) ? (m1.endPrice - h.entry) / (m1.dir * m1.len) : NaN);
+  const weak = !!h.weak || (h.tags || []).some(x => x && /78\.6%/.test(String(x.t)));
+
+  /* ① 자리 — 현재가가 진입가 ±1.0% 안 */
+  const spotOk = inZone && !beyondStop && !h.voided;
+  const spotText = !isNum(price) ? '시세를 기다리는 중입니다'
+    : inZone
+      ? '현재가 ' + fmtPx(price) + ' · 진입가 ' + fmtPx(h.entry) + '와 ' + absGap.toFixed(2) + '% 차이 (구간 안 ±1.0%)'
+      : '현재가 ' + fmtPx(price) + ' · 진입가 ' + fmtPx(h.entry) + '까지 ' + absGap.toFixed(2) + '% 남음 (구간 밖 ±1.0%)';
+
+  /* ② 라인 — 진입가가 4H 핵심 레벨에 ±1.2% */
+  const refs = auto1LineRefs(auto, ana);
+  const dist = x => Math.abs((h.entry - x.p) / x.p * 100);
+  const nearest = list => list.filter(x => isNum(x.p) && x.p > 0).sort((x, y) => dist(x) - dist(y))[0] || null;
+  const extRef = nearest(refs.filter(x => !x.own));
+  const ownRef = nearest(refs.filter(x => x.own));
+  const lineRef = (extRef && dist(extRef) <= AUTO1_LINE_TOL) ? extRef
+    : (ownRef && dist(ownRef) <= AUTO1_LINE_TOL && !weak) ? ownRef : null;
+  const lineOk = !!lineRef;
+  const lineText = lineRef
+    ? '진입가 ' + fmtPx(h.entry) + ' = ' + lineRef.label + ' ' + fmtPx(lineRef.p) + ' (' + dist(lineRef).toFixed(2) + '% 차이)'
+      + (lineRef.own ? ' — 자체 되돌림 근거' : ' — 4H 구조 라인 일치')
+    : weak ? '되돌림 78.6%를 넘어선 자리 — 재개 근거 약함, 라인 근거로 세지 않음'
+    : '진입가 ' + fmtPx(h.entry) + '와 가까운 4H 핵심 레벨 없음'
+      + (extRef ? ' (가장 가까운 ' + extRef.label + ' ' + dist(extRef).toFixed(2) + '%)' : '');
+
+  /* ③ 다이버전스 — 1H 다이버전스 또는 직전 1H 확인봉 */
+  const cs1 = t1h ? t1h.cs : ((c.mtf && c.mtf['1H']) || []);
+  const div1 = t1h ? t1h.div : (cs1.length >= 60 ? divergence(cs1, rsiSeries(cs1.map(x => x.c), 14)) : null);
+  const conf1 = cs1.filter(x => x && x.conf);
+  const last1 = conf1.length ? conf1[conf1.length - 1] : null;
+  const shp = last1 ? candleShape(last1) : null;
+  const divOk = !!(div1 && (side === 'long' ? div1.bull : div1.bear));
+  const confOk = !!(shp && (side === 'long' ? (shp.bull || shp.longLower) : (shp.bear || shp.longUpper)));
+  const divHit = divOk || confOk;
+  const divText1 = divOk ? '1H ' + (side === 'long' ? '상승' : '하락') + ' 다이버전스 확인'
+    : confOk ? '직전 1H 확정봉 ' + kst(last1.t) + ' ' + shp.text + ' — 확인봉'
+    : '1H 다이버전스 없음 · 직전 확정봉 ' + (shp ? shp.text : '없음') + ' — 전환 신호 미확인';
+
+  const checks = [
+    { ok:spotOk, name:'자리', text:spotText },
+    { ok:lineOk, name:'라인', text:lineText },
+    { ok:divHit, name:'다이버전스', text:divText1 }
+  ];
+  const n = checks.filter(x => x.ok).length;
+  const miss = checks.filter(x => !x.ok).map(x => x.name);
+
+  /* 현재가 기준 손익비 — 진입가 기준 값과 나란히 보여 줍니다 */
+  const riskE = Math.abs(h.entry - h.stop);
+  const rrE1 = riskE > 0 ? Math.abs(h.t1 - h.entry) / riskE : NaN;
+  const rrE2 = riskE > 0 ? Math.abs(h.t2 - h.entry) / riskE : NaN;
+  const riskNow = isNum(price) ? (side === 'long' ? price - h.stop : h.stop - price) : NaN;
+  const rrN1 = riskNow > 0 ? (side === 'long' ? h.t1 - price : price - h.t1) / riskNow : NaN;
+  const rrN2 = riskNow > 0 ? (side === 'long' ? h.t2 - price : price - h.t2) / riskNow : NaN;
+  const rrOk = isNum(rrN2) && rrN2 >= 3;
+
+  /* 안전장치 게이트 → 상태 */
+  let label = '관망', cls = 'neutral', title = '관망 — 근거 0/3', reason = 'none';
+  if (h.voided){
+    label = '무효'; cls = 'warn'; reason = 'void';
+    title = '⛔ 파동 무효 — ' + (m1 ? m1.id + ' 시작점 ' + fmtPx(m1.startPrice) + ' 이탈' : '되돌림 100% 초과');
+  } else if (beyondStop){
+    label = '무효'; cls = 'bad'; reason = 'stop';
+    title = '⛔ 손절선 이탈 — 자동 1 후보 소멸 (' + fmtPx(h.stop) + ')';
+  } else if (pastT1){
+    label = '만료'; cls = 'neutral'; reason = 'past';
+    title = '⏱ 1차 목표 이미 통과 — 지금은 진입 자리 아님 (' + fmtPx(h.t1) + ')';
+  } else if (n >= 3 && !inZone){
+    label = '대기'; cls = 'warn'; reason = 'gap';
+    title = '⏳ 대기 — 근거 3/3이지만 현재가와 진입가 ' + (isNum(absGap) ? absGap.toFixed(2) : '1') + '% 차이 (구간 밖)';
+  } else if (n >= 3 && !rrOk){
+    label = '손익비 미달'; cls = 'warn'; reason = 'rr';
+    title = '📉 손익비 미달 — 현재가 기준 2차 ' + (isNum(rrN2) ? rrN2.toFixed(1) : '—') + ':1 (최소 3:1)';
+  } else if (n >= 3){
+    label = '타점 도달'; cls = 'ok'; reason = 'hit';
+    title = '🟢 자동 1 타점 도달 (3/3)';
+  } else if (n === 2){
+    label = '대기'; cls = side === 'long' ? 'long' : 'bad'; reason = 'two';
+    title = '⏳ ' + sideKr + ' 대기 — 근거 2/3' + (miss.length ? ', ' + miss[0] + ' 필요' : '');
+  } else if (n === 1){
+    label = '관망'; cls = 'warn'; reason = 'one';
+    title = '관망 — 근거 1/3, 진입 아님';
+  }
+
+  /* 1D·4H 방향 대조 — 참고 배지 */
+  const dirOk = side === 'long' ? 'up' : 'down';
+  const tr1d = ana ? ana.tfs['1Dutc'].trend : null;
+  const tr4 = ana ? ana.tfs['4H'].trend : null;
+  const ref1d = !tr1d || tr1d === 'mixed' ? { t:'1D 혼조', cls:'neutral' }
+    : tr1d === dirOk ? { t:'1D 순추세', cls:'long' } : { t:'1D 역추세', cls:'warn' };
+  const ref4 = (!tr4 || tr4 === 'mixed') ? null
+    : { t:'4H ' + (tr4 === dirOk ? '일치' : '역방향'), cls: tr4 === dirOk ? 'long' : 'warn' };
+
+  const missTxt = miss.join('·');
+  let easy;
+  if (reason === 'void') easy = '<b>파동 무효</b> · 4H ' + (m1 ? m1.id : '직전') + ' 시작점(되돌림 100%)을 넘어섰습니다 — 이 후보는 끝났고, 다음 4H 파동이 완성되면 새 자동 1이 계산됩니다.';
+  else if (reason === 'stop') easy = '<b>손절선 이탈</b> · 자동 1 손절선을 이미 지나갔습니다. 지금은 진입 자리가 아니고, 되돌림이 와도 이 후보는 무효입니다.';
+  else if (reason === 'past') easy = '<b>1차 목표 통과</b> · 목표를 이미 지나갔습니다 — 추격하지 말고 다음 자리를 봅니다.';
+  else if (reason === 'gap') easy = '근거는 ' + n + '개지만 현재가가 진입가와 ' + absGap.toFixed(2) + '% 떨어져 있습니다 — 판정은 <b>대기</b>. 가격이 진입 구간(±1.0%)에 들어와야 타점입니다.';
+  else if (reason === 'rr') easy = '세 근거는 갖췄지만 지금 가격으로는 2차 손익비가 ' + rrN2.toFixed(1) + ':1 — 3:1이 안 되면 건너뜁니다. 진입가까지 되돌림을 기다리세요.';
+  else if (reason === 'hit') easy = '자리·라인·다이버전스가 모두 겹쳤습니다 — <b>자동 1 기준의 참고 타점</b>. 수작업 판정·알림과 별개이니 손익비와 비중(정찰병 10~30%)을 먼저 확인하세요.';
+  else if (n === 2) easy = '한 개 모자랍니다 — <b>' + missTxt + '</b>. 그 조건이 채워질 때까지 기다리는 자리입니다.';
+  else if (n === 1) easy = '<b>' + ((checks.find(x => x.ok) || {}).name || '') + '</b> 하나만 겹쳤습니다. 진입 신호가 아니라 지켜보는 구간입니다.';
+  else easy = '겹친 조건이 없습니다. 지금은 아무것도 하지 않는 구간입니다.';
+
+  const rText = isNum(r) ? (+r.toFixed(3)) + ' 되돌림' : '—';
+  return { ok:true, sym, price, auto, h, side, sideKr, n, checks, label, cls, title, reason, easy,
+    gapPct, absGap, inZone, beyondStop, pastT1, rrE1, rrE2, rrN1, rrN2, rrOk, weak, rText, m1, ref1d, ref4 };
+}
+/* 자동 1 판정 카드 그리기 — renderAnalysis()가 매 갱신 호출합니다 */
+function renderAuto1Verdict(a){
+  const badge = $('#a1Badge'), title = $('#a1Title'), sub = $('#a1Sub'), easy = $('#a1Easy');
+  const nums = $('#a1Nums'), checksHost = $('#a1Checks'), sum = $('#a1Sum'), age = $('#a1Age');
+  if (!badge || !title) return;
+  const v = auto1Verdict(state, a);
+  if (!v.ok){
+    badge.className = 'v-badge neutral';
+    badge.innerHTML = '<span>계산 중</span><small style="font-size:9px;font-weight:600;opacity:.7;letter-spacing:0">4H</small>';
+    title.textContent = '4H 캔들이 부족해 자동 1 판정을 계산 중입니다';
+    sub.textContent = (v.why ? v.why + ' — ' : '') + '4H 캔들이 쌓이면 직전 모노웨이브 되돌림 자리로 자동 1을 판정합니다.';
+    easy.innerHTML = '<b>참고 카드</b> · 4H 캔들 60개 이상, 모노웨이브 3개 이상이 되면 계산이 시작됩니다.';
+    if (nums) nums.innerHTML = '';
+    if (checksHost) checksHost.innerHTML = '';
+    if (sum) sum.innerHTML = '';
+    if (age) age.textContent = '4H 모노웨이브 · 1H 타이밍 · 실시간';
+    return;
+  }
+  const h = v.h, m1 = v.m1;
+  badge.className = 'v-badge ' + v.cls;
+  badge.innerHTML = '<span>' + v.label + '</span><small style="font-size:9px;font-weight:600;opacity:.7;letter-spacing:0">근거 ' + v.n + '/3</small>';
+  title.innerHTML = v.title +
+    ' <span class="badge ' + (v.side === 'long' ? 'long' : 'short') + '" style="vertical-align:2px">' + v.sideKr + '</span>' +
+    ' <span class="badge ' + v.ref1d.cls + '" style="vertical-align:2px">' + v.ref1d.t + '</span>' +
+    (v.ref4 ? ' <span class="badge ' + v.ref4.cls + '" style="vertical-align:2px">' + v.ref4.t + '</span>' : '') +
+    ' <span class="badge neutral" style="vertical-align:2px">참고용</span>';
+  sub.innerHTML = '4H ' + (m1 ? m1.id : '직전 파동') + ' ' + fmtPx(m1 ? m1.startPrice : NaN) + ' → ' + fmtPx(m1 ? m1.endPrice : NaN) +
+    ' · ' + v.rText + ' 진입 <b style="color:#dbe6f5">' + fmtPx(h.entry) + '</b> · 현재가 ' + fmtPx(v.price) +
+    ' <span style="color:' + ((isNum(v.gapPct) && v.gapPct >= 0) ? 'var(--up)' : 'var(--down)') + '">' + fmtPct(v.gapPct) + '</span>';
+  easy.innerHTML = v.easy;
+  const nm = ['①', '②', '③'];
+  if (checksHost) checksHost.innerHTML = v.checks.map((e, i) =>
+    '<div class="ev-item"><span class="ev-ico ' + (e.ok ? 'y' : 'n') + '">' + (e.ok ? '✓' : '✗') + '</span>' +
+    '<span><b>' + nm[i] + ' ' + e.name + '</b> — ' + e.text + '</span></div>').join('');
+  const cell = (k, val) => '<div class="scn-cell"><label>' + k + '</label><b>' + val + '</b></div>';
+  const rrCls = v.rrOk ? '#86efac' : '#fca5a5';
+  if (nums) nums.innerHTML = '<div class="scn-grid">' + cell('진입', fmtPx(h.entry)) + cell('손절 · 무효화', fmtPx(h.stop)) +
+    cell('1차 목표', fmtPx(h.t1)) + cell('2차 목표', fmtPx(h.t2)) + '</div>' +
+    '<div style="margin-top:7px; font-size:10.5px; color:var(--dim); line-height:1.55; font-variant-numeric:tabular-nums">' +
+      '진입가 기준 1차 <b>' + (isNum(v.rrE1) ? v.rrE1.toFixed(1) : '—') + ':1</b> / 2차 <b>' + (isNum(v.rrE2) ? v.rrE2.toFixed(1) : '—') + ':1</b>' +
+      ' · 현재가 기준 1차 <b style="color:' + (isNum(v.rrN1) && v.rrN1 >= 3 ? '#86efac' : '#fca5a5') + '">' + (isNum(v.rrN1) && v.rrN1 > 0 ? v.rrN1.toFixed(1) : '—') + ':1</b>' +
+      ' / 2차 <b style="color:' + rrCls + '">' + (isNum(v.rrN2) && v.rrN2 > 0 ? v.rrN2.toFixed(1) : '—') + ':1</b>' +
+      ' <span style="color:' + rrCls + '">' + (v.rrOk ? '— 2차 기준 3:1 충족' : '— 2차 3:1 미달') + '</span>' +
+    '</div>';
+  if (sum) sum.innerHTML = '<b style="color:' + (v.n >= 3 ? '#7ee2a4' : v.n === 2 ? '#ffd79a' : '#b3c2d6') + '">' + v.sideKr + ' 기준 ' + v.n + '/3</b> — ' +
+    (v.reason === 'hit' ? '자동 1 타점 도달. 자동 후보는 매 갱신마다 4H 캔들로 다시 계산되므로 다음 봉에서 자리가 사라질 수 있습니다.' :
+     v.reason === 'gap' ? '진입 구간(±1.0%)에 들어와야 타점입니다.' :
+     v.reason === 'rr' ? '진입가까지 되돌려 손익비를 맞추거나 건너뜁니다.' :
+     v.reason === 'void' ? '파동 무효선을 넘었습니다 — 다음 파동을 기다립니다.' :
+     v.reason === 'stop' ? '손절선을 지나 이 후보는 소멸했습니다.' :
+     v.reason === 'past' ? '목표를 지나 만료된 자리입니다.' :
+     '근거가 겹칠 때까지 기다립니다.') +
+    '<br><span style="color:var(--dim2)">이 카드는 4H 캔들로 매 갱신 다시 계산하는 <b>참고용</b>입니다 — 위 «멀티 타임프레임 판정»·ntfy 알림·시트 기록은 수작업 가설 기준 그대로입니다. ' +
+    '4H ATR(14) ' + fmtPx(v.auto.atr) + ' · 모노웨이브 ' + ((v.auto.waves || []).length) + '개 · 마지막 4H 봉 ' + kst(v.auto.at, true) + ' 기준' + (v.weak ? ' · 78.6% 초과 약한 자리' : '') + '.</span>';
+  if (age) age.textContent = '4H 모노웨이브 · 1H 타이밍 · ' + (v.auto.at ? kst(v.auto.at, true) + ' 기준' : '실시간');
+}
+/* 자동 1 판정 → 타점 계획(#planSec)으로 내려가기
+   가설 카드 «이 값으로 계산»·자동 후보 버튼과 같은 방식입니다. 저장된 «내 타점»은 덮어쓰지 않고 폼에만 채움 */
+function loadAuto1ToPlan(){
+  const v = auto1Verdict(state, state.ana);
+  if (!v.ok || !v.h){
+    toast('자동 1 계산 중', (v.why ? v.why + ' — ' : '') + '4H 캔들이 쌓이면 다시 눌러 주세요.');
+    return;
+  }
+  const h = v.h;
+  if (!isNum(h.entry) || !isNum(h.stop) || !isNum(h.t1)){
+    toast('자동 1 값 없음', '이번 계산에서 진입·손절·목표 값을 만들지 못했습니다.');
+    return;
+  }
+  const dpn = symOf(state.sym).dp;
+  const rd = x => +(+x).toFixed(dpn);
+  state.activeSlot = 'custom';
+  fillPlanForm({ side:h.side, entry:rd(h.entry), stop:rd(h.stop), t1:rd(h.t1), t2:rd(h.t2), lev:5, margin:0 });
+  renderPlanner(true);
+  const ps = $('#planSaved');
+  if (ps) ps.textContent = '자동 1 «' + h.title + '» 값 불러옴 — 수정하면 내 타점으로 저장됩니다';
+  const sec = $('#planSec');
+  if (sec) sec.scrollIntoView({ behavior:'smooth', block:'start' });
+  drawChart();
 }
 function renderAutoScenarios(){
   const host = $('#autoScnList');
@@ -7816,6 +8078,7 @@ function renderAll(){
     renderVTiming(null);
     renderEvViz(null);
     renderEvHyp(null);
+    renderAuto1Verdict(null);
   }
   renderPosition();
   renderScenarios();
@@ -7854,6 +8117,15 @@ function bindStickyPrice(){
 }
 function bindMisc(){
   bindSymSearch();
+  /* 자동 1 판정 카드 → 그 타점을 타점 계획(#planSec)에 불러오고 부드럽게 내려갑니다.
+     가설 카드의 «이 값으로 계산»·자동 후보 버튼과 같은 방식이고, 저장된 «내 타점»은 덮어쓰지 않습니다. */
+  const a1Card = $('#auto1Card');
+  if (a1Card){
+    a1Card.addEventListener('click', () => loadAuto1ToPlan());
+    a1Card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); loadAuto1ToPlan(); }
+    });
+  }
   $('#refreshBtn').addEventListener('click', () => { state.countdown = 15; refreshTick(true); });
   $('#zoomIn').addEventListener('click', () => { state.zoom = clamp((state.zoom || 90) + 20, 20, (state.candles || []).length || 200); drawChart(); });
   $('#zoomOut').addEventListener('click', () => { state.zoom = clamp((state.zoom || 90) - 20, 20, (state.candles || []).length || 200); drawChart(); });
