@@ -106,6 +106,10 @@ body{
 .psym.trd{border-color:rgba(56,189,248,.85); color:#d6efff}
 .psym.trd .tr{display:block}
 .psym.on.trd{box-shadow:0 0 0 1.5px rgba(125,211,252,.7)}
+/* 자동 1 타점 도달 — 미니 종목 버튼에도 파란 점 */
+.psym .a1d{width:5px; height:5px; border-radius:50%; display:none; flex:none; background:#5b8cff; box-shadow:0 0 5px rgba(91,140,255,.95)}
+.psym.a1 .a1d{display:block}
+.psym.a1:not(.st2):not(.st3){border-color:rgba(91,140,255,.7); color:#cfe0ff}
 .pbar-quote{margin-left:auto; flex:none; display:flex; align-items:baseline; gap:6px; min-width:0}
 .pbar-dot{width:6px;height:6px;border-radius:50%;background:var(--up); flex:none; align-self:center; animation:pulse 2s infinite}
 .pbar-price{font-size:15.5px; font-weight:800; letter-spacing:-.4px; white-space:nowrap; line-height:1.1}
@@ -190,6 +194,15 @@ body{
 .chip-legend i.d3{background:#f43f5e; box-shadow:0 0 5px rgba(244,63,94,.85)}
 .chip-legend i.d2{background:#f59e0b; box-shadow:0 0 5px rgba(245,158,11,.75)}
 .chip-legend .st-upd{margin-left:auto; opacity:.9}
+.chip-legend{flex-wrap:wrap; row-gap:3px}
+.chip-legend i.d1{background:#5b8cff; box-shadow:0 0 6px rgba(91,140,255,.9)}
+/* 자동 1 타점 도달 — 파란 점 (수작업 빨강·주황 점과 별개로 함께 표시) */
+.chip .a1d{position:absolute; right:5px; top:16px; width:7px; height:7px; border-radius:50%; display:none; background:#5b8cff; box-shadow:0 0 6px rgba(91,140,255,.95)}
+.chip.a1 .a1d{display:block}
+.chip.a1:not(.st2):not(.st3) .a1d{top:6px}   /* 수작업 점이 없을 땐 오른쪽 위, 있으면 그 아래에 나란히 */
+.chip.a1:not(.st2):not(.st3){border-color:rgba(91,140,255,.62); background:linear-gradient(160deg,rgba(91,140,255,.14),rgba(91,140,255,.04))}
+.chip.a1:not(.st2):not(.st3) small{color:#9dc0ff}
+.chip.a1.on:not(.st2):not(.st3){box-shadow:0 0 0 1.5px rgba(91,140,255,.55), 0 6px 18px -12px #000}
 @keyframes stDot{0%,100%{opacity:1}50%{opacity:.35}}
 
 /* ---------- cards ---------- */
@@ -762,6 +775,15 @@ body.sheet-open{overflow:hidden}
 #auto1Card .a1-go{display:flex; align-items:center; justify-content:center; gap:5px; margin-top:9px; padding:7px 8px; border-radius:9px;
   border:1px dashed rgba(91,140,255,.42); background:rgba(91,140,255,.08); color:#cfe0ff; font-size:10.5px; font-weight:800; letter-spacing:-.2px; text-align:center; line-height:1.35}
 #auto1Card:active .a1-go{background:rgba(91,140,255,.18)}
+/* 자동 1 «타점 도달» — 초록 대신 선명한 파란색 */
+.v-badge.a1-hit{color:#d7e5ff; border-color:rgba(91,140,255,.62); background:rgba(91,140,255,.18); box-shadow:0 0 0 1px rgba(91,140,255,.22), 0 0 20px -9px rgba(59,130,246,.95)}
+.badge.blue{color:#cfe0ff; background:rgba(91,140,255,.16); border:1px solid rgba(91,140,255,.4)}
+#auto1Card.a1-hit{border-color:rgba(91,140,255,.85); background:linear-gradient(165deg,rgba(91,140,255,.16),#0d1523 52%,#0a111d); box-shadow:0 0 0 1px rgba(91,140,255,.26), 0 16px 40px -26px rgba(59,130,246,.95)}
+#auto1Card.a1-hit .a1-go{border-color:rgba(91,140,255,.7); background:rgba(91,140,255,.18); color:#e2ecff}
+#evA1Card.a1-hit{border-color:rgba(91,140,255,.8); background:linear-gradient(165deg,rgba(91,140,255,.12),#0d1523 55%); box-shadow:0 0 0 1px rgba(91,140,255,.2), 0 14px 34px -26px rgba(59,130,246,.9)}
+#evA1Card.a1-hit .evviz-card.ok::before{background:rgba(91,140,255,.9)}
+#evA1Card.a1-hit .evviz-card.ok .evviz-step{background:rgba(91,140,255,.16); color:#cfe0ff; border-color:rgba(91,140,255,.42)}
+#evA1Card.a1-hit .evviz-badge.ok{color:#cfe0ff; background:rgba(91,140,255,.15); border:1px solid rgba(91,140,255,.42)}
 .tf-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px solid rgba(30,42,60,.65)}
 .tf-row:first-child{border-top:0}
 .tf-name{width:38px; flex:none; font-size:12px; font-weight:800; color:#c3d2e6}
@@ -1095,9 +1117,10 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
   <div class="chip-legend" id="chipLegend">
     <span><i class="d3"></i>타점 도달 3/3</span>
     <span><i class="d2"></i>2/3 대기</span>
+    <span><i class="d1"></i>자동 1 도달</span>
     <span class="st-upd" id="stUpd">6종목 점검 중</span>
   </div>
-  <div class="chip-easy" id="chipEasy">종목 순서는 <b>진입 중 포지션 → 타점 도달 3/3 → 바이낸스 선물 24시간 거래대금 순(6종목)</b>입니다. 빨간 점 = 자리·라인·다이버전스가 <b>모두</b> 겹침(3/3) <b>그리고 현재가가 그 가설의 진입가 ±1.0% 안</b> — 둘 다여야 타점 도달입니다(근거가 3/3이어도 진입가에서 떨어져 있으면 ‘3/3 대기 — 구간 밖’). NEoWave·1D 역추세로 깎지 않습니다 · 주황 점 = 하나 모자람(2/3, 대기). 자리와 라인이 같은 레벨이면 근거 1개로 셉니다. 3/3이어도 손익비 3:1이 안 되면 진입하지 않고, 확인봉 무효면 들어가지 않습니다. NEoWave·1D 역추세는 참고 줄로만 안내합니다.</div>
+  <div class="chip-easy" id="chipEasy">종목 순서는 <b>진입 중 포지션 → 타점 도달 3/3 → 바이낸스 선물 24시간 거래대금 순(6종목)</b>입니다. 빨간 점 = 자리·라인·다이버전스가 <b>모두</b> 겹침(3/3) <b>그리고 현재가가 그 가설의 진입가 ±1.0% 안</b> — 둘 다여야 타점 도달입니다(근거가 3/3이어도 진입가에서 떨어져 있으면 ‘3/3 대기 — 구간 밖’). NEoWave·1D 역추세로 깎지 않습니다 · 주황 점 = 하나 모자람(2/3, 대기). 자리와 라인이 같은 레벨이면 근거 1개로 셉니다. 3/3이어도 손익비 3:1이 안 되면 진입하지 않고, 확인봉 무효면 들어가지 않습니다. NEoWave·1D 역추세는 참고 줄로만 안내합니다. 🔵 <b>파란 점 = 자동 1(4H 모노웨이브) 판정이 타점 도달</b>(3/3 + 진입가 ±1.0% + 손익비 3:1) — 수작업 빨간·주황 점과 별개로 함께 표시됩니다. 값은 아래 «🤖 자동 1 판정» 카드에서 확인하세요.</div>
 
   <!-- ===== 차트 ===== -->
   <section id="chartSec">
@@ -3071,7 +3094,7 @@ function renderChips(keepLeft){
       '" title="' + (trd[s.id] ? '진입중 · ' : '') + (s.custom ? '조회 종목' : s.rank + '위 · 24시간 거래대금 ' + s.vol) + '">' +
       s.code + '<small>' + s.name + '</small>' +
       (trd[s.id] ? '<span class="tr" aria-hidden="true"><i></i>진입중</span>' : '') +
-      '<i class="st" aria-hidden="true"></i></button>').join('');
+      '<i class="st" aria-hidden="true"></i><i class="a1d" aria-hidden="true"></i></button>').join('');
   $$('.chip', el).forEach(b => {
     b.addEventListener('click', () => selectSymbol(b.dataset.sym));
   });
@@ -3102,7 +3125,7 @@ function renderPbarSyms(keepLeft){
   el.innerHTML = order.map(s =>
     '<button class="psym' + (s.id === state.sym ? ' on' : '') + (trd[s.id] ? ' trd' : '') + '" type="button" data-sym="' + s.id +
     '" data-rank="' + s.rank + '" aria-pressed="' + (s.id === state.sym) + '"><i class="st" aria-hidden="true"></i>' + s.code +
-    '<i class="tr" aria-hidden="true"></i></button>').join('');
+    '<i class="tr" aria-hidden="true"></i><i class="a1d" aria-hidden="true"></i></button>').join('');
   $$('.psym', el).forEach(b => b.addEventListener('click', () => selectSymbol(b.dataset.sym)));
   paintSymStatus();
   if (keepLeft) el.scrollLeft = 0;
@@ -3160,17 +3183,29 @@ function statusOfAnalysis(a){
   return { level, best, side:a.side, voided, price:a.price, label,
            timing: a.timing ? a.timing.short : '', timingCls: a.timing ? a.timing.cls : '' };
 }
+/* 자동 1 판정이 «타점 도달»(reason === 'hit')인지 — 종목 버튼 파란 점용
+   ctx는 state 또는 altCtx() 결과, a는 그 종목 분석 결과(없으면 null — 1H 캔들에서 직접 계산) */
+function auto1HitOf(ctx, a){
+  if (!ctx) return false;
+  try {
+    const v = auto1Verdict(ctx, a || null);
+    return !!(v && v.ok && v.reason === 'hit');
+  } catch (e) { return false; }   /* 자동 1을 못 계산해도 수작업 점·앱은 그대로 */
+}
 function applySymStatus(){
   cacheStateData();
   const map = {};
   const selA = state.ana && state.ana.sym === state.sym ? state.ana : null;
+  let selCtx = state;
   let sel = statusOfAnalysis(selA);
-  if (!sel){ const c = altCtx(state.sym); if (c) sel = statusOfAnalysis(buildAnalysis(c)); }  /* 전환 직후엔 캐시로 즉시 */
+  if (!sel){ const c = altCtx(state.sym); if (c){ selCtx = c; sel = statusOfAnalysis(buildAnalysis(c)); } }  /* 전환 직후엔 캐시로 즉시 */
+  if (sel) sel.a1 = auto1HitOf(selCtx, selA);            /* 자동 1 타점 도달 → 파란 점 */
   map[state.sym] = sel;
   SYMBOLS.forEach(s => {
     if (s.id === state.sym) return;          /* 선택 종목은 위에서 state 분석으로 계산 */
     const c = altCtx(s.id);
     map[s.id] = c ? statusOfAnalysis(buildAnalysis(c)) : null;
+    if (map[s.id]) map[s.id].a1 = auto1HitOf(c, null);   /* 4H·1H 캔들이 있는 종목은 자동 1도 바로 판정 */
   });
   state.statusMap = map;
   state.statusAt = Date.now();
@@ -3184,11 +3219,13 @@ function paintSymStatus(){
   const trd = tradingSyms();
   $$('.chip[data-sym], .psym[data-sym]').forEach(b => {
     const id = b.dataset.sym, st = map[id] || null, lvl = st ? st.level : 0;
+    const a1 = !!(st && st.a1);                 /* 자동 1 판정이 타점 도달 — 파란 점 */
     b.classList.toggle('st3', lvl === 3);
     b.classList.toggle('st2', lvl === 2);
+    b.classList.toggle('a1', a1);
     b.classList.toggle('trd', !!trd[id]);
     const s = symOf(id);
-    const txt = st ? st.label + (st.timing ? ' · ' + st.timing : '') : '상태 계산 중';
+    const txt = (st ? st.label + (st.timing ? ' · ' + st.timing : '') : '상태 계산 중') + (a1 ? ' · 🔵 자동 1 타점 도달' : '');
     b.setAttribute('aria-label', s.code + ' ' + s.name + (trd[id] ? ' (진입중)' : '') + (s.custom ? ' (조회 종목)' : ' (' + s.rank + '위)') + ' — ' + txt);
     b.title = (trd[id] ? '진입중 · ' : '') + (s.custom ? '조회 종목 · ' + s.code : s.rank + '위 ' + s.code + ' (24h ' + s.vol + ')') + ' — ' + txt + (st && isNum(st.price) ? ' · ' + fmtN(st.price, s.dp) : '');
   });
@@ -3900,6 +3937,8 @@ function a1VizDiv(v){
 function renderEvA1(v){
   const hyp = $('#evA1Hyp'), viz = $('#evA1Viz'), list = $('#evA1List'), sum = $('#evA1Sum'), hint = $('#evA1Hint');
   if (!viz) return;
+  const evCard = $('#evA1Card');
+  if (evCard) evCard.classList.toggle('a1-hit', !!(v && v.ok && v.reason === 'hit'));   /* 타점 도달 → 카드·배지 파란색 */
   if (!v || !v.ok){
     const why = (v && v.why) ? v.why : '4H 캔들을 기다리는 중입니다';
     if (hyp) hyp.innerHTML = '<span>자동 1 기준</span><b>계산 중</b><span class="dim">4H 모노웨이브 · 1H 타이밍</span>';
@@ -3913,7 +3952,7 @@ function renderEvA1(v){
   if (hint) hint.textContent = '자동 1 ' + v.sideKr + ' · 근거 ' + v.n + '/3 · 참고용';
   if (hyp) hyp.innerHTML = '<span>자동 1 기준</span><b>' + h.title + '</b>' +
     '<span class="dim">진입 ' + fmtPx(h.entry) + ' / 손절 ' + fmtPx(h.stop) + ' · ' + v.rText + '</span>' +
-    '<span class="badge ' + (v.cls === 'ok' ? 'long' : v.cls === 'warn' ? 'warn' : 'neutral') + '" style="margin-left:auto">' + v.label + ' ' + v.n + '/3</span>';
+    '<span class="badge ' + (v.cls === 'a1-hit' ? 'blue' : v.cls === 'ok' ? 'long' : v.cls === 'warn' ? 'warn' : 'neutral') + '" style="margin-left:auto">' + v.label + ' ' + v.n + '/3</span>';
   const steps = ['①', '②', '③'];
   const titles = [
     ['자리 · 4H 진입가', '현재가가 진입가 ±1.0% 안인지'],
@@ -3956,7 +3995,7 @@ function renderEvA1(v){
     : v.reason === 'rr' ? '세 근거가 갖춰져도 현재가 기준 2차 손익비가 3:1 미만이면 진입하지 않습니다.'
     : v.reason === 'hit' ? '자리·라인·다이버전스가 모두 겹친 참고 타점입니다 — 손익비·비중(정찰병 10~30%)을 먼저 확인하세요.'
     : '근거가 겹칠 때까지 기다리는 자리입니다.';
-  if (sum) sum.innerHTML = '<b style="color:' + (v.n >= 3 ? '#7ee2a4' : v.n === 2 ? '#ffd79a' : '#b3c2d6') + '">🤖 자동 1 ' + v.sideKr + ' 근거 ' + v.n + '/3 · ' + v.label + '</b> — ' + gate +
+  if (sum) sum.innerHTML = '<b style="color:' + (v.reason === 'hit' ? '#cfe0ff' : v.n >= 3 ? '#7ee2a4' : v.n === 2 ? '#ffd79a' : '#b3c2d6') + '">🤖 자동 1 ' + v.sideKr + ' 근거 ' + v.n + '/3 · ' + v.label + '</b> — ' + gate +
     '<br>손익비 — 진입가 기준 1차 <b>' + (isNum(v.rrE1) ? v.rrE1.toFixed(1) : '—') + ':1</b> / 2차 <b>' + (isNum(v.rrE2) ? v.rrE2.toFixed(1) : '—') + ':1</b>' +
     ' · 현재가 기준 2차 <b style="color:' + rrCol + '">' + (isNum(v.rrN2) && v.rrN2 > 0 ? v.rrN2.toFixed(1) : '—') + ':1</b>' +
     ' <span style="color:' + rrCol + '">' + (v.rrOk ? '— 3:1 충족' : '— 3:1 미달') + '</span>' +
@@ -4595,7 +4634,7 @@ function autoHypotheses(c){
    메인 판정(#verdictCard)·ntfy 알림·시트 기록은 수작업 가설 기준 그대로이고 이 카드는 화면 참고용입니다. */
 const AUTO1_TOL = 1.0;        /* 진입 구간 ±1.0% — 수작업 가설과 같은 기준 */
 const AUTO1_LINE_TOL = 1.2;   /* 라인 일치 ±1.2% */
-function auto1LineRefs(auto, a){
+function auto1LineRefs(auto, a, c){
   const out = [];
   const m1 = auto ? auto.m1 : null;
   if (m1 && isNum(m1.len) && m1.len > 0){
@@ -4641,7 +4680,7 @@ function auto1Verdict(c, a){
       : '현재가 ' + fmtPx(price) + ' · 진입가 ' + fmtPx(h.entry) + '까지 ' + absGap.toFixed(2) + '% 남음 (구간 밖 ±1.0%)';
 
   /* ② 라인 — 진입가가 4H 핵심 레벨에 ±1.2% */
-  const refs = auto1LineRefs(auto, ana);
+  const refs = auto1LineRefs(auto, ana, c);
   const dist = x => Math.abs((h.entry - x.p) / x.p * 100);
   const nearest = list => list.filter(x => isNum(x.p) && x.p > 0).sort((x, y) => dist(x) - dist(y))[0] || null;
   const extRef = nearest(refs.filter(x => !x.own));
@@ -4704,8 +4743,8 @@ function auto1Verdict(c, a){
     label = '손익비 미달'; cls = 'warn'; reason = 'rr';
     title = '📉 손익비 미달 — 현재가 기준 2차 ' + (isNum(rrN2) ? rrN2.toFixed(1) : '—') + ':1 (최소 3:1)';
   } else if (n >= 3){
-    label = '타점 도달'; cls = 'ok'; reason = 'hit';
-    title = '🟢 자동 1 타점 도달 (3/3)';
+    label = '타점 도달'; cls = 'a1-hit'; reason = 'hit';   /* 파란색 표시 (수작업 초록과 구분) */
+    title = '🔵 자동 1 타점 도달 (3/3)';
   } else if (n === 2){
     label = '대기'; cls = side === 'long' ? 'long' : 'bad'; reason = 'two';
     title = '⏳ ' + sideKr + ' 대기 — 근거 2/3' + (miss.length ? ', ' + miss[0] + ' 필요' : '');
@@ -4747,6 +4786,8 @@ function renderAuto1Verdict(a){
   if (!badge || !title) return;
   const v = auto1Verdict(state, a);
   renderEvA1(v);                     /* #evSec «🤖 자동 1 진입근거 · 3중 점검» 도표 — 같은 v로 그려 카드와 항상 일치 */
+  const a1CardEl = $('#auto1Card');
+  if (a1CardEl) a1CardEl.classList.toggle('a1-hit', !!(v.ok && v.reason === 'hit'));   /* 타점 도달 → 카드 테두리·배경 파란색 */
   if (!v.ok){
     badge.className = 'v-badge neutral';
     badge.innerHTML = '<span>계산 중</span><small style="font-size:9px;font-weight:600;opacity:.7;letter-spacing:0">4H</small>';
@@ -4785,7 +4826,7 @@ function renderAuto1Verdict(a){
       ' / 2차 <b style="color:' + rrCls + '">' + (isNum(v.rrN2) && v.rrN2 > 0 ? v.rrN2.toFixed(1) : '—') + ':1</b>' +
       ' <span style="color:' + rrCls + '">' + (v.rrOk ? '— 2차 기준 3:1 충족' : '— 2차 3:1 미달') + '</span>' +
     '</div>';
-  if (sum) sum.innerHTML = '<b style="color:' + (v.n >= 3 ? '#7ee2a4' : v.n === 2 ? '#ffd79a' : '#b3c2d6') + '">' + v.sideKr + ' 기준 ' + v.n + '/3</b> — ' +
+  if (sum) sum.innerHTML = '<b style="color:' + (v.reason === 'hit' ? '#cfe0ff' : v.n >= 3 ? '#7ee2a4' : v.n === 2 ? '#ffd79a' : '#b3c2d6') + '">' + v.sideKr + ' 기준 ' + v.n + '/3</b> — ' +
     (v.reason === 'hit' ? '자동 1 타점 도달. 자동 후보는 매 갱신마다 4H 캔들로 다시 계산되므로 다음 봉에서 자리가 사라질 수 있습니다.' :
      v.reason === 'gap' ? '진입 구간(±1.0%)에 들어와야 타점입니다.' :
      v.reason === 'rr' ? '진입가까지 되돌려 손익비를 맞추거나 건너뜁니다.' :
