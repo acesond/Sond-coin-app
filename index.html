@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>매억남 코인 분석 · 대형 메이저 6종목 실시간</title>
+<title>손디코인분석 · 대형 메이저 6종목 실시간</title>
 <meta name="description" content="매억남·박경철 실전 1장 기준으로 바이낸스 USDT-M 선물 대형 메이저 6종목(BTC·ETH·SOL·XRP·BNB·DOGE)을 실시간 분석하는 모바일 웹앱. 멀티 타임프레임 RSI·거래량·다이버전스 자동 판정, 가설 타점, 손익비 계산기, 매매 전 체크리스트.">
 <meta name="theme-color" content="#070b12">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="매억남 분석">
-<meta name="application-name" content="매억남 코인 분석">
+<meta name="apple-mobile-web-app-title" content="손디코인분석">
+<meta name="application-name" content="손디코인분석">
 <meta name="format-detection" content="telephone=no">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23070b12'/%3E%3Cpath d='M6 21l5-6 4 3.4L26 8' stroke='%2322c55e' stroke-width='2.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-<link rel="manifest" href='data:application/manifest+json,{"name":"매억남 코인 분석","short_name":"매억남","start_url":"./","display":"standalone","background_color":"%23070b12","theme_color":"%23070b12","lang":"ko"}'>
+<link rel="manifest" href='data:application/manifest+json,{"name":"손디코인분석","short_name":"손디코인분석","start_url":"./","display":"standalone","background_color":"%23070b12","theme_color":"%23070b12","lang":"ko"}'>
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%23070b12'/%3E%3Cpath d='M32 118l28-34 24 20 30-44 34-18' stroke='%2322c55e' stroke-width='9' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
 :root{
@@ -1044,7 +1044,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
           </svg>
         </div>
         <div class="brand-txt">
-          <b>매억남 코인 분석</b>
+          <b>손디코인분석</b>
           <span>파동 · RSI · 다이버전스 · 손익비</span>
         </div>
       </div>
@@ -1427,7 +1427,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
 <script>
 'use strict';
 /* =========================================================
-   매억남 관점 코인 분석 웹앱
+   손디코인분석 웹앱
    - 데이터: Binance USDT-M 선물 public API (fapi.binance.com, CORS 허용)
    - 기준: 실전 매매 1장 체크리스트 (국면→자리→확인→숫자)
    ========================================================= */
@@ -8332,7 +8332,7 @@ async function toggleAlerts(){
     : '알림음 + 상단 배너로 동작';
   showBanner([{ kind:'test', sym:{ id:'test' }, title:'🔔 알림 켜짐', body: how + ' — 3/3 타점 도달·지금 진입 가능 시 알려드립니다.' }]);
   if (perm === 'granted'){
-    try { new Notification('매억남 분석 알림 ON', { body: '3/3 타점 도달·지금 진입 가능 시 알려드립니다.', tag:'maeyo-test' }); } catch (e) {}
+    try { new Notification('손디코인분석 알림 ON', { body: '3/3 타점 도달·지금 진입 가능 시 알려드립니다.', tag:'maeyo-test' }); } catch (e) {}
   }
 }
 function checkAlerts(){
