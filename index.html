@@ -7158,8 +7158,9 @@ const DEL_KEY = 'maeyo.deletedIds.v1';
    배포·동기화 테스트 중에 시트로 새어 나간 기록들입니다. 새 버전 앱이 열리는 순간
    이 기기의 localStorage에서도 지우고, 시트에도 절대 다시 올리지 않습니다.
    · t-win / t-loss / t-open : 메모가 '테스트 승·패·진행'이던 시험용 3건
-   · tl17955490867980uya    : 테스트 브라우저의 11/25 04:38 BTC 롱 200 USDT (진입=청산 같은 분) */
-const PURGE_TEST_IDS = ['t-win', 't-loss', 't-open', 'tl17955490867980uya'];
+   · tl17955490867980uya    : 테스트 브라우저의 11/25 04:38 BTC 롱 200 USDT (진입=청산 같은 분)
+   · tl17957491232482kvt    : 11/27 12:12 예약주문 체결 검증용 BTC 숏 61,778 (라이브 화면 검증 뒤 정리) */
+const PURGE_TEST_IDS = ['t-win', 't-loss', 't-open', 'tl17955490867980uya', 'tl17957491232482kvt'];
 function isPurgeTestRecord(e){
   if (!e) return true;
   const id = String(e.id || '');
