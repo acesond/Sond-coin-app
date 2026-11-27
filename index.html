@@ -667,6 +667,14 @@ button.toggle b{font-variant-numeric:tabular-nums; color:#67e8f9; font-weight:80
 .ass-inp:focus{border-color:rgba(91,140,255,.55)}
 .ass-btn{border:1px solid rgba(91,140,255,.45); background:rgba(91,140,255,.17); color:#cfe0ff; font-family:inherit; font-size:9.5px; font-weight:800; padding:6px 9px; border-radius:8px; cursor:pointer; flex:none; white-space:nowrap}
 .ass-btn.wd{border-color:rgba(34,197,94,.42); background:rgba(34,197,94,.13); color:#a7f3c4}
+.ass-btn.fix{border-color:rgba(250,204,21,.5); background:rgba(250,204,21,.14); color:#fde68a}
+.ass-adj{margin-top:8px; border-top:1px dashed var(--line); padding-top:7px}
+.ass-adj-h{display:flex; align-items:baseline; gap:5px; font-size:9px; color:var(--dim2); font-weight:700}
+.ass-adj-h b{font-weight:800; font-variant-numeric:tabular-nums; margin-left:auto; font-size:10px; color:#fde68a}
+.ass-adj-i{display:flex; align-items:center; gap:6px; font-size:9px; color:var(--dim); margin-top:5px; font-variant-numeric:tabular-nums}
+.ass-adj-i .ass-adj-t{flex:1; min-width:0; color:#9fb0c8}
+.ass-adj-i .ass-adj-n{font-weight:800; white-space:nowrap; color:#fde68a}
+.ass-adj-i .ass-adj-n.up{color:var(--up)} .ass-adj-i .ass-adj-n.down{color:var(--down)}
 .ass-wd{margin-top:8px; border-top:1px dashed var(--line); padding-top:7px}
 .ass-wd-h{display:flex; align-items:baseline; gap:5px; font-size:9px; color:var(--dim2); font-weight:700}
 .ass-wd-h b{color:#ffb3c0; font-weight:800; font-variant-numeric:tabular-nums; margin-left:auto; font-size:10px}
@@ -6895,15 +6903,29 @@ function extraChartLevels(){
    · 청산할 때는 지우지 않고 실현 ROE를 계산해 '종료됨'으로 보존
    · 저장 위치: localStorage 'maeyo.tradeLog.v1' (이 기기에만) */
 const LOG_KEY = 'maeyo.tradeLog.v1';
-/* ---------- 자산현황 (초기 금액 · 출금 · 실현 손익) ----------
-   초기 금액(첫 시드) + 매매 실현 손익(USDT) − 총 출금액 = 현재 자산
-   · 초기 금액/출금 내역: localStorage 'maeyo.assetState.v1' (이 기기에만)
-   · 실현 손익(USDT) = 각 기록의 투입 증거금 × 실현 ROE / 100 */
+/* ---------- 자산현황 (초기 금액 · 잔액 보정 · 출금 · 실현 손익) ----------
+   초기 금액(첫 시드) + 매매 실현 손익(USDT) + 잔액 보정 − 총 출금액 = 현재 자산
+   · 초기 금액/보정/출금 내역: localStorage 'maeyo.assetState.v1'
+   · 실현 손익(USDT) = 각 기록의 투입 증거금 × 실현 ROE / 100
+   · 잔액 보정(adjust): 바이낸스 앱에 찍힌 실제 자산과 맞추기 위해 넣은 차액입니다.
+     보정할 때 initial도 같은 금액만큼 옮겨 두기 때문에 시트에는 initial 하나만 올라가고,
+     (시트 Apps Script v3는 initial·withdrawals만 저장) 폰·PC 어느 쪽에서 열어도 숫자가 같습니다.
+     보정 내역(corr)은 이 기기에 남는 설명용 기록입니다. */
 const ASSET_KEY = 'maeyo.assetState.v1';
 const SEED_DEL_KEY = 'maeyo.seedDeleted.v1';
 const ASSET_DEFAULT = 730;
-let assetState = { initial: ASSET_DEFAULT, withdrawals: [] };
+let assetState = { initial: ASSET_DEFAULT, withdrawals: [], corr: [] };
 
+/* 보정 내역 정리 — 양수면 자산이 늘고, 음수면 줄어든 차액입니다. */
+function normCorrections(list){
+  return (Array.isArray(list) ? list : []).filter(c => c && isNum(parseFloat(c.delta)) && Math.abs(parseFloat(c.delta)) >= 0.005)
+    .map(c => ({
+      id: c.id || ('adj' + Math.random().toString(36).slice(2, 8)),
+      at: isNum(c.at) ? c.at : Date.now(),
+      delta: Math.round(parseFloat(c.delta) * 100) / 100,
+      memo: String(c.memo || '').slice(0, 40)
+    })).slice(-60);
+}
 function loadAssetState(){
   const v = store(ASSET_KEY);
   const init = v && isNum(parseFloat(v.initial)) && parseFloat(v.initial) > 0 ? parseFloat(v.initial) : ASSET_DEFAULT;
@@ -6915,11 +6937,15 @@ function loadAssetState(){
       at: isNum(w.at) ? w.at : Date.now(),
       usd: Math.round(parseFloat(w.usd) * 100) / 100,
       memo: String(w.memo || '').slice(0, 40)
-    }))
+    })),
+    corr: normCorrections(v && v.corr)
   };
 }
 function saveAssetState(){ store(ASSET_KEY, assetState); if (!syncApplying) syncSchedule(); }
 function totalWithdrawals(){ return assetState.withdrawals.reduce((a, w) => a + (+w.usd || 0), 0); }
+function totalCorrections(){ return (Array.isArray(assetState.corr) ? assetState.corr : []).reduce((a, c) => a + (+c.delta || 0), 0); }
+/* 화면에 보이는 '초기 금액' — 보정을 빼고 원래 넣은 시드만 */
+function baseAsset(){ return Math.round((assetState.initial - totalCorrections()) * 100) / 100; }
 function marginOf(e){ return e && isNum(parseFloat(e.margin)) && parseFloat(e.margin) > 0 ? Math.round(parseFloat(e.margin) * 100) / 100 : NaN; }
 function pnlUsd(e, roe){ const m = marginOf(e); return isNum(m) && isNum(roe) ? m * roe / 100 : NaN; }
 /* 수수료 반영 순손익 — 수수료율이 저장된 기록만 차감합니다.
@@ -6957,11 +6983,52 @@ function usd2(v){ return (v >= 0 ? '+' : '') + (Math.round(v * 100) / 100).toFix
 function setInitialAmount(v){
   const n = parseFloat(v);
   if (!isNum(n) || n <= 0){ toast('초기 금액 확인', '0보다 큰 USDT 금액을 입력하세요.'); return; }
-  assetState.initial = Math.round(n * 100) / 100;
+  /* 초기 금액은 '원래 넣은 시드'로 저장 — 잔액 보정분은 그대로 따로 남겨 둡니다. */
+  const adj = totalCorrections();
+  assetState.initial = Math.round((n + adj) * 100) / 100;
   saveAssetState();
   renderJournal();
   refreshAutoMargin();
-  toast('초기 금액 저장', assetState.initial.toFixed(2) + ' USDT 기준으로 자산현황을 다시 계산했습니다.');
+  toast('초기 금액 저장', n.toFixed(2) + ' USDT' + (Math.abs(adj) >= 0.005 ? ' + 보정 ' + usd2(adj) : '') +
+    ' 기준으로 자산현황을 다시 계산했습니다.');
+}
+/* ---------- 잔액 맞추기 (바이낸스 실제 현재 자산으로) ----------
+   입력한 금액과 앱의 현재 자산 차이만큼을 '보정'으로 남기고 initial을 같은 만큼 옮깁니다.
+   → 현재 자산 = 입력값, 실현 손익·출금·매매기록은 그대로.
+   · initial이 함께 움직이므로 새로고침·구글 시트 왕복 뒤에도 맞춘 금액이 유지됩니다.
+   · 시트의 '초기 금액' 칸에는 보정이 반영된 기준값이 올라갑니다(시트 서버 코드 수정 불필요). */
+function fixCurrentAsset(inp){
+  const raw = (inp && inp.value !== undefined) ? inp.value : inp;
+  const target = parseFloat(raw);
+  if (!isNum(target) || target < 0){ toast('현재 자산 확인', '0 이상의 USDT 금액을 입력하세요.'); return; }
+  const before = currentAsset();
+  const delta = Math.round((target - before) * 100) / 100;
+  if (!isNum(delta) || Math.abs(delta) < 0.005){
+    toast('이미 맞습니다', '현재 자산 ' + before.toFixed(2) + ' USDT와 같은 금액입니다.');
+    return;
+  }
+  assetState.initial = Math.round((assetState.initial + delta) * 100) / 100;
+  assetState.corr = normCorrections((Array.isArray(assetState.corr) ? assetState.corr : []).concat([{
+    id: 'adj' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), at: Date.now(), delta: delta, memo: '바이낸스 잔액 맞추기'
+  }]));
+  saveAssetState();
+  renderJournal();
+  refreshAutoMargin();
+  toast('잔액 맞춤', before.toFixed(2) + ' → ' + target.toFixed(2) + ' USDT · 보정 ' + usd2(delta) +
+    ' (실현 손익·출금은 그대로, 현재 자산 계산만 맞췄습니다)');
+}
+function delCorrection(id){
+  const list = Array.isArray(assetState.corr) ? assetState.corr : [];
+  const i = list.findIndex(c => c.id === id);
+  if (i < 0) return;
+  const c = list[i];
+  list.splice(i, 1);
+  assetState.corr = list;
+  assetState.initial = Math.round((assetState.initial - (+c.delta || 0)) * 100) / 100;
+  saveAssetState();
+  renderJournal();
+  refreshAutoMargin();
+  toast('보정 삭제', '잔액 보정 ' + usd2(+c.delta) + ' USDT를 지우고 현재 자산을 다시 계산했습니다.');
 }
 function addWithdrawal(inp, memoEl){
   const n = parseFloat(inp && inp.value);
@@ -6987,31 +7054,47 @@ function delWithdrawal(id){
 function renderAssetCard(){
   const el = $('#jAsset');
   if (!el) return;
-  const init = assetState.initial, wd = totalWithdrawals(), real = realizedPnlUsd();
+  const wd = totalWithdrawals(), real = realizedPnlUsd();
+  const adj = totalCorrections(), base = baseAsset();
   const cur = currentAsset(), hasOpen = tradeLog.some(e => e.status === 'open'), op = hasOpen ? openPnlUsd() : NaN;
   const cls = v => !isNum(v) ? '' : v > 0 ? 'up' : v < 0 ? 'down' : '';
   const ws = assetState.withdrawals.slice().sort((a, b) => b.at - a.at);
+  const cs = (Array.isArray(assetState.corr) ? assetState.corr : []).slice().sort((a, b) => b.at - a.at);
+  const adjTxt = (adj > 0 ? '+' : '−') + Math.abs(adj).toFixed(2);
   el.innerHTML =
-    '<div class="ass-h"><b>💰 현재 자산현황</b><span class="ass-sub">이 기기 기록 기준</span></div>' +
-    '<div class="ass-eq">초기 <b class="num">' + init.toFixed(2) + '</b> + 실현 손익 <b class="num ' + cls(real) + '">' + usd2(real) + '</b> − 총 출금 <b class="num">' + wd.toFixed(2) + '</b> =</div>' +
+    '<div class="ass-h"><b>💰 현재 자산현황</b><span class="ass-sub">' + (syncEnabled() ? '폰·PC 시트 동기화' : '이 기기 기록 기준') + '</span></div>' +
+    '<div class="ass-eq">초기 <b class="num">' + base.toFixed(2) + '</b> + 실현 손익 <b class="num ' + cls(real) + '">' + usd2(real) + '</b>' +
+      (Math.abs(adj) >= 0.005 ? ' ' + (adj > 0 ? '+' : '−') + ' 보정 <b class="num ' + cls(adj) + '">' + Math.abs(adj).toFixed(2) + '</b>' : '') +
+      ' − 총 출금 <b class="num">' + wd.toFixed(2) + '</b> =</div>' +
     '<div class="ass-main"><span class="ass-l">현재 자산</span><span class="ass-v num">' + cur.toFixed(2) + '</span><span class="ass-u">USDT</span>' +
       (hasOpen ? '<span class="ass-open ' + cls(op) + '">미실현 참고 ' + usd2(op) + '</span>' : '') + '</div>' +
     '<div class="ass-row">' +
-      '<div class="ass-f"><label>초기 금액</label><input class="ass-inp" id="assInit" type="number" inputmode="decimal" step="any" min="0" value="' + init + '"><span class="ass-u">USDT</span></div>' +
+      '<div class="ass-f"><label>잔액 맞추기</label><input class="ass-inp" id="assFix" type="number" inputmode="decimal" step="any" min="0" value="' + cur.toFixed(2) + '"><span class="ass-u">USDT</span></div>' +
+      '<button class="ass-btn fix" id="assFixGo" type="button">맞추기</button>' +
+    '</div>' +
+    '<div class="ass-row">' +
+      '<div class="ass-f"><label>초기 금액</label><input class="ass-inp" id="assInit" type="number" inputmode="decimal" step="any" min="0" value="' + base + '"><span class="ass-u">USDT</span></div>' +
       '<button class="ass-btn" id="assSave" type="button">저장</button>' +
     '</div>' +
     '<div class="ass-row">' +
       '<div class="ass-f"><label>출금</label><input class="ass-inp" id="assWd" type="number" inputmode="decimal" step="any" min="0" placeholder="출금액"><input class="ass-inp" id="assWdMemo" maxlength="40" placeholder="메모(선택)"></div>' +
       '<button class="ass-btn wd" id="assWdAdd" type="button">출금 기록</button>' +
     '</div>' +
+    (cs.length ? '<div class="ass-adj"><div class="ass-adj-h">잔액 보정 ' + cs.length + '건<b>' + adjTxt + ' USDT</b></div>' +
+      cs.map(c => '<div class="ass-adj-i"><span class="ass-adj-t">' + kst(c.at, true) + ' · ' + escHtml(c.memo || '잔액 맞추기') + '</span>' +
+        '<span class="ass-adj-n ' + (c.delta > 0 ? 'up' : 'down') + '">' + usd2(+c.delta) + '</span>' +
+        '<button class="j-mini warn" data-adel="' + c.id + '" type="button">삭제</button></div>').join('') + '</div>' : '') +
     (ws.length ? '<div class="ass-wd"><div class="ass-wd-h">출금 내역 ' + ws.length + '건<b>-' + wd.toFixed(2) + ' USDT</b></div>' +
       ws.map(w => '<div class="ass-wd-i"><span class="ass-wd-t">' + kst(w.at, true) + ' · <span>' + escHtml(w.memo || '메모 없음') + '</span></span>' +
         '<span class="ass-wd-n">-' + (+w.usd).toFixed(2) + '</span>' +
         '<button class="j-mini warn" data-wdel="' + w.id + '" type="button">삭제</button></div>').join('') + '</div>' : '') +
-    '<div class="ass-note">초기 금액·출금 내역은 ' + (syncEnabled() ? '구글 시트와 함께 저장됩니다.' : '이 기기에만 저장됩니다.') + ' 실현 손익은 기록마다 입력한 <b>투입 증거금 × 실현 ROE</b>에서 <b>왕복 수수료</b>를 뺀 순손익으로 계산하며, 진행 중 포지션의 미실현 손익은 현재가 기준 참고값(예상 수수료 차감)입니다.</div>';
+    '<div class="ass-note">현재 자산이 바이낸스 앱과 다르면 <b>잔액 맞추기</b>에 실제 자산을 넣고 [맞추기]를 누르세요 — 차액을 <b>보정</b>으로 남기고 현재 자산만 맞춥니다(실현 손익·출금 기록은 그대로). 초기 금액·보정·출금 내역은 ' + (syncEnabled() ? '구글 시트와 함께 저장됩니다.' : '이 기기에만 저장됩니다.') + ' 실현 손익은 기록마다 입력한 <b>투입 증거금 × 실현 ROE</b>에서 <b>왕복 수수료</b>를 뺀 순손익으로 계산하며, 진행 중 포지션의 미실현 손익은 현재가 기준 참고값(예상 수수료 차감)입니다.</div>';
   const initEl = $('#assInit'), saveEl = $('#assSave'), wdEl = $('#assWd'), wmEl = $('#assWdMemo'), addEl = $('#assWdAdd');
+  const fixEl = $('#assFix'), fixGo = $('#assFixGo');
   if (saveEl) saveEl.addEventListener('click', () => setInitialAmount(initEl && initEl.value));
   if (initEl) initEl.addEventListener('keydown', ev => { if (ev.key === 'Enter'){ ev.preventDefault(); setInitialAmount(initEl.value); } });
+  if (fixGo) fixGo.addEventListener('click', () => fixCurrentAsset(fixEl));
+  if (fixEl) fixEl.addEventListener('keydown', ev => { if (ev.key === 'Enter'){ ev.preventDefault(); fixCurrentAsset(fixEl); } });
   if (addEl) addEl.addEventListener('click', () => addWithdrawal(wdEl, wmEl));
   if (wdEl) wdEl.addEventListener('keydown', ev => { if (ev.key === 'Enter'){ ev.preventDefault(); addWithdrawal(wdEl, wmEl); } });
 }
@@ -7483,14 +7566,24 @@ function syncApply(data){
     }
     if (data.asset && isNum(parseFloat(data.asset.initial))){
       const ws = Array.isArray(data.asset.withdrawals) ? data.asset.withdrawals : [];
+      const sheetInit = Math.round(parseFloat(data.asset.initial) * 100) / 100;
+      /* 잔액 보정 내역(corr)은 이 기기에만 있는 설명용 기록입니다.
+         시트에는 보정이 반영된 initial 하나만 올라가므로,
+         시트 기준값이 이 기기 값과 같을 때만 보정 내역을 남기고
+         다른 기기가 초기 금액을 바꿨으면 새 기준을 그대로 따릅니다. */
+      const keepCorr = Math.abs(sheetInit - (isNum(assetState.initial) ? assetState.initial : 0)) < 0.005
+        ? (Array.isArray(assetState.corr) ? assetState.corr : []) : [];
+      const normC = (typeof normCorrections === 'function') ? normCorrections
+        : (l => (Array.isArray(l) ? l : []).filter(c => c && isNum(parseFloat(c.delta))));
       assetState = {
-        initial: Math.round(parseFloat(data.asset.initial) * 100) / 100,
+        initial: sheetInit,
         withdrawals: ws.filter(w => w && isNum(parseFloat(w.usd)) && parseFloat(w.usd) > 0).map(w => ({
           id: w.id || ('wd' + Math.random().toString(36).slice(2, 8)),
           at: isNum(w.at) ? w.at : Date.now(),
           usd: Math.round(parseFloat(w.usd) * 100) / 100,
           memo: String(w.memo || '').slice(0, 40)
-        }))
+        })),
+        corr: normC(keepCorr)
       };
       store(ASSET_KEY, assetState);
     }
@@ -8537,7 +8630,7 @@ function bindJournal(){
   if (!page || page.dataset.bound === '1') return;
   page.dataset.bound = '1';
   page.addEventListener('click', ev => {
-    const t = ev.target.closest('[data-jperiod],[data-jresult],[data-jsym],[data-jexit],[data-jchart],[data-jdel],[data-jmemo],[data-jmemosave],[data-jmemocancel],[data-jmargin],[data-jmarginsave],[data-jfee],[data-jfeesave],[data-jat],[data-jatsave],[data-jatcancel],[data-jrev],[data-wdel],[data-ofill],[data-ocancel]');
+    const t = ev.target.closest('[data-jperiod],[data-jresult],[data-jsym],[data-jexit],[data-jchart],[data-jdel],[data-jmemo],[data-jmemosave],[data-jmemocancel],[data-jmargin],[data-jmarginsave],[data-jfee],[data-jfeesave],[data-jat],[data-jatsave],[data-jatcancel],[data-jrev],[data-wdel],[data-adel],[data-ofill],[data-ocancel]');
     if (!t) return;
     if (t.hasAttribute('data-ofill')){ fillOrder(t.dataset.ofill); return; }
     if (t.hasAttribute('data-ocancel')){ cancelOrder(t.dataset.ocancel); return; }
@@ -8559,6 +8652,7 @@ function bindJournal(){
     if (t.hasAttribute('data-jatcancel')){ renderJournal(); return; }
     if (t.hasAttribute('data-jrev')){ revLossNow(t.dataset.jrev); return; }
     if (t.hasAttribute('data-wdel')){ delWithdrawal(t.dataset.wdel); return; }
+    if (t.hasAttribute('data-adel')){ delCorrection(t.dataset.adel); return; }
   });
 }
 /* ========================= 매매 복기 차트 (종료 매매 · 📈 차트 보기) =========================

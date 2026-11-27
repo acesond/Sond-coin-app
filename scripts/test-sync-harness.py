@@ -378,6 +378,52 @@ globalThis.__run = async function(){
   const back = SRV.orders.find(o => o.id === 'od-a1') || {};
   ok('17-3 다시 올릴 때도 출처 유지', back.source === 'auto1', String(back.source));
 
+  /* 18) 잔액 맞추기(현재 자산 보정) — 보정이 반영된 기준값이 시트로 올라가고
+        새로고침·시트 왕복·다른 기기에서도 맞춘 현재 자산(= 기준값 + 실현 − 출금)이 유지됨 */
+  reset({});
+  store(SYNC_TS_KEY, T0J);
+  tradeLog = clone(J6);
+  SRV.journal = clone(J6); SRV.updatedAt = T0J;
+  assetState = { initial: 833.80, withdrawals: [],
+    corr: [{ id:'adj1', at: T0J, delta: -3.21, memo:'바이낸스 잔액 맞추기' }] };
+  saveAssetState();
+  flushTimers();
+  await pump(30);
+  ok('18-1 시트에 보정 반영 기준값 저장', SRV.asset.initial === 833.8, SRV.asset.initial);
+  ok('18-2 시트에는 보정 내역을 올리지 않음(형식 그대로)', !('corr' in (SRV.asset || {})) && SRV.asset.withdrawals.length === 0,
+     JSON.stringify(SRV.asset));
+  syncNow();
+  await pump(40);
+  ok('18-3 왕복 뒤 기준값 유지', assetState.initial === 833.8, assetState.initial);
+  ok('18-4 왕복 뒤 보정 내역 유지', (assetState.corr || []).length === 1 && assetState.corr[0].delta === -3.21,
+     JSON.stringify(assetState.corr));
+  const corrSum = (assetState.corr || []).reduce((a, c) => a + (+c.delta || 0), 0);
+  ok('18-5 왕복 뒤 화면상 초기 금액(기준값 − 보정합) 유지', Math.abs((assetState.initial - corrSum) - 837.01) < 0.005,
+     assetState.initial + ' / ' + corrSum);
+  const srvAsset18 = clone(SRV.asset);       /* 시트에 올라간 기준값 — 다른 기기가 받을 값 */
+  reset({});                                  /* 다른 기기(보정 내역 없는 기기)에서 열기 */
+  store(SYNC_TS_KEY, T0J);
+  tradeLog = clone(J6);
+  SRV.journal = clone(J6); SRV.asset = srvAsset18; SRV.updatedAt = T0J + 60000;
+  syncNow();
+  await pump(40);
+  ok('18-6 다른 기기도 맞춘 기준값을 받음', assetState.initial === 833.8, assetState.initial);
+  ok('18-7 다른 기기엔 보정 내역 없음', (assetState.corr || []).length === 0, JSON.stringify(assetState.corr));
+
+  /* 19) 다른 기기가 초기 금액을 바꾸면 이 기기의 보정 내역은 정리되고 새 기준을 따름 */
+  reset({});
+  store(SYNC_TS_KEY, T0J);
+  tradeLog = clone(J6);
+  SRV.journal = clone(J6);
+  assetState = { initial: 833.80, withdrawals: [], corr: [{ id:'adj1', at: T0J, delta: -3.21 }] };
+  SRV.asset = { initial: 900, withdrawals: [] };
+  SRV.updatedAt = T0J + 60000;
+  syncNow();
+  await pump(40);
+  ok('19-1 다른 기기 기준값 적용', assetState.initial === 900, assetState.initial);
+  ok('19-2 옛 보정 내역 정리', (assetState.corr || []).length === 0, JSON.stringify(assetState.corr));
+  ok('19-3 시트 예약주문·기록 그대로', SRV.journal.length === 6, SRV.journal.length);
+
   globalThis.__result = JSON.stringify({ results: __out, log: __log });
   return 1;
  } catch (e){ globalThis.__result = JSON.stringify({ results: __out, log: __log, fatal: String(e && (e.message || e)) + ' || ' + String(e && e.stack) }); }
