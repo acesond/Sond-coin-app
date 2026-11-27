@@ -6651,7 +6651,7 @@ function openOrderSheet(kindArg){
     addOrder({
       id: orderIdNew(), sym: state.sym, code: symOf(state.sym).code,
       side: plan.side === 'long' ? 'long' : 'short', kind: 'entry',
-      price: px, margin: Math.round(mg * 100) / 100, lev: lev,
+      price: px, margin: mg, lev: lev,
       stop: plan.stop, t1: plan.t1, t2: plan.t2, feeMode: 'maker',
       at: Date.now(), note: note, status: 'pending', hitAt: 0
     });
