@@ -7459,7 +7459,8 @@ function syncApply(data){
       store(LOG_KEY, tradeLog);
       syncRememberSeen(remote.map(e => String(e.id)));
     }
-    if (data.asset && isNum(parseFloat(data.asset.initial))){      const ws = Array.isArray(data.asset.withdrawals) ? data.asset.withdrawals : [];
+    if (data.asset && isNum(parseFloat(data.asset.initial))){
+      const ws = Array.isArray(data.asset.withdrawals) ? data.asset.withdrawals : [];
       assetState = {
         initial: Math.round(parseFloat(data.asset.initial) * 100) / 100,
         withdrawals: ws.filter(w => w && isNum(parseFloat(w.usd)) && parseFloat(w.usd) > 0).map(w => ({
@@ -7492,7 +7493,8 @@ function syncPushBodyOk(res){
   if (Array.isArray(res.journal)) syncApply(res);
   if (isNum(res.updatedAt)) store(SYNC_TS_KEY, res.updatedAt);
   return true;
-}function syncPushBodyErr(res){ return new Error((res && (res.reason || res.error)) || '저장 실패'); }
+}
+function syncPushBodyErr(res){ return new Error((res && (res.reason || res.error)) || '저장 실패'); }
 /* 앱 진입·배지 클릭 — 받아서 합치고 올리기 */
 async function syncNow(){
   if (!syncEnabled()){ syncMark('off'); return; }
