@@ -339,6 +339,70 @@ button.toggle b{font-variant-numeric:tabular-nums; color:#67e8f9; font-weight:80
 /* 계산기 안 진입 기록 버튼 — 바로 위 '이 타점 저장'(primary)과 위계를 구분 */
 #planSec .pos-btn{background:linear-gradient(160deg,rgba(91,140,255,.24),rgba(47,107,255,.10)); border:1px solid rgba(91,140,255,.62); color:#e3ecff; letter-spacing:-.2px}
 #planSec .pos-btn:active{background:rgba(91,140,255,.32)}
+#planSec .pos-btns{display:grid; grid-template-columns:1fr 1fr; gap:6px}
+#planSec .pos-btn.ord{background:linear-gradient(160deg,rgba(56,189,248,.16),rgba(14,116,144,.08)); border-color:rgba(56,189,248,.5); color:#cdeeff; font-size:11.5px}
+
+/* ---------- 물타기(추가 진입) 계산 · 예약주문 ---------- */
+.wd-box{margin:10px 0 0; border:1px solid rgba(192,132,252,.26); border-radius:12px; background:linear-gradient(180deg,rgba(192,132,252,.06),#0b1320 60%); overflow:hidden}
+.wd-head{display:flex; align-items:center; gap:6px; width:100%; border:0; background:transparent; color:#e3ecff; font-family:inherit; font-size:11.5px; font-weight:800; letter-spacing:-.2px; padding:9px 10px; cursor:pointer; text-align:left}
+.wd-head .wd-sum{margin-left:auto; font-size:9.5px; font-weight:700; color:#c4b5fd; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:56%}
+.wd-head .wd-caret{flex:none; font-size:10px; color:var(--dim2); transition:transform .15s}
+.wd-box.on .wd-head .wd-caret{transform:rotate(180deg)}
+.wd-body{padding:0 10px 10px; border-top:1px dashed rgba(192,132,252,.22)}
+.wd-note{font-size:9px; line-height:1.5; color:var(--dim2); padding:7px 0 0; word-break:keep-all}
+.wd-note b{color:#dbe6f5; font-weight:800}
+.wd-row{display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:7px; align-items:start}
+.wd-f{min-width:0}
+.wd-f label{display:block; font-size:8.5px; font-weight:700; color:var(--dim2); margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.wd-f input{width:100%; box-sizing:border-box; border:1px solid var(--line2); background:#0a1220; color:#e6eefb; font-family:inherit; font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; padding:6px 7px; border-radius:8px; outline:none}
+.wd-f input:focus{border-color:rgba(192,132,252,.6)}
+.wd-f input::placeholder{color:#4c5a6e; font-weight:600}
+.wd-pct{display:flex; gap:3px; margin-top:4px}
+.wd-pct button{flex:1; border:1px solid rgba(192,132,252,.26); background:rgba(192,132,252,.08); color:#d6c9ff; font-family:inherit; font-size:8.5px; font-weight:800; padding:2px 0; border-radius:5px; cursor:pointer; line-height:1.5}
+.wd-pct button:active{background:rgba(192,132,252,.2)}
+.wd-rowh{display:flex; align-items:center; gap:5px; font-size:9px; font-weight:800; color:#c4b5fd; margin-top:10px; padding-top:8px; border-top:1px solid rgba(30,42,60,.9)}
+.wd-rowh button{margin-left:auto; border:1px solid var(--line2); background:transparent; color:var(--dim2); font-family:inherit; font-size:8.5px; font-weight:700; padding:2px 6px; border-radius:6px; cursor:pointer}
+.wd-out{display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:9px}
+.wd-cell{background:#0a1220; border:1px solid rgba(30,42,60,.9); border-radius:9px; padding:5px 7px; min-width:0}
+.wd-cell label{display:block; font-size:8.5px; color:var(--dim2)}
+.wd-cell b{font-size:11.5px; font-weight:800; letter-spacing:-.2px; font-variant-numeric:tabular-nums; display:block; margin-top:1px; line-height:1.3; word-break:keep-all}
+.wd-cell b.vio{color:#d8b4fe} .wd-cell b.up{color:#a7f3c4} .wd-cell b.down{color:#ffb3c0} .wd-cell b.mut{color:var(--dim)}
+.wd-msg{margin-top:7px; font-size:9px; line-height:1.5; color:#ffd79a; word-break:keep-all}
+.wd-msg:empty{display:none}
+.wd-res{width:100%; margin-top:8px; font-size:10.5px; padding:7px 8px}
+.ord-mini{margin:9px 0 0; border:1px solid rgba(56,189,248,.3); border-radius:11px; background:linear-gradient(180deg,rgba(56,189,248,.09),#0b1320); padding:7px 9px}
+.ord-mini[hidden]{display:none}
+.ord-mini-h{display:flex; align-items:center; gap:5px; font-size:10px; font-weight:800; color:#bae6fd}
+.ord-mini-h .ord-mini-n{margin-left:auto; font-size:9px; font-weight:700; color:var(--dim2); font-variant-numeric:tabular-nums}
+.ord-mini-i{display:flex; align-items:baseline; gap:5px; flex-wrap:wrap; margin-top:4px; font-size:9.5px; color:var(--dim2); font-variant-numeric:tabular-nums; line-height:1.4}
+.ord-mini-i b{font-size:10.5px; font-weight:800; color:#dbe6f5}
+.ord-mini-i .od-hit{color:#ffd79a; font-weight:800}
+.ord-mini-i .od-go{margin-left:auto; color:#9fb6d8}
+.ord-card{margin:0 0 10px}
+.ord-card-h{display:flex; align-items:center; gap:6px; margin:0 2px 7px; font-size:11px; font-weight:800; color:#bae6fd; letter-spacing:-.2px}
+.ord-card-h small{margin-left:auto; font-size:9px; font-weight:700; color:var(--dim2)}
+.ord{border:1px solid rgba(56,189,248,.3); background:linear-gradient(180deg,rgba(56,189,248,.07),var(--card) 70%); border-radius:13px; padding:9px 10px; margin-bottom:7px}
+.ord.hit{border-color:rgba(245,158,11,.62); background:linear-gradient(180deg,rgba(245,158,11,.13),var(--card) 70%)}
+.ord-h{display:flex; align-items:center; gap:5px; flex-wrap:wrap}
+.ord-code{font-size:12px; font-weight:800; letter-spacing:-.2px}
+.ord-side{font-size:9px; font-weight:800; padding:1px 5px; border-radius:5px; white-space:nowrap}
+.ord-side.long{color:#a7f3c4; background:rgba(34,197,94,.14); border:1px solid rgba(34,197,94,.3)}
+.ord-side.short{color:#ffb3c0; background:rgba(244,63,94,.13); border:1px solid rgba(244,63,94,.3)}
+.ord-kind{font-size:8.5px; font-weight:800; padding:1px 5px; border-radius:5px; color:#c4b5fd; background:rgba(192,132,252,.12); border:1px solid rgba(192,132,252,.3); white-space:nowrap}
+.ord-st{margin-left:auto; font-size:9px; font-weight:800; padding:1px 6px; border-radius:5px; color:#bae6fd; background:rgba(56,189,248,.14); border:1px solid rgba(56,189,248,.32); white-space:nowrap}
+.ord.hit .ord-st{color:#ffe1a6; background:rgba(245,158,11,.16); border-color:rgba(245,158,11,.42)}
+.ord-px{display:flex; align-items:baseline; gap:6px; margin-top:5px; flex-wrap:wrap}
+.ord-px b{font-size:15px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.4px}
+.ord-px span{font-size:9px; color:var(--dim2); font-variant-numeric:tabular-nums}
+.ord-g{display:grid; grid-template-columns:1fr 1fr; gap:4px 7px; margin-top:6px; font-size:9px; color:var(--dim2); font-variant-numeric:tabular-nums; line-height:1.45}
+.ord-g b{color:#cfdcec; font-weight:800}
+.ord-g .od-d{color:#9fb6d8}
+.ord-g .od-d.near{color:#ffd79a; font-weight:800}
+.ord-acts{display:flex; gap:6px; margin-top:8px}
+.ord-acts button{flex:1; font-family:inherit; font-size:10px; font-weight:800; padding:6px 4px; border-radius:8px; cursor:pointer; border:1px solid var(--line2); background:transparent; color:var(--dim)}
+.ord-acts .fill{color:#a7f3c4; border-color:rgba(34,197,94,.45); background:rgba(34,197,94,.1)}
+.ord-acts .cancel{color:#ffb3c0; border-color:rgba(244,63,94,.38)}
+.ord-note{margin:2px 2px 0; font-size:9px; line-height:1.5; color:var(--dim2); word-break:keep-all}
 
 /* ---------- 페이지 전환 · 파동 해설 · 매매기록 · 시트 ---------- */
 .pgbar{display:flex; gap:6px; margin:10px 0 2px}
@@ -1326,6 +1390,28 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
         <span class="sub" id="statusSub"></span>
       </div>
       <ul class="warns" id="warnList"></ul>
+      <div class="wd-box" id="wdBox">
+        <button class="wd-head" id="wdToggle" type="button" aria-expanded="false" aria-controls="wdBody">
+          <span>➕ 물타기 (추가 진입)</span>
+          <span class="wd-sum" id="wdSum">꺼짐</span>
+          <span class="wd-caret">▼</span>
+        </button>
+        <div class="wd-body" id="wdBody" hidden>
+          <div class="wd-note" id="wdNote">1차 진입은 위 계산기 값(<b id="wdBase">—</b>)을 쓰고, 여기에는 <b>추가로 걸 지정가와 증거금</b>만 넣습니다. 평단·손익비가 바로 다시 계산됩니다.</div>
+          <div id="wdRows"></div>
+          <div class="wd-rowh">합산 결과<button type="button" id="wdClear">입력 지우기</button></div>
+          <div class="wd-out">
+            <div class="wd-cell"><label>합산 평단가</label><b class="vio" id="wdAvg">—</b></div>
+            <div class="wd-cell"><label>총 증거금 / 포지션(USDT)</label><b id="wdSize">—</b></div>
+            <div class="wd-cell"><label>물타기 반영 손익비 (1차 / 2차)</label><b id="wdRR">—</b></div>
+            <div class="wd-cell"><label>손절 시 손실 (ROE)</label><b class="down" id="wdLoss">—</b></div>
+            <div class="wd-cell"><label>1차 익절 수익 (ROE)</label><b class="up" id="wdT1">—</b></div>
+            <div class="wd-cell"><label>2차 익절 수익 (ROE)</label><b class="up" id="wdT2">—</b></div>
+          </div>
+          <div class="wd-msg" id="wdMsg"></div>
+          <button class="btn ghost wd-res" id="wdReserve" type="button">⏳ 이 물타기 단들을 예약주문으로 등록</button>
+        </div>
+      </div>
       <div style="display:flex; gap:7px; margin-top:10px">
         <button class="btn primary" id="savePlanBtn" style="flex:1">이 타점 저장</button>
         <button class="btn ghost" id="resetPlanBtn">초기화</button>
@@ -1333,6 +1419,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
       <div style="font-size:10px; color:var(--dim2); margin-top:8px" id="planSaved">가설 1 · 저장된 값</div>
       <div class="pos-sep"><span>🎯 진입 기록 · 실시간 대응</span></div>
       <div class="pos-wrap" id="posBox"></div>
+      <div class="ord-mini" id="orderMini" hidden></div>
     </div>
   </section>
 
@@ -1379,6 +1466,7 @@ section{scroll-margin-top:calc(var(--hdrH) + 20px)}
     <section id="journalSec">
       <div class="sec-title"><h2><i></i>📒 매매기록</h2><span class="sec-right"><button class="sync-pill sm idle" id="syncPillJournal" type="button"><i></i><span>구글 시트 연결 대기</span></button><span class="hint" id="jHint">이 기기에 저장</span></span></div>
       <div class="ass-card" id="jAsset"></div>
+      <div class="ord-card" id="jOrders" hidden></div>
       <div class="card jstat-card" id="jStats"></div>
       <div class="jfilter">
         <div class="jtabs jperiod" id="jPeriod" role="group" aria-label="기간 보기"></div>
@@ -2956,6 +3044,11 @@ function entryTiming(a, c1h){
 /* ------------------------- render: live / chips / legend ------------------------- */
 function selectSymbol(id){
   if (!id || id === state.sym) return;
+  /* 종목을 갈아탈 때 — 입력 중이던 계산기·물타기 값을 지금 종목에 먼저 저장한 뒤
+     새 종목의 저장값(없으면 가설 기본값)으로 폼을 다시 채웁니다. */
+  flushPlanForm();
+  if (wdSaveTimer){ clearTimeout(wdSaveTimer); wdSaveTimer = null; }
+  wdSave();
   cacheStateData();                 /* 전환 전 종목 데이터를 캐시에 남겨 버튼 색이 끊기지 않게 */
   state.sym = id;
   state.activeSlot = 'h1';
@@ -2965,6 +3058,11 @@ function selectSymbol(id){
   state.candles = [];
   state.ticker = null;
   state.hover = null;
+  wdLoad(id);
+  fillPlanForm(planFor('h1'));
+  wdRenderRows();
+  renderPlanner();
+  updatePlanLabel();
   renderChips();
   renderPbarSyms();
   renderPbarLive();
@@ -3064,10 +3162,18 @@ function closeCustomSymbol(){
   state.customSym = null;
   renderSymNow();
   if (state.sym === id){
+    flushPlanForm();
+    if (wdSaveTimer){ clearTimeout(wdSaveTimer); wdSaveTimer = null; }
+    wdSave();
     state.ana = null; state.ticker = null; state.candles = [];
     state.mtf = { '1Dutc':[], '4H':[], '1H':[] };
     state.sym = SYMBOLS[0].id;
     state.activeSlot = 'h1';
+    wdLoad(state.sym);
+    fillPlanForm(planFor('h1'));
+    wdRenderRows();
+    renderPlanner();
+    updatePlanLabel();
     renderChips(true); renderPbarSyms(true);
     loadAll();
   }
@@ -3218,6 +3324,7 @@ function applySymStatus(){
   /* 3/3 타점 도달·해제로 탭 순서가 달라졌으면 즉시 다시 그림 (선택 종목 state.sym은 그대로) */
   if (orderKeyOf(getOrderedSymbols()) !== tabOrderKey){ renderChips(true); renderPbarSyms(true); }
   checkAlerts();
+  checkOrderHits();      /* 예약주문 지정가 도달 표시·알림 */
 }
 function paintSymStatus(){
   const map = state.statusMap || {};
@@ -3334,6 +3441,7 @@ function updateChartHint(){
   const on = [];
   if (state.showMonowave) on.push('청록 = 모노웨이브');
   if (state.showLines) on.push('점선 = 가설선');
+  if (state.showLines && extraChartLevels().length) on.push('보라 = 평단 · 금 = 물타기 · 하늘 = 예약');
   if (state.fibOn) on.push('보라·금 점선 = 피보나치');
   el.textContent = on.length ? on.join(' · ') : '보조선 숨김';
 }
@@ -5276,6 +5384,7 @@ function renderPlanner(force){
   $('#levVal').textContent = p.lev + '배';
   $('#levVal').style.color = p.lev > 10 ? 'var(--warn)' : '';
   state.lastCalc = c;
+  wdPaint(p);          /* 물타기 합산 평단·손익비도 같은 입력값으로 다시 계산 */
   renderPosition();   /* 계산기 숫자가 바뀌면 진입 기록 버튼 문구도 같이 갱신 */
 }
 let saveTimer = null;
@@ -5288,12 +5397,23 @@ function sanitizePlan(p){
 function savePlanDebounced(){
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
+    saveTimer = null;
     const p = sanitizePlan(readPlanForm());
     putPlan(state.activeSlot || 'custom', p);
     const nm = hypOf(state.activeSlot) ? hypOf(state.activeSlot).title : '내 타점';
     $('#planSaved').textContent = nm + ' · 저장됨 ' + kst(Date.now());
     refreshPlanViews();
   }, 400);
+}
+/* 디바운스를 기다리지 않고 지금 폼 값을 현재 종목에 저장 — 종목 전환·페이지 이동 직전에 */
+function flushPlanForm(){
+  if (saveTimer){ clearTimeout(saveTimer); saveTimer = null; }
+  const f = $('#fEntry');
+  if (!f) return;
+  const p = sanitizePlan(readPlanForm());
+  if (isNum(p.entry) || isNum(p.stop) || isNum(p.t1) || isNum(p.t2) || (isNum(p.margin) && p.margin > 0)){
+    putPlan(state.activeSlot || 'custom', p);
+  }
 }
 function bindPlanner(){
   ['#fEntry', '#fStop', '#fT1', '#fT2', '#fMargin'].forEach(id => {
@@ -5655,6 +5775,13 @@ function drawChart(){
     if (l.p < min) min = l.p;
     if (l.p > max) max = l.p;
   });
+  /* 물타기 단·합산 평단·예약주문 지정가도 세로 범위에 넣습니다(멀리 있는 값은 그리지 않음) */
+  const extraLv = state.showLines ? extraChartLevels() : [];
+  extraLv.forEach(l => {
+    if (!isNum(l.p)) return;
+    if (l.p < min) min = l.p;
+    if (l.p > max) max = l.p;
+  });
   const padY = (max - min) * 0.10 || max * 0.002;
   min -= padY; max += padY;
   const Y = p => yP + (max - p) / (max - min) * hPrice;
@@ -5920,6 +6047,27 @@ function drawChart(){
     });
   }
 
+  /* 물타기·예약주문 선 — 오른쪽 안쪽에 짧은 이름표 */
+  if (state.showLines && extraLv.length){
+    extraLv.forEach(l => {
+      const y = Y(l.p);
+      if (y < yP + 2 || y > yP + hPrice - 2) return;
+      ctx.strokeStyle = l.col;
+      ctx.globalAlpha = .88;
+      ctx.setLineDash(l.dash || [3, 3]);
+      ctx.lineWidth = l.w || 1;
+      ctx.beginPath(); ctx.moveTo(padL, y + .5); ctx.lineTo(padL + areaW, y + .5); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+      const lab = l.tag + ' ' + fmtN(l.p, d);
+      ctx.font = 'bold 8px ui-monospace, SFMono-Regular, Menlo, monospace';
+      const tw = ctx.measureText(lab).width;
+      ctx.fillStyle = 'rgba(9,14,22,.90)';
+      roundRect(ctx, padL + areaW - tw - 9, y - 5.5, tw + 7, 11, 3); ctx.fill();
+      ctx.fillStyle = l.col; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(lab, padL + areaW - 6, y);
+    });
+  }
+
   /* 가설 예상 경로 — 오른쪽 미래 칸으로 이어지는 점선 */
   if (proj && state.showLines){
     const lastC = cs[end-1].c;
@@ -6094,13 +6242,19 @@ function renderPosition(){
     const mgTxt = plan && isNum(plan.margin) && plan.margin > 0 ? ' · 증거금 ' + (Math.round(plan.margin * 100) / 100) + ' USDT' : '';
     box.innerHTML =
       '<div class="pos-open">' +
-        '<button class="btn primary pos-btn" id="posOpenBtn" type="button">🎯 이 타점 진입 기록</button>' +
+        '<div class="pos-btns">' +
+          '<button class="btn primary pos-btn" id="posOpenBtn" type="button">🎯 이 타점 진입 기록</button>' +
+          '<button class="btn ghost pos-btn ord" id="posOrderBtn" type="button">⏳ 예약주문 등록</button>' +
+        '</div>' +
         '<div class="pos-hint">' + (plan && isNum(plan.entry) && plan.entry > 0
           ? kk + ' · 계산기 값 그대로 — ' + sideTxt + ' ' + fmtPx(plan.entry) + ' · 손절 ' + fmtPx(plan.stop) + ' · 1차 ' + fmtPx(plan.t1) + ' · ' + plan.lev + '배' + mgTxt
           : '위 계산기에 진입가를 넣으면 그 값 그대로 기록됩니다') + '</div>' +
       '</div>';
     const b = $('#posOpenBtn');
     if (b) b.addEventListener('click', openEntrySheet);
+    const ob = $('#posOrderBtn');
+    if (ob) ob.addEventListener('click', () => openOrderSheet('entry'));
+    renderOrderMini();
     return;
   }
 
@@ -6155,6 +6309,7 @@ function renderPosition(){
       '<div class="pos-acts">' +
         '<button class="btn ' + (p.half ? 'done' : 'ghost') + '" id="posHalfBtn" type="button">' +
           (p.half ? '✓ 1차 익절·본절 이동 완료' : '1차 익절 · 본절 이동') + '</button>' +
+        '<button class="btn ghost" id="posAddBtn" type="button">⏳ 물타기 예약</button>' +
       '</div>' +
     '</div>';
 
@@ -6162,6 +6317,542 @@ function renderPosition(){
   if (eb) eb.addEventListener('click', () => openExitSheet(state.sym));
   const hb = $('#posHalfBtn');
   if (hb) hb.addEventListener('click', toggleHalf);
+  const ab = $('#posAddBtn');
+  if (ab) ab.addEventListener('click', () => { wdOpen(); toast('물타기 예약', '추가 진입 지정가·증거금을 넣고 아래 ⏳ 버튼을 누르면 예약주문으로 등록됩니다.'); });
+  renderOrderMini();
+}
+
+/* ========================= 물타기(추가 진입) 계산 =========================
+   · 1차 진입 = 위 계산기의 진입가·증거금·레버리지, 추가 진입 = 이 상자의 지정가·증거금
+   · 포지션 규모(USDT) = 증거금 × 레버리지 · 수량 = 규모 ÷ 가격
+   · 합산 평단가 = Σ규모 ÷ Σ수량 → 손익비·손익을 평단 기준으로 다시 계산합니다
+   · 입력값은 종목별로 이 기기에 저장(localStorage 'maeyo.waterdown.v1')하고,
+     다른 종목으로 갈아타면 그 종목의 값(없으면 빈칸)으로 새로 열립니다. */
+const WD_KEY = 'maeyo.waterdown.v1';
+const WD_MAX = 3;
+const wd = { open:false, sym:'', rows:[{ price:'', margin:'' }] };
+function wdNum(v){ const n = parseFloat(v); return isNum(n) && n > 0 ? n : ''; }
+function wdLoad(sym){
+  let all = {};
+  try { all = store(WD_KEY) || {}; } catch (e) { all = {}; }
+  const arr = Array.isArray(all[sym]) ? all[sym] : [];
+  wd.sym = sym;
+  wd.rows = arr.slice(0, WD_MAX).map(r => ({ price: wdNum(r && r.price), margin: wdNum(r && r.margin) }));
+  if (!wd.rows.length) wd.rows = [{ price:'', margin:'' }];
+}
+function wdSave(symArg){
+  const sym = symArg || wd.sym || state.sym;
+  let all = {};
+  try { all = store(WD_KEY) || {}; } catch (e) { all = {}; }
+  const rows = (wd.rows || []).map(r => ({ price: wdNum(r.price), margin: wdNum(r.margin) }))
+    .filter(r => r.price !== '' || r.margin !== '');
+  if (rows.length) all[sym] = rows; else delete all[sym];
+  store(WD_KEY, all);
+}
+let wdSaveTimer = null;
+function wdSaveDebounced(){
+  if (wdSaveTimer) clearTimeout(wdSaveTimer);
+  const sym = wd.sym || state.sym;
+  wdSaveTimer = setTimeout(() => { wdSaveTimer = null; wdSave(sym); }, 400);
+}
+/* 합산 계산 — 추가 단이 하나도 없으면 ok:false */
+function wdCalc(pArg){
+  const p = pArg || calcEntryPlan();
+  const lev = clamp(parseInt(p && p.lev, 10) || 5, 1, 50);
+  const long = p && p.side === 'long';
+  const rows = (wd.rows || []).map(r => ({ price: wdNum(r.price), margin: wdNum(r.margin) }));
+  const adds = rows.map((r, i) => ({ price:r.price, margin:r.margin, n:i + 1 }))
+    .filter(r => r.price !== '' && r.margin !== '');
+  const out = { ok:false, long, lev, adds, legs:[], assumed:false };
+  if (!adds.length) return out;
+  let baseMg = isNum(p.margin) && p.margin > 0 ? p.margin : NaN;
+  let assumed = false;
+  if (!isNum(baseMg)){
+    const rm = riskMarginFor(p);
+    baseMg = isNum(rm.margin) && rm.margin > 0 ? rm.margin : defaultMargin();
+    assumed = true;
+  }
+  const legs = [];
+  if (isNum(p.entry) && p.entry > 0) legs.push({ price:p.entry, margin:baseMg, base:true, n:0 });
+  adds.forEach(a => legs.push({ price:a.price, margin:a.margin, base:false, n:a.n }));
+  if (!legs.some(l => l.base)) return out;          /* 1차 진입가가 없으면 평단을 못 냅니다 */
+  let sizeSum = 0, qtySum = 0, mgSum = 0;
+  legs.forEach(l => { const s = l.margin * lev; sizeSum += s; qtySum += s / l.price; mgSum += l.margin; });
+  if (!(qtySum > 0) || !(mgSum > 0)) return out;
+  const avg = sizeSum / qtySum;
+  const pnlAt = P => isNum(P) ? (long ? qtySum * (P - avg) : qtySum * (avg - P)) : NaN;
+  const risk = isNum(p.stop) ? (long ? avg - p.stop : p.stop - avg) : NaN;
+  const rew1 = isNum(p.t1) ? (long ? p.t1 - avg : avg - p.t1) : NaN;
+  const rew2 = isNum(p.t2) ? (long ? p.t2 - avg : avg - p.t2) : NaN;
+  const okRisk = isNum(risk) && risk > 0;
+  out.ok = true; out.legs = legs; out.assumed = assumed;
+  out.avg = avg; out.margin = mgSum; out.size = sizeSum; out.qty = qtySum;
+  out.risk = risk; out.riskPct = avg > 0 ? risk / avg * 100 : NaN;
+  out.r1 = okRisk ? rew1 / risk : NaN;
+  out.r2 = okRisk ? rew2 / risk : NaN;
+  out.loss = pnlAt(p.stop); out.p1 = pnlAt(p.t1); out.p2 = pnlAt(p.t2);
+  out.lossRoe = isNum(out.loss) ? out.loss / mgSum * 100 : NaN;
+  out.p1Roe = isNum(out.p1) ? out.p1 / mgSum * 100 : NaN;
+  out.p2Roe = isNum(out.p2) ? out.p2 / mgSum * 100 : NaN;
+  /* 1차 단독 손익비 — 물타기로 좋아졌는지 나빠졌는지 비교용 */
+  const b = legs.find(l => l.base);
+  const bRisk = isNum(p.stop) ? (long ? b.price - p.stop : p.stop - b.price) : NaN;
+  out.baseR1 = bRisk > 0 && isNum(p.t1) ? (long ? p.t1 - b.price : b.price - p.t1) / bRisk : NaN;
+  out.baseR2 = bRisk > 0 && isNum(p.t2) ? (long ? p.t2 - b.price : b.price - p.t2) / bRisk : NaN;
+  out.baseEntry = b.price;
+  return out;
+}
+function wdRRCls(v){ return !isNum(v) ? '' : v >= 3 ? 'up' : v >= 1 ? '' : 'down'; }
+/* 결과 칸만 갱신 — 입력 중인 칸(input)은 다시 그리지 않습니다 */
+function wdPaint(pArg){
+  const p = pArg || calcEntryPlan();
+  const box = $('#wdBox');
+  if (!box) return;
+  box.classList.toggle('on', !!wd.open);
+  const body = $('#wdBody');
+  if (body) body.hidden = !wd.open;
+  const tog = $('#wdToggle');
+  if (tog) tog.setAttribute('aria-expanded', wd.open ? 'true' : 'false');
+  const base = $('#wdBase');
+  if (base) base.textContent = isNum(p.entry) && p.entry > 0
+    ? (p.side === 'long' ? '롱' : '숏') + ' ' + fmtPx(p.entry) + (isNum(p.margin) && p.margin > 0 ? ' · 증거금 ' + Math.round(p.margin) + ' USDT' : '') + ' · ' + (parseInt(p.lev, 10) || 5) + '배'
+    : '진입가 미입력';
+  const c = wdCalc(p);
+  state.wdCalc = c;
+  const sum = $('#wdSum');
+  const set = (id, txt, cls) => { const el = $(id); if (!el) return; el.textContent = txt; el.className = cls || ''; };
+  const fpx = v => isNum(v) ? fmtN(v, dp()) : '—';
+  if (!c.ok){
+    if (sum) sum.textContent = '추가 단 없음';
+    set('#wdAvg', '—', 'vio'); set('#wdSize', '—'); set('#wdRR', '—');
+    set('#wdLoss', '—', 'down'); set('#wdT1', '—', 'up'); set('#wdT2', '—', 'up');
+    const m0 = $('#wdMsg');
+    if (m0) m0.textContent = '';
+    const rb = $('#wdReserve');
+    if (rb){ rb.disabled = false; rb.textContent = '⏳ 이 물타기 단들을 예약주문으로 등록'; }
+    return;
+  }
+  const u = v => isNum(v) ? ((v > 0 ? '+' : '') + v.toFixed(2) + ' U') : '—';
+  const pc = v => isNum(v) ? ' (' + (v > 0 ? '+' : '') + v.toFixed(1) + '%)' : '';
+  if (sum) sum.textContent = '평단 ' + fpx(c.avg) + ' · ' + c.adds.length + '단';
+  set('#wdAvg', fpx(c.avg), 'vio');
+  set('#wdSize', Math.round(c.margin) + ' / ' + Math.round(c.size).toLocaleString('en-US') + ' U');
+  set('#wdRR', (isNum(c.r1) ? c.r1.toFixed(2) : '—') + ' : 1 / ' + (isNum(c.r2) ? c.r2.toFixed(2) : '—') + ' : 1', wdRRCls(Math.min(isNum(c.r1) ? c.r1 : 0, isNum(c.r2) ? c.r2 : 0)));
+  set('#wdLoss', u(c.loss) + pc(c.lossRoe), 'down');
+  set('#wdT1', u(c.p1) + pc(c.p1Roe), 'up');
+  set('#wdT2', u(c.p2) + pc(c.p2Roe), 'up');
+  const msg = [];
+  if (c.assumed) msg.push('1차 증거금이 비어 있어 자산 기준 증거금 <b>' + Math.round(c.margin - c.adds.reduce((a, r) => a + r.margin, 0)) + ' USDT</b>로 계산했습니다.');
+  if (!(isNum(c.risk) && c.risk > 0)) msg.push('손절가가 평단의 ' + (c.long ? '아래' : '위') + '에 있어야 손익비가 계산됩니다 — 방향을 확인하세요.');
+  c.adds.forEach(a => {
+    const beyond = isNum(p.stop) ? (c.long ? a.price <= p.stop : a.price >= p.stop) : false;
+    if (beyond) msg.push(a.n + '차 지정가 ' + fmtPx(a.price) + '는 손절선 ' + fmtPx(p.stop) + ' 너머입니다 — 그 가격에 체결되면 이미 손실 구간입니다.');
+    const near = isNum(p.t1) ? (c.long ? a.price >= p.t1 : a.price <= p.t1) : false;
+    if (near) msg.push(a.n + '차 지정가 ' + fmtPx(a.price) + '는 1차 목표 ' + fmtPx(p.t1) + '를 지나쳤습니다 — 목표를 다시 잡으세요.');
+  });
+  if (isNum(c.baseR1) && isNum(c.r1) && c.r1 + 0.005 < c.baseR1) msg.push('물타기 후 1차 손익비 ' + c.r1.toFixed(2) + ':1 — 1차 단독(' + c.baseR1.toFixed(2) + ':1)보다 낮아졌습니다. 평단이 목표에 가까워진 만큼 목표를 늘리거나 추가를 줄이세요.');
+  const mEl = $('#wdMsg');
+  if (mEl) mEl.innerHTML = msg.map(t => '· ' + t).join('<br>');
+  const rb = $('#wdReserve');
+  if (rb){ rb.disabled = false; rb.textContent = '⏳ 물타기 ' + c.adds.length + '단을 예약주문으로 등록'; }
+}
+/* 입력 줄 — 단 수가 바뀔 때만 다시 그립니다 */
+function wdRenderRows(pArg){
+  const box = $('#wdRows');
+  if (!box) return;
+  const p = pArg || calcEntryPlan();
+  const n = Math.max(1, Math.min(WD_MAX, (wd.rows || []).length));
+  let h = '';
+  for (let i = 0; i < n; i++){
+    const r = wd.rows[i] || { price:'', margin:'' };
+    h += '<div class="wd-row">' +
+      '<div class="wd-f"><label>' + (i + 1) + '차 추가 지정가</label>' +
+        '<input type="number" inputmode="decimal" step="any" min="0" data-wdi="' + i + '" data-wdk="price" value="' + (r.price === '' ? '' : r.price) + '" placeholder="' + (isNum(p.entry) ? fmtPx(p.entry) : '가격') + '"></div>' +
+      '<div class="wd-f"><label>' + (i + 1) + '차 추가 증거금 (USDT)</label>' +
+        '<input type="number" inputmode="decimal" step="any" min="0" data-wdi="' + i + '" data-wdk="margin" value="' + (r.margin === '' ? '' : r.margin) + '" placeholder="0">' +
+        '<div class="wd-pct">' +
+          '<button type="button" data-wdpct="50" data-wdi="' + i + '">50%</button>' +
+          '<button type="button" data-wdpct="100" data-wdi="' + i + '">100%</button>' +
+          '<button type="button" data-wdpct="200" data-wdi="' + i + '">200%</button>' +
+        '</div></div>' +
+    '</div>';
+  }
+  if (n < WD_MAX) h += '<button class="wd-res" id="wdAddBtn" type="button" style="margin-top:7px">+ 추가 진입 한 단 더 (' + n + '/' + WD_MAX + ')</button>';
+  box.innerHTML = h;
+}
+function wdOpen(){
+  wd.open = true;
+  wdRenderRows();
+  wdPaint();
+  const sec = $('#wdBox');
+  if (sec) sec.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+function wdInitForm(){
+  wdLoad(state.sym);
+  wd.open = false;
+  wdRenderRows();
+  wdPaint();
+}
+function bindWd(){
+  const box = $('#wdBox');
+  if (!box || box.dataset.bound === '1') return;
+  box.dataset.bound = '1';
+  const tog = $('#wdToggle');
+  if (tog) tog.addEventListener('click', () => {
+    wd.open = !wd.open;
+    if (wd.open) wdRenderRows();
+    wdPaint();
+  });
+  box.addEventListener('input', ev => {
+    const inp = ev.target.closest('input[data-wdi]');
+    if (!inp) return;
+    const i = parseInt(inp.dataset.wdi, 10), k = inp.dataset.wdk;
+    if (!(i >= 0) || (k !== 'price' && k !== 'margin') || !wd.rows[i]) return;
+    wd.rows[i][k] = wdNum(inp.value);
+    wdPaint();
+    wdSaveDebounced();
+    drawChart();
+  });
+  box.addEventListener('click', ev => {
+    const b = ev.target.closest('button');
+    if (!b) return;
+    if (b.hasAttribute('data-wdpct')){
+      const i = parseInt(b.dataset.wdi, 10), pct = +b.dataset.wdpct;
+      const p = calcEntryPlan();
+      const baseMg = isNum(p.margin) && p.margin > 0 ? p.margin : (isNum(riskMarginFor(p).margin) ? riskMarginFor(p).margin : defaultMargin());
+      if (!isNum(baseMg) || baseMg <= 0){ toast('증거금 기준 없음', '위 계산기에 증거금을 넣은 뒤 % 버튼을 쓰세요.'); return; }
+      const mg = Math.round(baseMg * pct / 100 * 100) / 100;
+      wd.rows[i] = wd.rows[i] || { price:'', margin:'' };
+      wd.rows[i].margin = mg;
+      wdRenderRows(); wdPaint(); wdSaveDebounced(); drawChart();
+      return;
+    }
+    if (b.id === 'wdAddBtn'){
+      if (wd.rows.length >= WD_MAX) return;
+      wd.rows.push({ price:'', margin:'' });
+      wdRenderRows(); wdPaint();
+      const last = box.querySelector('input[data-wdi="' + (wd.rows.length - 1) + '"]');
+      if (last && last.focus) last.focus({ preventScroll:true });
+      return;
+    }
+    if (b.id === 'wdClear'){
+      wd.rows = [{ price:'', margin:'' }];
+      wdRenderRows(); wdPaint(); wdSaveDebounced(); drawChart();
+      toast('물타기 입력 지우기', '추가 단을 모두 비웠습니다 — 1차 진입 값은 그대로입니다.');
+      return;
+    }
+    if (b.id === 'wdReserve'){ reserveWdOrders(); return; }
+  });
+}
+
+/* ========================= 예약주문 (지정가 대기) =========================
+   · 이 앱은 거래소에 주문을 내지 않습니다. 적어 둔 지정가를 현재가와 비교해
+     🎯 지정가 도달 표시 · 체결(진행 중 매매기록으로 전환) · 취소만 이 기기에서 관리합니다.
+   · 저장: localStorage 'maeyo.orders.v1' — 구글 시트 매매기록(_JournalJSON)과 섞지 않습니다. */
+const ORDERS_KEY = 'maeyo.orders.v1';
+let orderLog = [];
+function orderSideKr(o){ return o.side === 'long' ? '롱' : '숏'; }
+function orderTypeKr(o){ return o.side === 'long' ? 'Limit Buy · 롱' : 'Limit Sell · 숏'; }
+function orderNum(v){ const n = parseFloat(v); return isNum(n) ? n : NaN; }
+function loadOrders(){
+  let v = null;
+  try { v = store(ORDERS_KEY); } catch (e) { v = null; }
+  const now = Date.now();
+  orderLog = (Array.isArray(v) ? v : []).filter(o => o && o.id && o.sym && o.status === 'pending' && !o.filledAt).map(o => ({
+    id: String(o.id), sym: o.sym, code: o.code || symOf(o.sym).code,
+    side: o.side === 'long' ? 'long' : 'short', kind: o.kind === 'add' ? 'add' : 'entry',
+    price: orderNum(o.price), margin: orderNum(o.margin), lev: clamp(parseInt(o.lev, 10) || 5, 1, 50),
+    stop: orderNum(o.stop), t1: orderNum(o.t1), t2: orderNum(o.t2),
+    feeMode: feeModeOf(o.feeMode), at: isNum(o.at) ? o.at : now,
+    note: String(o.note || '').slice(0, 80),
+    baseEntry: orderNum(o.baseEntry), hitAt: isNum(o.hitAt) ? o.hitAt : 0,
+    status: 'pending'
+  })).filter(o => isNum(o.price) && o.price > 0 && isNum(o.margin) && o.margin > 0);
+  saveOrdersRaw();
+}
+function saveOrdersRaw(){ try { store(ORDERS_KEY, orderLog); } catch (e) {} }
+function saveOrders(){
+  saveOrdersRaw();
+  renderOrderMini();
+  renderOrders();
+}
+function pendingOrders(sym){ return (orderLog || []).filter(o => o.status === 'pending' && (!sym || o.sym === sym)); }
+/* 지정가 도달 판정 — 매수(롱) 대기는 현재가가 지정가 이하로, 매도(숏) 대기는 지정가 이상으로 */
+function orderReached(o, cur){
+  if (!o || !isNum(cur)) return false;
+  return o.side === 'long' ? cur <= o.price : cur >= o.price;
+}
+function orderGap(o, cur){
+  if (!o || !isNum(cur) || !(cur > 0)) return NaN;
+  return (o.price - cur) / cur * 100;
+}
+function orderIdNew(){ return 'od' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
+function ordRound(v, sym){ const k = Math.pow(10, symOf(sym).dp); return Math.round(v * k) / k; }
+function ordUsd(v){
+  if (!isNum(v)) return '—';
+  const n = Math.round(v * 100) / 100;
+  const p = Math.abs(n).toFixed(2).split('.');
+  return (n < 0 ? '-' : '') + p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '.' + p[1];
+}
+function addOrder(o){
+  orderLog.push(o);
+  saveOrders();
+  return o;
+}
+/* 계산기 값(또는 물타기 단)을 예약주문으로 등록하는 시트 */
+function openOrderSheet(kindArg){
+  if (kindArg === 'add'){ wdOpen(); return; }
+  const plan = calcEntryPlan();
+  if (!plan || !isNum(plan.entry) || plan.entry <= 0){
+    toast('지정가가 없습니다', '계산기에 진입가를 넣거나 가설값을 불러온 뒤 예약주문을 등록하세요.');
+    return;
+  }
+  const lev = plan.lev;
+  const sideKr = plan.side === 'long' ? '롱' : '숏';
+  const mgDef = isNum(plan.margin) && plan.margin > 0 ? Math.round(plan.margin * 100) / 100 : defaultMargin();
+  openSheet(
+    '<div class="sh-grip"></div>' +
+    '<div class="sh-t">⏳ ' + symOf(state.sym).code + ' ' + sideKr + ' 지정가 예약주문</div>' +
+    '<div class="sh-sub">지정가에 닿으면 <b>🎯 지정가 도달</b>로 알려주고, <b>✅ 체결</b>을 누르면 그 가격으로 <b>진행 중</b> 매매기록이 됩니다. 거래소에 실제 주문은 나가지 않습니다.</div>' +
+    '<div class="sh-list">' +
+      '<div class="sh-row"><span class="sh-k">방향</span><span class="sh-v"><b>' + orderTypeKr({ side: plan.side }) + '</b> · ' + lev + '배</span></div>' +
+      '<div class="sh-row"><span class="sh-k">TP / SL</span><span class="sh-v">1차 <b>' + fmtPx(plan.t1) + '</b> · 2차 <b>' + fmtPx(plan.t2) + '</b> · SL <b>' + fmtPx(plan.stop) + '</b></span></div>' +
+    '</div>' +
+    '<label class="sh-lbl" for="shLimit">지정가 (계산기 진입가 — 그 자리에 걸어 둘 가격)</label>' +
+    '<input class="sh-inp" id="shLimit" type="number" inputmode="decimal" step="any" min="0" value="' + plan.entry + '">' +
+    '<label class="sh-lbl" for="shOMargin">증거금 (USDT)</label>' +
+    '<input class="sh-inp" id="shOMargin" type="number" inputmode="decimal" step="any" min="0" value="' + mgDef + '">' +
+    '<div id="shOPrev" style="font-size:10px;line-height:1.5;color:var(--dim2);margin:-2px 0 8px"></div>' +
+    '<label class="sh-lbl" for="shONote">메모 (선택)</label>' +
+    '<input class="sh-inp" id="shONote" maxlength="80" placeholder="예: 4H 저항 지정가 대기">' +
+    '<div class="sh-acts"><button class="btn ghost" id="shCancel" type="button">취소</button><button class="btn primary" id="shOk" type="button">⏳ 예약주문 등록</button></div>'
+  );
+  const prev = () => {
+    const el = $('#shOPrev');
+    if (!el) return;
+    const px = parseFloat(($('#shLimit') || {}).value), mg = parseFloat(($('#shOMargin') || {}).value);
+    el.innerHTML = isNum(px) && px > 0 && isNum(mg) && mg > 0
+      ? '주문금액 <b>' + (Math.round(mg * lev * 100) / 100).toLocaleString('en-US') + ' USDT</b> = 증거금 ' + (Math.round(mg * 100) / 100) + ' × ' + lev + '배 · 손익비는 계산기 값을 그대로 씁니다.'
+      : '지정가와 증거금을 넣으면 주문금액을 계산합니다.';
+  };
+  ['#shLimit', '#shOMargin'].forEach(sel => { const el = $(sel); if (el) el.addEventListener('input', prev); });
+  prev();
+  $('#sheetBd').onclick = closeSheet;
+  $('#shCancel').addEventListener('click', closeSheet);
+  $('#shOk').addEventListener('click', () => {
+    const px = parseFloat(($('#shLimit') || {}).value);
+    const mg = parseFloat(($('#shOMargin') || {}).value);
+    if (!isNum(px) || px <= 0){ toast('지정가 확인', '0보다 큰 지정가를 넣어 주세요.'); return; }
+    if (!isNum(mg) || mg <= 0){ toast('증거금 확인', '0보다 큰 증거금을 넣어 주세요.'); return; }
+    const note = (((($('#shONote') || {}).value) || '')).trim().slice(0, 80);
+    const dup = pendingOrders(state.sym).some(x => x.side === (plan.side === 'long' ? 'long' : 'short') && x.kind === 'entry' && Math.abs(x.price - px) / Math.max(1e-9, px) < 0.00002);
+    if (dup){ toast('이미 같은 예약주문', fmtPx(px) + ' 지정가 ' + (plan.side === 'long' ? '롱' : '숏') + ' 예약주문이 이미 대기 중입니다.'); return; }
+    closeSheet();
+    addOrder({
+      id: orderIdNew(), sym: state.sym, code: symOf(state.sym).code,
+      side: plan.side === 'long' ? 'long' : 'short', kind: 'entry',
+      price: px, margin: Math.round(mg * 100) / 100, lev: lev,
+      stop: plan.stop, t1: plan.t1, t2: plan.t2, feeMode: 'maker',
+      at: Date.now(), note: note, status: 'pending', hitAt: 0
+    });
+    renderPosition();
+    toast('⏳ 예약주문 등록', symOf(state.sym).code + ' ' + orderTypeKr({ side: plan.side }) + ' ' + fmtPx(px) + ' · 증거금 ' + mg + ' U — 매매기록 탭 ⏳ 예약주문에서 체결·취소할 수 있습니다.');
+  });
+}
+/* 물타기 단들을 한 번에 예약주문으로 */
+function reserveWdOrders(){
+  const p = calcEntryPlan();
+  const c = wdCalc(p);
+  if (!c.ok || !c.adds.length){
+    toast('물타기 입력 없음', '물타기 상자에 지정가와 증거금을 먼저 넣어 주세요.');
+    return;
+  }
+  if (!isNum(p.stop) || (p.side === 'short' ? p.stop <= c.avg : p.stop >= c.avg)){
+    toast('손절선 확인', '손절가가 평단 ' + fmtPx(c.avg) + '의 ' + (p.side === 'short' ? '위' : '아래') + '에 있어야 합니다.');
+    return;
+  }
+  const list = c.adds.slice();
+  const dup = pendingOrders(state.sym).filter(o => o.kind === 'add' && (o.side === (p.side === 'long' ? 'long' : 'short')));
+  let n = 0;
+  list.forEach(a => {
+    if (dup.some(o => Math.abs(o.price - a.price) / Math.max(1e-9, a.price) < 0.00002)) return;
+    addOrder({
+      id: orderIdNew(), sym: state.sym, code: symOf(state.sym).code,
+      side: p.side === 'long' ? 'long' : 'short', kind: 'add',
+      price: a.price, margin: Math.round(a.margin * 100) / 100, lev: c.lev,
+      stop: p.stop, t1: p.t1, t2: p.t2, feeMode: 'maker',
+      at: Date.now(), note: '물타기 ' + a.n + '차 (1차 ' + fmtPx(c.baseEntry) + ')',
+      baseEntry: c.baseEntry, status: 'pending', hitAt: 0
+    });
+    n++;
+  });
+  if (!n){ toast('이미 등록됨', '같은 지정가의 물타기 예약주문이 이미 대기 중입니다 — 매매기록 탭에서 확인하세요.'); return; }
+  renderPosition();
+  renderOrders();
+  toast('⏳ 물타기 예약주문 ' + n + '건 등록', '평단 ' + fmtPx(c.avg) + ' 기준으로 다시 계산했습니다 — 매매기록 탭에서 도달·체결을 확인하세요.');
+}
+/* 예약주문 카드 */
+function ordCard(o){
+  const cur = livePriceOf(o.sym);
+  const reach = isNum(cur) && orderReached(o, cur);
+  const gap = isNum(cur) ? orderGap(o, cur) : NaN;
+  const dr = isNum(gap) ? Math.abs(gap) : NaN;
+  const size = o.margin * o.lev;
+  const near = isNum(dr) && dr <= 0.5;
+  return '<div class="ord' + (reach ? ' hit' : '') + '">' +
+    '<div class="ord-h">' +
+      '<span class="ord-code">' + escHtml(o.code) + '</span>' +
+      '<span class="ord-side ' + o.side + '">' + orderTypeKr(o) + '</span>' +
+      (o.kind === 'add' ? '<span class="ord-kind">물타기</span>' : '') +
+      '<span class="ord-st">' + (reach ? '🎯 지정가 도달' : '⏳ 대기') + '</span>' +
+    '</div>' +
+    '<div class="ord-px"><b>' + pxOf(o.price, o.sym) + '</b><span>지정가 · 주문금액 ' + ordUsd(size) + ' USDT · ' + kst(o.at, true) + ' 등록</span></div>' +
+    '<div class="ord-g">' +
+      '<div>증거금 <b>' + o.margin.toFixed(2) + ' U</b></div>' +
+      '<div>레버리지 <b>' + o.lev + '배</b></div>' +
+      '<div>TP 1차 / 2차 <b>' + (isNum(o.t1) ? pxOf(o.t1, o.sym) : '—') + ' / ' + (isNum(o.t2) ? pxOf(o.t2, o.sym) : '—') + '</b></div>' +
+      '<div>SL <b style="color:#ffb3c0">' + (isNum(o.stop) ? pxOf(o.stop, o.sym) : '—') + '</b></div>' +
+      '<div>현재가 <b>' + (isNum(cur) ? pxOf(cur, o.sym) : '확인 대기') + '</b></div>' +
+      '<div class="od-d' + (reach || near ? ' near' : '') + '">' + (reach ? '🎯 지정가 도달' : (isNum(dr) ? '지정가까지 ' + dr.toFixed(2) + '%' : '거리 계산 대기')) + '</div>' +
+    '</div>' +
+    (o.note ? '<div class="ord-note">메모 · ' + escHtml(o.note) + '</div>' : '') +
+    '<div class="ord-acts">' +
+      '<button class="fill" type="button" data-ofill="' + o.id + '">✅ 체결 (진행중으로 이동)</button>' +
+      '<button class="cancel" type="button" data-ocancel="' + o.id + '">❌ 주문 취소</button>' +
+    '</div></div>';
+}
+function renderOrders(){
+  const el = $('#jOrders');
+  if (!el) return;
+  const all = pendingOrders();
+  if (!all.length){ el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = '<div class="ord-card-h">⏳ 예약주문 대기<small>' + all.length + '건 · 지정가 도달 시 🎯</small></div>' +
+    all.slice().sort((a, b) => (b.at || 0) - (a.at || 0)).map(ordCard).join('') +
+    '<p class="ord-note">이 앱은 거래소에 주문을 내지 않습니다 — 적어 둔 지정가를 현재가와 비교해 <b>지정가 도달 표시·체결 기록·취소</b>만 이 기기에서 관리합니다(localStorage).</p>';
+}
+function renderOrderMini(){
+  const el = $('#orderMini');
+  if (!el) return;
+  const all = pendingOrders();
+  if (!all.length){ el.hidden = true; el.innerHTML = ''; return; }
+  const cur = all.filter(o => o.sym === state.sym);
+  const show = (cur.length ? cur : all).slice(0, 3);
+  el.hidden = false;
+  const dpOf = sym => symOf(sym).dp;
+  el.innerHTML = '<div class="ord-mini-h">⏳ 예약주문 대기 ' + all.length + '건' +
+      '<span class="ord-mini-n">' + (cur.length ? symOf(state.sym).code + ' ' + cur.length + '건' : '다른 종목') + '</span></div>' +
+    show.map(o => {
+      const c = livePriceOf(o.sym), reach = isNum(c) && orderReached(o, c);
+      const dr = isNum(c) ? Math.abs(orderGap(o, c)) : NaN;
+      return '<div class="ord-mini-i"><b>' + escHtml(o.code) + '</b> ' + orderTypeKr(o) + ' ' + fmtN(o.price, dpOf(o.sym)) +
+        ' · ' + o.lev + '배 · 증거금 ' + Math.round(o.margin) + ' U' +
+        (reach ? ' · <span class="od-hit">🎯 지정가 도달</span>' : isNum(dr) ? ' · ' + dr.toFixed(2) + '% 남음' : '') + '</div>';
+    }).join('') +
+    '<div class="ord-mini-i"><span class="od-go">매매기록 탭 ⏳ 예약주문에서 체결·취소</span></div>';
+}
+/* 15초 시세 갱신마다 — 지정가 도달 표시 + 알림(허용 시, 주문당 1회) */
+function checkOrderHits(){
+  if (!orderLog.length) return;
+  let changed = false;
+  const fired = [];
+  orderLog.forEach(o => {
+    if (!o || o.status !== 'pending') return;
+    const cur = livePriceOf(o.sym);
+    if (!isNum(cur)) return;
+    if (!orderReached(o, cur)) return;
+    if (!o.hitAt){ o.hitAt = Date.now(); changed = true; }
+    if (state.alertOn && !o.alertAt){
+      o.alertAt = Date.now();
+      changed = true;
+      fired.push({ kind:'ord', sym: symOf(o.sym), title:'🎯 ' + o.code + ' 지정가 도달',
+        body: orderTypeKr(o) + ' ' + fmtN(o.price, symOf(o.sym).dp) + ' · ' + o.lev + '배 · 현재가 ' + fmtN(cur, symOf(o.sym).dp) + ' — 체결할지 확인하세요' });
+    }
+  });
+  if (changed){
+    saveOrdersRaw();
+    renderOrderMini();
+    if (!$('#page-journal').hidden) renderOrders();
+  }
+  if (fired.length) fireAlert(fired);
+}
+/* ✅ 체결 — 진행 중 매매기록으로 전환(물타기 단이면 기존 포지션에 합산) */
+function fillOrder(id){
+  const o = orderLog.find(x => x.id === id);
+  if (!o) return;
+  const at = Date.now();
+  let merged = false, mergedEntry = NaN;
+  /* 같은 종목·방향의 진행 중 포지션이 있으면 새 기록을 만들지 않고 합산(평단 갱신)합니다 */
+  {
+    const e = tradeLog.find(x => x.status === 'open' && x.sym === o.sym && (x.side === 'long' ? 'long' : 'short') === o.side);
+    const m0 = e ? marginOf(e) : NaN;
+    if (e && isNum(m0) && isNum(e.entry) && e.entry > 0){
+      const l0 = parseInt(e.lev, 10) || o.lev;
+      const s0 = m0 * l0, s1 = o.margin * o.lev;
+      const avg = (s0 + s1) / (s0 / e.entry + s1 / o.price);
+      e.margin = Math.round((m0 + o.margin) * 100) / 100;
+      e.entry = ordRound(avg, o.sym);
+      e.water = (parseInt(e.water, 10) || 1) + 1;
+      e.memo = ((e.memo ? e.memo + ' · ' : '') + '물타기 ' + e.water + '차 체결 ' + pxOf(o.price, o.sym)).slice(0, 140);
+      const p = state.pos && state.pos[o.sym];
+      if (p){ p.entry = e.entry; savePos(); }
+      merged = true; mergedEntry = e.entry;
+    }
+  }
+  if (!merged){
+    const lid = 'tl' + at + Math.random().toString(36).slice(2, 6);
+    const snap = { at: at, price: o.price, bar: state.bar,
+      plan: { side: o.side, entry: o.price, stop: o.stop, t1: o.t1, t2: o.t2, lev: o.lev, margin: o.margin },
+      hyp: { title: '⏳ 예약주문 체결', kind: o.side, why: (o.kind === 'add' ? '물타기 ' : '') + '지정가 ' + pxOf(o.price, o.sym) + ' 예약주문이 체결된 것으로 기록했습니다.' },
+      order: { id: o.id, price: o.price, margin: o.margin, lev: o.lev, at: o.at } };
+    tradeLog.unshift({ id: lid, sym: o.sym, code: o.code, side: o.side, lev: o.lev,
+      entry: o.price, stop: o.stop, t1: o.t1, t2: o.t2, slot: '',
+      margin: Math.round(o.margin * 100) / 100, feeMode: 'maker', feeRate: FEE_RATES.maker,
+      at: at, status: 'open', memo: o.note || ('⏳ 예약주문 체결 · 지정가 ' + pxOf(o.price, o.sym)),
+      snap: snap, fromOrder: o.id });
+    state.pos = state.pos || {};
+    state.pos[o.sym] = { side: o.side, entry: o.price, stop: o.stop, t1: o.t1, t2: o.t2,
+      lev: o.lev, slot: '', at: at, half: false, logId: lid };
+    savePos();
+  }
+  orderLog = orderLog.filter(x => x.id !== id);
+  saveOrdersRaw();
+  saveTradeLog();
+  renderChips();
+  renderPbarSyms();
+  renderOrderMini();
+  renderPosition();
+  renderJournal();
+  refreshAutoMargin();
+  toast(merged ? '➕ 물타기 체결 반영' : '✅ 예약주문 체결',
+    merged
+      ? escHtml(o.code) + ' ' + orderSideKr(o) + ' — ' + pxOf(o.price, o.sym) + ' 증거금 ' + o.margin.toFixed(2) + ' U를 기존 포지션에 합산했습니다(평단 ' + pxOf(mergedEntry, o.sym) + ').'
+      : escHtml(o.code) + ' ' + orderTypeKr(o) + ' ' + pxOf(o.price, o.sym) + ' — 매매기록에 <b>진행 중</b>으로 옮겼습니다.');
+}
+function cancelOrder(id){
+  const o = orderLog.find(x => x.id === id);
+  if (!o) return;
+  orderLog = orderLog.filter(x => x.id !== id);
+  saveOrdersRaw();
+  renderOrderMini();
+  renderOrders();
+  renderPosition();
+  toast('❌ 예약주문 취소', escHtml(o.code) + ' ' + orderSideKr(o) + ' 지정가 ' + pxOf(o.price, o.sym) + ' — 이 앱의 대기 목록에서 지웠습니다(거래소 주문은 건드리지 않음).');
+}
+/* 차트에 같이 그릴 선 — 물타기 단(지정가) · 합산 평단 · 이 종목 예약주문 */
+function extraChartLevels(){
+  const out = [];
+  const cs = state.candles || [];
+  const last = cs.length ? cs[cs.length - 1].c : NaN;
+  const near = v => isNum(v) && v > 0 && isNum(last) && Math.abs(v / last - 1) <= 0.12;
+  let c = null;
+  try { c = wdCalc(readPlanForm()); } catch (e) { c = null; }
+  if (c && c.ok){
+    c.legs.filter(l => !l.base).forEach(l => { if (near(l.price)) out.push({ p:l.price, tag:'물타기' + l.n, col:'#f59e0b', dash:[2, 3], w:1 }); });
+    if (c.adds.length && near(c.avg)) out.push({ p:c.avg, tag:'평단', col:'#c084fc', dash:[7, 3], w:1.5 });
+  }
+  pendingOrders(state.sym).forEach(o => { if (near(o.price)) out.push({ p:o.price, tag:'⏳예약', col:'#38bdf8', dash:[1, 3], w:1 }); });
+  return out;
 }
 
 /* ========================= 매매기록 (2페이지) =========================
@@ -7673,6 +8364,7 @@ function renderJournal(){
   const cards = journalCards();
   renderJournalStats(cards);
   renderJournalFilters();
+  renderOrders();
   if (!cards.length){
     list.innerHTML = tradeLog.length
       ? '<div class="j-empty"><b>이 조건에 맞는 기록이 없습니다</b>기간·상태·결과·종목 필터를 바꾸면 다른 기록이 보입니다.</div>'
@@ -7744,8 +8436,10 @@ function bindJournal(){
   if (!page || page.dataset.bound === '1') return;
   page.dataset.bound = '1';
   page.addEventListener('click', ev => {
-    const t = ev.target.closest('[data-jperiod],[data-jresult],[data-jsym],[data-jexit],[data-jchart],[data-jdel],[data-jmemo],[data-jmemosave],[data-jmemocancel],[data-jmargin],[data-jmarginsave],[data-jfee],[data-jfeesave],[data-jat],[data-jatsave],[data-jatcancel],[data-jrev],[data-wdel]');
+    const t = ev.target.closest('[data-jperiod],[data-jresult],[data-jsym],[data-jexit],[data-jchart],[data-jdel],[data-jmemo],[data-jmemosave],[data-jmemocancel],[data-jmargin],[data-jmarginsave],[data-jfee],[data-jfeesave],[data-jat],[data-jatsave],[data-jatcancel],[data-jrev],[data-wdel],[data-ofill],[data-ocancel]');
     if (!t) return;
+    if (t.hasAttribute('data-ofill')){ fillOrder(t.dataset.ofill); return; }
+    if (t.hasAttribute('data-ocancel')){ cancelOrder(t.dataset.ocancel); return; }
     if (t.hasAttribute('data-jperiod')){ jFilter.period = t.dataset.jperiod; store(JPERIOD_KEY, jFilter.period); renderJournal(); return; }
     if (t.hasAttribute('data-jresult')){ jFilter.result = t.dataset.jresult; renderJournal(); return; }
     if (t.hasAttribute('data-jsym')){ jFilter.sym = t.dataset.jsym; renderJournal(); return; }
@@ -8567,6 +9261,7 @@ function init(){
   state.pos = store(POS_KEY) || {};
   loadAssetState();
   loadTradeLog();
+  loadOrders();
   loadJournalPeriod();
   /* 첫 화면 — 매매 중 종목이 있으면 가장 최근 진입한 그 종목, 없으면 정렬 1번째 종목을 기본 선택 */
   const firstOpen = openTradesByRecency()[0];
@@ -8586,7 +9281,9 @@ function init(){
   renderChecklist();
   state.activeSlot = 'h1';
   fillPlanForm(planFor('h1'));
+  wdInitForm();
   bindPlanner();
+  bindWd();
   bindMisc();
   bindStickyPrice();
   chartInit();
