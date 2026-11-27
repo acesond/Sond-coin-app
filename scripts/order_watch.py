@@ -120,7 +120,7 @@ def main(argv=None):
             "kind": "setup",
             "label": "예약주문 감시 준비 안 됨",
             "text": ("구글 시트의 Apps Script 가 아직 예약주문을 돌려주지 않습니다(v2 붙여넣기 전) — "
-                     "지금은 웹앱 예약주문이 시트에만 저장되고, 관점 감시는 돌지 않습니다."),
+                     "지금은 예약주문이 폰 브라우저에만 저장되고, 시트·관점 감시에는 반영되지 않습니다."),
             "ordersUpdatedAt": got.get("ordersUpdatedAt"),
         }
         if not args.dry_run:
