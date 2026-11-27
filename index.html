@@ -6554,20 +6554,34 @@ let orderLog = [];
 function orderSideKr(o){ return o.side === 'long' ? '롱' : '숏'; }
 function orderTypeKr(o){ return o.side === 'long' ? 'Limit Buy · 롱' : 'Limit Sell · 숏'; }
 function orderNum(v){ const n = parseFloat(v); return isNum(n) ? n : NaN; }
+/* 라이브 검증·테스트로 만든 예약주문 흔적은 폰·시트의 예약주문 표에 남기지 않습니다 */
+function isOrderTestNoise(o){
+  if (!o) return true;
+  const note = String(o.note || '');
+  if (o.status === 'pending') return /^\s*테스트/.test(note);
+  return /테스트|검증/.test(note);
+}
 function loadOrders(){
   let v = null;
   try { v = store(ORDERS_KEY); } catch (e) { v = null; }
   const now = Date.now();
-  orderLog = (Array.isArray(v) ? v : []).filter(o => o && o.id && o.sym && o.status === 'pending' && !o.filledAt).map(o => ({
-    id: String(o.id), sym: o.sym, code: o.code || symOf(o.sym).code,
-    side: o.side === 'long' ? 'long' : 'short', kind: o.kind === 'add' ? 'add' : 'entry',
-    price: orderNum(o.price), margin: orderNum(o.margin), lev: clamp(parseInt(o.lev, 10) || 5, 1, 50),
-    stop: orderNum(o.stop), t1: orderNum(o.t1), t2: orderNum(o.t2),
-    feeMode: feeModeOf(o.feeMode), at: isNum(o.at) ? o.at : now,
-    note: String(o.note || '').slice(0, 80),
-    baseEntry: orderNum(o.baseEntry), hitAt: isNum(o.hitAt) ? o.hitAt : 0,
-    status: 'pending'
-  })).filter(o => isNum(o.price) && o.price > 0 && isNum(o.margin) && o.margin > 0);
+  const all = (Array.isArray(v) ? v : []).filter(o => o && o.id && o.sym).map(o => {
+    const st = (o.status === 'cancelled' || o.status === 'filled') ? o.status : 'pending';
+    return {
+      id: String(o.id), sym: o.sym, code: o.code || symOf(o.sym).code,
+      side: o.side === 'long' ? 'long' : 'short', kind: o.kind === 'add' ? 'add' : 'entry',
+      price: orderNum(o.price), margin: orderNum(o.margin), lev: clamp(parseInt(o.lev, 10) || 5, 1, 50),
+      stop: orderNum(o.stop), t1: orderNum(o.t1), t2: orderNum(o.t2),
+      feeMode: feeModeOf(o.feeMode), at: isNum(o.at) ? o.at : now,
+      note: String(o.note || '').slice(0, 80),
+      baseEntry: orderNum(o.baseEntry), hitAt: isNum(o.hitAt) ? o.hitAt : 0,
+      status: st, st: isNum(o.st) ? o.st : (isNum(o.at) ? o.at : now)
+    };
+  }).filter(o => isNum(o.price) && o.price > 0 && isNum(o.margin) && o.margin > 0 && !isOrderTestNoise(o));
+  /* 미체결은 모두, 끝난 주문(체결·취소)은 최근 40건만 남겨 다른 기기와 상태를 맞춥니다 */
+  const pend = all.filter(o => o.status === 'pending');
+  const fin = all.filter(o => o.status !== 'pending').sort((a, b) => (b.st || 0) - (a.st || 0)).slice(0, 40);
+  orderLog = pend.concat(fin);
   saveOrdersRaw();
 }
 function saveOrdersRaw(){ try { store(ORDERS_KEY, orderLog); } catch (e) {} }
@@ -6575,6 +6589,7 @@ function saveOrders(){
   saveOrdersRaw();
   renderOrderMini();
   renderOrders();
+  try { if (!syncApplying) syncSchedule(); } catch (e) {}
 }
 function pendingOrders(sym){ return (orderLog || []).filter(o => o.status === 'pending' && (!sym || o.sym === sym)); }
 /* 지정가 도달 판정 — 매수(롱) 대기는 현재가가 지정가 이하로, 매도(숏) 대기는 지정가 이상으로 */
@@ -6729,7 +6744,7 @@ function renderOrders(){
   el.hidden = false;
   el.innerHTML = '<div class="ord-card-h">⏳ 예약주문 대기<small>' + all.length + '건 · 지정가 도달 시 🎯</small></div>' +
     all.slice().sort((a, b) => (b.at || 0) - (a.at || 0)).map(ordCard).join('') +
-    '<p class="ord-note">이 앱은 거래소에 주문을 내지 않습니다 — 적어 둔 지정가를 현재가와 비교해 <b>지정가 도달 표시·체결 기록·취소</b>만 이 기기에서 관리합니다(localStorage).</p>';
+    '<p class="ord-note">이 앱은 거래소에 주문을 내지 않습니다 — 적어 둔 지정가를 현재가와 비교해 <b>지정가 도달 표시·체결 기록·취소</b>만 관리합니다. 대기 주문은 <b>구글 시트 예약주문 탭</b>과 폰·PC에 함께 동기화되고, 안 걸린 채 관점이 바뀌면 <b>ntfy 알림</b>으로도 알려드립니다.</p>';
 }
 function renderOrderMini(){
   const el = $('#orderMini');
@@ -6815,9 +6830,11 @@ function fillOrder(id){
       lev: o.lev, slot: '', at: at, half: false, logId: lid };
     savePos();
   }
-  orderLog = orderLog.filter(x => x.id !== id);
+  /* 체결된 주문도 '체결' 상태로 남겨 다른 기기의 대기 목록에서 함께 빠지게 합니다 */
+  o.status = 'filled'; o.filledAt = at; o.st = at;
   saveOrdersRaw();
   saveTradeLog();
+  try { if (!syncApplying) syncSchedule(); } catch (e) {}
   renderChips();
   renderPbarSyms();
   renderOrderMini();
@@ -6832,12 +6849,11 @@ function fillOrder(id){
 function cancelOrder(id){
   const o = orderLog.find(x => x.id === id);
   if (!o) return;
-  orderLog = orderLog.filter(x => x.id !== id);
-  saveOrdersRaw();
-  renderOrderMini();
-  renderOrders();
+  /* 지우지 않고 '취소'로 남깁니다 — 다른 기기·시트에도 취소가 전해지고, 옛 복사본이 대기로 되살아나지 않습니다. */
+  o.status = 'cancelled'; o.cancelAt = Date.now(); o.st = Date.now();
+  saveOrders();
   renderPosition();
-  toast('❌ 예약주문 취소', escHtml(o.code) + ' ' + orderSideKr(o) + ' 지정가 ' + pxOf(o.price, o.sym) + ' — 이 앱의 대기 목록에서 지웠습니다(거래소 주문은 건드리지 않음).');
+  toast('❌ 예약주문 취소', escHtml(o.code) + ' ' + orderSideKr(o) + ' 지정가 ' + pxOf(o.price, o.sym) + ' — 폰·PC 대기 목록과 시트 예약주문에서 함께 빠집니다(거래소 주문은 건드리지 않음).');
 }
 /* 차트에 같이 그릴 선 — 물타기 단(지정가) · 합산 평단 · 이 종목 예약주문 */
 function extraChartLevels(){
@@ -7157,6 +7173,7 @@ function updateJournalBadges(){
    · 시트 원본은 _JournalJSON + _Sync 이고 매매기록·요약·출금내역은 서버가 다시 그립니다. */
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbzrR9WYm67ggHFrCdu_b7aNxebxhs1OdMiMCQD21srCThXYU1tCmkTQC0cruB3bQncf/exec';
 const SYNC_TS_KEY = 'maeyo.sync.updatedAt.v1';      /* 마지막으로 서버와 맞춘 updatedAt */
+const ORD_SYNC_TS_KEY = 'maeyo.sync.ordersUpdatedAt.v1'; /* 마지막으로 서버와 맞춘 예약주문 updatedAt */
 const SYNC_STAT_KEY = 'maeyo.sync.stat.v1';         /* 마지막 동기화 시각·상태 */
 const SYNC_SEEN_KEY = 'maeyo.sync.seenIds.v1';      /* 지난번에 시트에서 본 기록 id — 사라진 id = 다른 기기가 지운 기록 */
 /* 지운 기록 id — 한 기기에서 지운 매매가 다른 기기의 옛 복사본 때문에 되살아나지 않게 합니다.
@@ -7334,9 +7351,13 @@ async function syncPullOnce(){
 async function syncPushOnce(force){
   const del = syncDelIds();
   const journal = tradeLog.filter(e => e && e.id && !del.has(String(e.id)) && !isPurgeTestRecord(e));
+  const orders = syncOrdersLocal().filter(o => o && o.id && !isOrderTestNoise(o)).map(syncCleanOrder).filter(Boolean);
+  const ots = store(ORD_SYNC_TS_KEY);
   const body = JSON.stringify({
     action: 'save', journal: journal,
     asset: { initial: assetState.initial, withdrawals: assetState.withdrawals },
+    orders: orders,
+    baseOrdersUpdatedAt: isNum(ots) ? ots : 0,
     baseUpdatedAt: syncLastTs(), force: !!force
   });
   try {
@@ -7358,6 +7379,43 @@ async function syncPushOnce(force){
     if (okIds && okAsset) return { ok: true, updatedAt: chk.updatedAt, journal: chk.journal, asset: chk.asset };
     return { ok: false, reason: '전송 확인 실패', updatedAt: chk && chk.updatedAt, journal: chk && chk.journal, asset: chk && chk.asset };
   }
+}
+/* ---------- 예약주문 합치기 ----------
+   · 미체결(pending)은 id 기준 합집합, 끝난 주문(체결·취소)은 상태 시각(st)이 더 늦은 쪽을 남깁니다.
+   · 한 기기에서 취소/체결한 주문은 어느 기기에서도 대기로 되살아나지 않습니다(끝난 상태 우선). */
+function syncOrdersLocal(){ return (typeof orderLog !== 'undefined' && Array.isArray(orderLog)) ? orderLog : []; }
+function syncOrderFinal(o){ return !!o && (o.status === 'cancelled' || o.status === 'filled'); }
+function syncCleanOrder(o){
+  if (!o || !o.id || !o.sym) return null;
+  const price = parseFloat(o.price), margin = parseFloat(o.margin);
+  if (!(price > 0) || !(margin > 0)) return null;
+  return {
+    id: String(o.id), sym: String(o.sym), code: String(o.code || symOf(o.sym).code),
+    side: o.side === 'long' ? 'long' : 'short', kind: o.kind === 'add' ? 'add' : 'entry',
+    price: price, margin: margin, lev: parseInt(o.lev, 10) || 5,
+    stop: parseFloat(o.stop), t1: parseFloat(o.t1), t2: parseFloat(o.t2),
+    feeMode: feeModeOf(o.feeMode), at: Number(o.at) || Date.now(),
+    note: String(o.note || '').slice(0, 80),
+    baseEntry: parseFloat(o.baseEntry), hitAt: Number(o.hitAt) || 0,
+    status: o.status === 'cancelled' ? 'cancelled' : (o.status === 'filled' ? 'filled' : 'pending'),
+    st: Number(o.st) || Number(o.at) || Date.now()
+  };
+}
+function syncMergeOrders(local, remote){
+  const byId = new Map();
+  const pick = (a, b) => {
+    if (!a) return b;
+    if (!b) return a;
+    const fa = syncOrderFinal(a), fb = syncOrderFinal(b);
+    if (fa !== fb) return fa ? a : b;                       /* 끝난 주문 > 대기 */
+    return (Number(b.st) || 0) > (Number(a.st) || 0) ? b : a; /* 같은 상태면 더 늦은 쪽 */
+  };
+  (remote || []).forEach(o => { if (o && o.id) byId.set(String(o.id), o); });
+  (local || []).forEach(o => { if (!o || !o.id) return; const k = String(o.id); byId.set(k, pick(byId.get(k), o)); });
+  const list = Array.from(byId.values()).filter(o => !isOrderTestNoise(o));
+  const pend = list.filter(o => !syncOrderFinal(o));
+  const fin = list.filter(syncOrderFinal).sort((a, b) => (Number(b.st) || 0) - (Number(a.st) || 0)).slice(0, 40);
+  return pend.concat(fin);
 }
 /* 두 기록 합치기 — id 기준 합집합, 같은 건이면 '청산된 쪽 / 더 늦은 쪽'을 남김 */
 function syncMergeJournal(local, remote){
@@ -7401,8 +7459,7 @@ function syncApply(data){
       store(LOG_KEY, tradeLog);
       syncRememberSeen(remote.map(e => String(e.id)));
     }
-    if (data.asset && isNum(parseFloat(data.asset.initial))){
-      const ws = Array.isArray(data.asset.withdrawals) ? data.asset.withdrawals : [];
+    if (data.asset && isNum(parseFloat(data.asset.initial))){      const ws = Array.isArray(data.asset.withdrawals) ? data.asset.withdrawals : [];
       assetState = {
         initial: Math.round(parseFloat(data.asset.initial) * 100) / 100,
         withdrawals: ws.filter(w => w && isNum(parseFloat(w.usd)) && parseFloat(w.usd) > 0).map(w => ({
@@ -7414,19 +7471,28 @@ function syncApply(data){
       };
       store(ASSET_KEY, assetState);
     }
+    if (Array.isArray(data.orders)){
+      const merged = syncMergeOrders(syncOrdersLocal(), data.orders.map(syncCleanOrder).filter(Boolean));
+      if (typeof orderLog !== 'undefined'){
+        orderLog = merged;
+        if (typeof saveOrdersRaw === 'function') saveOrdersRaw();
+      }
+    }
     if (isNum(data.updatedAt)) store(SYNC_TS_KEY, data.updatedAt);
+    if (isNum(data.ordersUpdatedAt)) store(ORD_SYNC_TS_KEY, data.ordersUpdatedAt);
   } finally { syncApplying = false; }
   renderJournal();
   refreshAutoMargin();
   updateJournalBadges();
+  if (typeof renderOrderMini === 'function') renderOrderMini();
+  if (typeof renderOrders === 'function') renderOrders();
 }
 function syncPushBodyOk(res){
   if (!res || res.ok !== true) return false;
   if (Array.isArray(res.journal)) syncApply(res);
   if (isNum(res.updatedAt)) store(SYNC_TS_KEY, res.updatedAt);
   return true;
-}
-function syncPushBodyErr(res){ return new Error((res && (res.reason || res.error)) || '저장 실패'); }
+}function syncPushBodyErr(res){ return new Error((res && (res.reason || res.error)) || '저장 실패'); }
 /* 앱 진입·배지 클릭 — 받아서 합치고 올리기 */
 async function syncNow(){
   if (!syncEnabled()){ syncMark('off'); return; }

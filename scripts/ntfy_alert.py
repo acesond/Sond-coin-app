@@ -47,6 +47,15 @@ KST = timezone(timedelta(hours=9))
 USER_AGENT = "sond-coin-alert/1.0 (+https://github.com/acesond/Sond-coin-app)"
 COOLDOWN_MIN = 60
 AUTO1_NEAR_PCT = 0.8   # 자동 1 진입가 ±0.8% 이내면 타점 도달 (수작업 가설의 ±1.0%와 별개)
+HTTP_TIMEOUT = 25      # 시세·시트 HTTP 타임아웃(초). check.sh 에서는 줄여 씁니다.
+
+# 예약주문(지정가 대기) 관점 감시
+#   · 웹앱이 구글 시트로 동기화한 '미체결 예약주문'만 읽어서 감시합니다(읽기 전용).
+#   · 미체결 주문이 0건이면 아무 알림도 보내지 않습니다.
+SYNC_URL = "https://script.google.com/macros/s/AKfycbzrR9WYm67ggHFrCdu_b7aNxebxhs1OdMiMCQD21srCThXYU1tCmkTQC0cruB3bQncf/exec"
+ORDER_COOLDOWN_MIN = 180   # 같은 주문·같은 사유 재알림 간격(분)
+ORDER_NEAR_PCT = 0.30      # 무효화선(SL·가설 손절)에 이만큼(% ) 다가가면 '근접'
+ORDER_STALE_PCT = 0.20     # 반대편 가설 진입선을 이만큼 넘어서면 '관점 식음'
 
 BN = "https://fapi.binance.com"
 OKX = "https://www.okx.com"
@@ -246,7 +255,7 @@ class Feed:
     # -- 바이낸스
     def _bn_candles(self, sym, bar, limit):
         iv = BN_IV[bar]
-        d = http_json(f"{BN}/fapi/v1/klines?symbol={sym}&interval={iv}&limit={limit}")
+        d = http_json(f"{BN}/fapi/v1/klines?symbol={sym}&interval={iv}&limit={limit}", timeout=HTTP_TIMEOUT)
         now_ms = int(time.time() * 1000)
         out = []
         for a in d:
@@ -257,7 +266,7 @@ class Feed:
         return out
 
     def _bn_ticker(self, sym):
-        d = http_json(f"{BN}/fapi/v1/ticker/24hr?symbol={sym}")
+        d = http_json(f"{BN}/fapi/v1/ticker/24hr?symbol={sym}", timeout=HTTP_TIMEOUT)
         o = d[0] if isinstance(d, list) else d
         return {"last": float(o["lastPrice"]), "open24h": float(o["openPrice"]),
                 "high24h": float(o["highPrice"]), "low24h": float(o["lowPrice"]),
@@ -269,7 +278,7 @@ class Feed:
 
     def _okx_candles(self, sym, bar, limit):
         inst = self._okx_inst(sym)
-        d = http_json(f"{OKX}/api/v5/market/candles?instId={inst}&bar={OKX_BAR[bar]}&limit={min(limit, 300)}")
+        d = http_json(f"{OKX}/api/v5/market/candles?instId={inst}&bar={OKX_BAR[bar]}&limit={min(limit, 300)}", timeout=HTTP_TIMEOUT)
         if d.get("code") != "0":
             raise RuntimeError("OKX 오류 " + str(d.get("code")) + " " + str(d.get("msg")))
         out = []
@@ -280,7 +289,7 @@ class Feed:
 
     def _okx_ticker(self, sym):
         inst = self._okx_inst(sym)
-        d = http_json(f"{OKX}/api/v5/market/ticker?instId={inst}")
+        d = http_json(f"{OKX}/api/v5/market/ticker?instId={inst}", timeout=HTTP_TIMEOUT)
         if d.get("code") != "0" or not d.get("data"):
             raise RuntimeError("OKX 시세 오류 " + str(d.get("code")))
         o = d["data"][0]
@@ -1050,6 +1059,267 @@ def auto1_body(a, sym_meta, tk, refs):
     return "\n".join(lines)
 
 
+# ---------------------------------------------------------------- 예약주문 감시
+# 시트(Apps Script)에 동기화된 '미체결 예약주문'만 감시합니다.
+#   · 예약주문이 0건이면 아무 것도 하지 않습니다(알림·푸시 없음).
+#   · 지정가에 닿기 전에 관점이 바뀌는 경우를 알립니다:
+#       ① 무효화선 근접 / 돌파(SL + 그 방향 가설의 손절선), 1H 확정 종가로 확인
+#       ② 4H 종가가 EMA50 반대편에 안착 — 구조 반전
+#       ③ 반대편 가설 진입선(눌림 롱 / 숏 진입)을 먼저 넘어 지정가 관점이 식은 경우
+#       ④ (보너스) 지정가 도달 — 앱을 안 켜도 알 수 있게
+#   · 거래소 주문은 절대 내지 않습니다(읽기·알림만).
+
+def _sym_meta(sym, price=None):
+    m = SYM_BY_ID.get(sym)
+    if m:
+        return m
+    code = str(sym or "").replace("USDT", "") or str(sym or "?")
+    dp = 2
+    if is_num(price):
+        dp = 1 if price >= 1000 else (2 if price >= 10 else (4 if price >= 1 else 5))
+    return {"id": sym, "code": code, "name": code, "dp": dp}
+
+
+def fetch_pending_orders(url=SYNC_URL, verbose=True):
+    """시트에서 미체결 예약주문만 읽습니다(읽기 전용)."""
+    out = {"ok": False, "supported": False, "orders": [], "why": "", "ordersUpdatedAt": None}
+    try:
+        q = ("&" if "?" in url else "?") + "action=pull&t=" + str(int(time.time()))
+        d = http_json(url + q, timeout=HTTP_TIMEOUT, retries=2)
+    except Exception as e:  # noqa: BLE001
+        out["why"] = f"시트 읽기 실패: {e}"
+        return out
+    if not isinstance(d, dict) or d.get("ok") is not True:
+        out["why"] = "시트 응답 형식이 예상과 다릅니다"
+        return out
+    out["ok"] = True
+    out["ordersUpdatedAt"] = d.get("ordersUpdatedAt")
+    if "orders" not in d:
+        out["why"] = "시트 Apps Script가 아직 예약주문을 돌려주지 않습니다(구버전 — 붙여넣기 전)"
+        return out
+    out["supported"] = True
+    for o in d.get("orders") or []:
+        if not isinstance(o, dict) or o.get("status") != "pending" or not o.get("sym"):
+            continue
+        try:
+            price = float(o.get("price")); margin = float(o.get("margin"))
+        except (TypeError, ValueError):
+            continue
+        if not (price > 0 and margin > 0):
+            continue
+        o = dict(o)
+        o["price"] = price
+        o["margin"] = margin
+        out["orders"].append(o)
+    if verbose:
+        print(f"· 예약주문(시트): 미체결 {len(out['orders'])}건", flush=True)
+    return out
+
+
+def _hyp_stops(sym, side):
+    return [float(l["p"]) for l in (HYP_DATA["LEVELS"].get(sym) or [])
+            if l.get("side") == side and l.get("role") == "stop" and is_num(l.get("p"))]
+
+
+def _tag_price(sym, tag):
+    for l in (HYP_DATA["LEVELS"].get(sym) or []):
+        if l.get("tag") == tag and is_num(l.get("p")):
+            return float(l["p"])
+    return None
+
+
+def evaluate_order(o, tk, candles):
+    """예약주문 1건의 관점 상태 — 어떤 사유로 알릴지(conds)까지 계산합니다."""
+    sym = o["sym"]
+    price = float(tk["last"])
+    meta = _sym_meta(sym, price)
+    dp = meta["dp"]
+    side = "short" if o.get("side") == "short" else "long"
+    limit = float(o["price"])
+    stop = float(o["stop"]) if is_num(o.get("stop")) and float(o["stop"]) > 0 else None
+
+    cands = ([stop] if stop else []) + _hyp_stops(sym, side)
+    cands = [x for x in cands if x > 0]
+    inval = (min(cands) if side == "short" else max(cands)) if cands else None
+
+    ev = {
+        "id": str(o.get("id") or ""), "sym": sym, "code": meta["code"], "name": meta.get("name", meta["code"]),
+        "dp": dp, "side": side, "kind": "add" if o.get("kind") == "add" else "entry",
+        "limit": limit, "price": price, "margin": float(o["margin"]),
+        "lev": int(float(o.get("lev") or 5) or 5), "stop": stop,
+        "t1": float(o["t1"]) if is_num(o.get("t1")) else None,
+        "t2": float(o["t2"]) if is_num(o.get("t2")) else None,
+        "inval": inval, "note": str(o.get("note") or ""), "at": o.get("at"),
+        "conds": []
+    }
+    ev["gapPct"] = (limit - price) / price * 100 if side == "short" else (price - limit) / price * 100
+    ev["reached"] = (price >= limit) if side == "short" else (price <= limit)
+
+    c1 = [c for c in (candles.get("1H") or []) if c.get("conf")]
+    close1 = float(c1[-1]["c"]) if c1 else None
+    c4 = [c for c in (candles.get("4H") or []) if c.get("conf")]
+    e50 = close4 = None
+    if len(c4) >= 60:
+        closes4 = [c["c"] for c in c4]
+        e50 = ema_series(closes4, 50)[-1]
+        close4 = float(closes4[-1])
+
+    # ① 무효화선 근접·돌파
+    if inval:
+        if side == "short":
+            breach = price >= inval
+            dist = (inval - price) / price * 100
+            conf = close1 is not None and close1 >= inval
+        else:
+            breach = price <= inval
+            dist = (price - inval) / price * 100
+            conf = close1 is not None and close1 <= inval
+        ev["invalDistPct"] = dist
+        if breach:
+            ev["conds"].append({
+                "key": "breach1h" if conf else "breach", "rank": 3 if conf else 2,
+                "label": "무효화선 1H 종가 돌파" if conf else "무효화선 돌파",
+                "text": (f"무효화선 {fmt_px(inval, dp)} {'위' if side == 'short' else '아래'}로 "
+                         + (f"1H 종가 마감({fmt_px(close1, dp)})" if conf else f"현재가 {fmt_px(price, dp)}")
+                         + (" — 숏" if side == "short" else " — 롱") + " 관점이 무효입니다")
+            })
+        elif dist <= ORDER_NEAR_PCT:
+            ev["conds"].append({
+                "key": "near", "rank": 2, "label": "무효화선 근접",
+                "text": (f"무효화선 {fmt_px(inval, dp)}까지 {dist:.2f}% 남았습니다 — "
+                         f"{'위' if side == 'short' else '아래'}로 마감하면 "
+                         + ("숏" if side == "short" else "롱") + " 관점이 무효입니다")
+            })
+
+    # ② 4H 구조 반전 — 4H 종가가 EMA50 반대편에 안착
+    if e50 and close4 is not None:
+        if side == "short" and close4 > e50 and price > e50:
+            ev["conds"].append({"key": "flip4h", "rank": 2, "label": "4H 구조 반전",
+                "text": f"4H 종가 {fmt_px(close4, dp)}가 EMA50 {fmt_px(e50, dp)} 위에 안착 — 하락 구조(숏 근거)가 꺾였습니다"})
+        elif side == "long" and close4 < e50 and price < e50:
+            ev["conds"].append({"key": "flip4h", "rank": 2, "label": "4H 구조 반전",
+                "text": f"4H 종가 {fmt_px(close4, dp)}가 EMA50 {fmt_px(e50, dp)} 아래로 안착 — 상승 구조(롱 근거)가 꺾였습니다"})
+
+    # ③ 반대편 가설 진입선을 먼저 넘어 지정가 관점이 식은 경우
+    if side == "short":
+        lvl = _tag_price(sym, "눌림 롱 진입")
+        if lvl and price <= lvl * (1 - ORDER_STALE_PCT / 100):
+            ev["conds"].append({"key": "stale", "rank": 1, "label": "지정가 관점 식음",
+                "text": (f"눌림 롱 진입 {fmt_lv(lvl, dp)} 아래({fmt_px(price, dp)})로 먼저 내려갔습니다 — "
+                         f"{fmt_px(limit, dp)} 숏 지정가 자리로 되돌아오지 않고 지나갈 수 있습니다")})
+    else:
+        lvl = _tag_price(sym, "숏 진입")
+        if lvl and price >= lvl * (1 + ORDER_STALE_PCT / 100):
+            ev["conds"].append({"key": "stale", "rank": 1, "label": "지정가 관점 식음",
+                "text": (f"숏 진입 구간 {fmt_lv(lvl, dp)} 위({fmt_px(price, dp)})로 먼저 올라갔습니다 — "
+                         f"{fmt_px(limit, dp)} 롱 지정가 자리로 내려오지 않고 지나갈 수 있습니다")})
+
+    # ④ 지정가 도달
+    if ev["reached"]:
+        ev["conds"].append({"key": "reach", "rank": 1, "label": "지정가 도달",
+            "text": f"현재가 {fmt_px(price, dp)} — 지정가 {fmt_px(limit, dp)}에 닿았습니다(실제 체결 여부는 거래소에서 확인)"})
+
+    ev["conds"].sort(key=lambda c: -c["rank"])
+    ev["best"] = ev["conds"][0] if ev["conds"] else None
+    return ev
+
+
+def order_title(ev, cond):
+    what = f"{ev['code']} {'숏' if ev['side'] == 'short' else '롱'} {fmt_px(ev['limit'], ev['dp'])}"
+    icon = {"breach1h": "🚨", "breach": "⚠️", "near": "⚠️", "flip4h": "🔄", "stale": "⌛", "reach": "🎯"}
+    head = {"breach1h": "예약주문 무효화 확정", "breach": "예약주문 무효화", "near": "예약주문 무효화 임박",
+            "flip4h": "예약주문 관점 반전", "stale": "예약주문 관점 식음", "reach": "지정가 도달"}
+    return f"{icon.get(cond['key'], '⚠️')} {head.get(cond['key'], '예약주문 점검')} — {what}"
+
+
+def order_body(ev, cond):
+    dp = ev["dp"]
+    f = lambda v: fmt_px(v, dp)  # noqa: E731
+    side_kr = "숏" if ev["side"] == "short" else "롱"
+    kind_kr = "물타기" if ev["kind"] == "add" else "지정가"
+    lines = [
+        f"⏳ {ev['code']} {side_kr} {kind_kr} {f(ev['limit'])} · 증거금 {ev['margin']:.2f} U · {ev['lev']}배 — 아직 미체결",
+        f"현재가 {f(ev['price'])} · " + ("지정가 도달" if ev["reached"] else f"지정가까지 {fmt_pct(ev['gapPct'])}") +
+        (f" · 무효화선 {f(ev['inval'])}" if ev.get("inval") else ""),
+        "",
+        f"{cond['label']} · {cond['text']}",
+    ]
+    tail = []
+    if ev.get("stop"):
+        tail.append("SL " + f(ev["stop"]))
+    if ev.get("t1"):
+        tail.append("TP1 " + f(ev["t1"]))
+    if ev.get("t2"):
+        tail.append("TP2 " + f(ev["t2"]))
+    if tail:
+        lines.append("· " + " · ".join(tail))
+    if ev.get("note"):
+        lines.append("· 메모 " + ev["note"])
+    lines += ["",
+              "지정가를 그대로 두면 걸려도 관점이 죽은 자리일 수 있습니다 — 주문 취소나 새 관점의 지정가로 바꾸는 것을 검토하세요.",
+              "(거래소 주문은 대신 내지 않습니다 · 웹앱이 시트에 올린 예약주문을 읽어 알림만 보냅니다)",
+              APP_URL]
+    return "\n".join(lines)
+
+
+def scan_orders(feed, verbose=True, url=SYNC_URL, orders=None, deadline=None):
+    """미체결 예약주문을 읽어 관점 변화 알림 목록을 만듬니다. 주문이 0건이면 빈 결과."""
+    res = {"ok": False, "supported": False, "orders": [], "alerts": [], "errors": [], "why": ""}
+    got = None
+    if orders is None:
+        got = fetch_pending_orders(url, verbose)
+        res["ok"] = got["ok"]
+        res["supported"] = got["supported"]
+        res["why"] = got["why"]
+        res["ordersUpdatedAt"] = got.get("ordersUpdatedAt")
+        if not got["ok"]:
+            return res
+        orders = got["orders"]
+    else:
+        res["ok"] = True
+        res["supported"] = True
+        orders = [o for o in (orders or []) if o.get("status", "pending") == "pending"]
+    res["orders"] = orders
+    if not orders:
+        if verbose:
+            print("· 예약주문 감시: 미체결 0건 — 알림 없음", flush=True)
+        return res
+
+    by_sym = {}
+    for o in orders:
+        by_sym.setdefault(o["sym"], []).append(o)
+    for sym, group in by_sym.items():
+        if deadline is not None and time.time() > deadline:
+            res["errors"].append({"sym": sym, "error": "시간 초과로 이번 판정에서 건너뜀"})
+            continue
+        try:
+            tk = feed.ticker(sym)
+            candles = {bar: feed.candles(sym, bar, 200) for bar in ("4H", "1H")}
+        except Exception as e:  # noqa: BLE001
+            res["errors"].append({"sym": sym, "error": str(e)})
+            if verbose:
+                print(f"!! 예약주문 {sym} 시세 실패: {e}", flush=True)
+            continue
+        for o in group:
+            ev = evaluate_order(o, tk, candles)
+            if verbose:
+                print(f"· 예약주문 {ev['code']} {ev['side']} {fmt_px(ev['limit'], ev['dp'])}"
+                      f" · 현재가 {fmt_px(ev['price'], ev['dp'])}"
+                      f" · {'/'.join(c['key'] for c in ev['conds']) or '관점 유지'}", flush=True)
+            for cond in ev["conds"]:
+                res["alerts"].append({
+                    "key": f"order:{ev['id']}:{cond['key']}",
+                    "orderId": ev["id"], "sym": sym, "side": ev["side"],
+                    "limit": ev["limit"], "price": ev["price"], "dp": ev["dp"],
+                    "cond": cond["key"], "label": cond["label"], "text": cond["text"],
+                    "title": order_title(ev, cond), "body": order_body(ev, cond),
+                    "tags": "warning,bell" if cond["key"] != "reach" else "dart,bell",
+                    "facts": {"orderId": ev["id"], "sym": sym, "side": ev["side"],
+                              "limit": ev["limit"], "price": ev["price"], "cond": cond["key"]}
+                })
+    return res
+
+
 # ---------------------------------------------------------------- 상태(쿨다운)
 def load_state(path):
     try:
@@ -1087,7 +1357,7 @@ def in_cooldown(st, key, now_ts, minutes):
 
 
 # ---------------------------------------------------------------- 실행
-def write_summary(results, sent, source, feed, sent_auto=None):
+def write_summary(results, sent, source, feed, sent_auto=None, sent_ord=None, order_watch=None):
     """GitHub Actions 실행 요약(GITHUB_STEP_SUMMARY)에 한 줄씩 남깁니다."""
     path = os.environ.get("GITHUB_STEP_SUMMARY")
     if not path:
@@ -1103,7 +1373,15 @@ def write_summary(results, sent, source, feed, sent_auto=None):
         else:
             lines.append(f"| {a['sym']} | {fmt_px(a['price'], meta['dp'])} | {a['nS']}/3 | {a['nL']}/3 | {a['label']} | {auto_cell(a, meta['dp'])} |")
     lines += ["", "- 발송(3중 점검): " + (", ".join(s["key"] for s in sent) or "없음"),
-             "- 발송(자동 1): " + (", ".join(s["key"] for s in (sent_auto or [])) or "없음")]
+             "- 발송(자동 1): " + (", ".join(s["key"] for s in (sent_auto or [])) or "없음"),
+             "- 발송(예약주문): " + (", ".join(s["key"] for s in (sent_ord or [])) or "없음")]
+    ow = order_watch or {}
+    if ow.get("supported") is False and ow.get("ok"):
+        lines.append("- 예약주문 감시: 시트가 아직 예약주문을 돌려주지 않음(Apps Script 구버전)")
+    elif ow.get("ok") is not True:
+        lines.append("- 예약주문 감시: " + (ow.get("why") or "시트를 읽지 못했습니다"))
+    else:
+        lines.append(f"- 예약주문 감시: 미체결 {len(ow.get('orders') or [])}건 · 알림 사유 {len(ow.get('alerts') or [])}개")
     with open(path, "a", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
 
@@ -1246,6 +1524,38 @@ def main(argv=None):
             "label": "자동 1 타점 도달",
         }
 
+    # ---- 예약주문(시트) 관점 감시 — 미체결 주문이 있을 때만
+    sent_ord, skipped_ord = [], []
+    ow = {"ok": False, "supported": False, "orders": [], "alerts": [], "errors": [], "why": ""}
+    try:
+        ow = scan_orders(feed, verbose=not args.quiet)
+    except Exception as e:  # noqa: BLE001
+        print(f"!! 예약주문 감시 실패: {e}", flush=True)
+    for al in ow.get("alerts") or []:
+        key = al["key"]
+        left = in_cooldown(st, key, now_ts, ORDER_COOLDOWN_MIN)
+        if left > 0:
+            skipped_ord.append((key, round(left, 1)))
+            print(f"· 예약주문 쿨다운 {key} — {left:.0f}분 남음, 발송 생략", flush=True)
+            continue
+        try:
+            r = send_ntfy(al["title"], al["body"], dry_run=args.dry_run, tags=al.get("tags", "warning,bell"))
+        except Exception as e:  # noqa: BLE001
+            print(f"!! 예약주문 알림 발송 실패 {key}: {e}", flush=True)
+            continue
+        sent_ord.append({"key": key, "title": al["title"], "res": r})
+        print(f"🔔 예약주문 알림 발송 {key} — {al['title']}", flush=True)
+        st.setdefault("alerts", {})[key] = {
+            "ts": now_ts,
+            "iso": now_kst().isoformat(timespec="seconds"),
+            "kind": "order",
+            "orderId": al.get("orderId"),
+            "sym": al.get("sym"),
+            "cond": al.get("cond"),
+            "limit": al.get("limit"),
+            "price": al.get("price"),
+        }
+
     if args.json_out:
         payload = {
             "generated": now_kst().isoformat(timespec="seconds"),
@@ -1254,7 +1564,16 @@ def main(argv=None):
             "cooldownMin": args.cooldown,
             "sent": [s["key"] for s in sent],
             "sentAuto": [s["key"] for s in sent_auto],
-            "skipped": skipped + skipped_auto,
+            "sentOrders": [s["key"] for s in sent_ord],
+            "orders": {
+                "supported": ow.get("supported"),
+                "pending": len(ow.get("orders") or []),
+                "alerts": [{"key": a["key"], "title": a["title"], "cond": a["cond"], "text": a["text"]}
+                           for a in (ow.get("alerts") or [])],
+                "errors": ow.get("errors") or [],
+                "why": ow.get("why") or ""
+            },
+            "skipped": skipped + skipped_auto + skipped_ord,
             "symbols": [
                 {k: v for k, v in a.items() if k not in ("ticker",)}
                 for a in results
@@ -1271,15 +1590,18 @@ def main(argv=None):
                      "label": a.get("label"), "error": a.get("error")} for a in results],
         "sent": [s["key"] for s in sent],
         "sentAuto": [s["key"] for s in sent_auto],
+        "sentOrders": [s["key"] for s in sent_ord],
+        "pendingOrders": len(ow.get("orders") or []),
     }
     if not args.dry_run:
         save_state(args.state, st)
 
-    write_summary(results, sent, source, feed, sent_auto)
+    write_summary(results, sent, source, feed, sent_auto, sent_ord, ow)
 
     ok = [a for a in results if "error" not in a]
-    print(f"· 3/3 알림 {len(sent)}건 · 자동 1 알림 {len(sent_auto)}건 · 판정 {len(ok)}/{len(results)}종목"
-          f" · 쿨다운 생략 {len(skipped) + len(skipped_auto)}건", flush=True)
+    print(f"· 3/3 알림 {len(sent)}건 · 자동 1 알림 {len(sent_auto)}건 · 예약주문 알림 {len(sent_ord)}건"
+          f"(미체결 {len(ow.get('orders') or [])}건) · 판정 {len(ok)}/{len(results)}종목"
+          f" · 쿨다운 생략 {len(skipped) + len(skipped_auto) + len(skipped_ord)}건", flush=True)
     if not ok:
         print("!! 모든 종목 조회 실패 — 데이터 소스 확인 필요", flush=True)
         return 1

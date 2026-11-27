@@ -60,17 +60,20 @@ const localStorage = {};
 function isNum(v){ return typeof v === 'number' && isFinite(v); }
 
 /* 가짜 Apps Script 서버 */
-const SRV = { updatedAt: 0, journal: [], asset: { initial: 730, withdrawals: [] }, mode: 'ok', jsonp: 'ok', saves: [], pulls: 0 };
+const SRV = { updatedAt: 0, journal: [], orders: [], ordersUpdatedAt: 0, asset: { initial: 730, withdrawals: [] }, mode: 'ok', jsonp: 'ok', saves: [], pulls: 0, legacyOrders: false };
 const clone = o => JSON.parse(JSON.stringify(o));
-function srvGet(){ SRV.pulls++; return { ok:true, schema:1, updatedAt: SRV.updatedAt || 1, count: SRV.journal.length, journal: clone(SRV.journal), asset: clone(SRV.asset) }; }
+function srvGet(){ SRV.pulls++; const d = { ok:true, schema:1, updatedAt: SRV.updatedAt || 1, count: SRV.journal.length, journal: clone(SRV.journal), asset: clone(SRV.asset) };
+  if (!SRV.legacyOrders){ d.orders = clone(SRV.orders); d.ordersUpdatedAt = SRV.ordersUpdatedAt; d.orderCount = SRV.orders.length; }
+  return d; }
 function srvPost(body){
   SRV.saves.push(clone(body));
   const base = Number(body.baseUpdatedAt);
   const stale = !body.force && isFinite(base) && SRV.updatedAt > 0 && SRV.updatedAt > base + 1500;
-  if (stale) return { ok:false, error:'stale', reason:'stale', updatedAt: SRV.updatedAt, count: SRV.journal.length, journal: clone(SRV.journal), asset: clone(SRV.asset) };
+  if (stale) return { ok:false, error:'stale', reason:'stale', updatedAt: SRV.updatedAt, count: SRV.journal.length, journal: clone(SRV.journal), asset: clone(SRV.asset), orders: clone(SRV.orders), ordersUpdatedAt: SRV.ordersUpdatedAt };
   SRV.journal = clone(body.journal || []); SRV.asset = clone(body.asset || SRV.asset);
+  if (Array.isArray(body.orders)){ SRV.orders = clone(body.orders); SRV.ordersUpdatedAt = Date.now(); }
   SRV.updatedAt = Date.now();
-  return { ok:true, updatedAt: SRV.updatedAt, count: SRV.journal.length, journal: clone(SRV.journal), asset: clone(SRV.asset) };
+  return { ok:true, updatedAt: SRV.updatedAt, count: SRV.journal.length, journal: clone(SRV.journal), asset: clone(SRV.asset), orders: clone(SRV.orders), ordersUpdatedAt: SRV.ordersUpdatedAt, orderCount: SRV.orders.length };
 }
 function mkRes(data){ return { ok:true, status:200, text(){ return Promise.resolve(JSON.stringify(data)); } }; }
 globalThis.fetch = function(url, opt){
@@ -94,6 +97,20 @@ function refreshAutoMargin(){ __render.auto++; }
 function updateJournalBadges(){ __render.badge++; }
 let tradeLog = [];
 let assetState = { initial: 730, withdrawals: [] };
+const ORDERS_KEY = 'maeyo.orders.v1';
+let orderLog = [];
+function saveOrdersRaw(){ store(ORDERS_KEY, orderLog); }
+function saveOrders(){ saveOrdersRaw(); renderOrderMini(); renderOrders(); try { if (!syncApplying) syncSchedule(); } catch (e) {} }
+function renderOrders(){ __render.orders = (__render.orders || 0) + 1; }
+function renderOrderMini(){ __render.ordersMini = (__render.ordersMini || 0) + 1; }
+function symOf(s){ return { code: String(s || '').replace('USDT', '').slice(0, 4), dp: 2 }; }
+function feeModeOf(v){ return v === 'taker' ? 'taker' : 'maker'; }
+function isOrderTestNoise(o){
+  if (!o) return true;
+  const note = String(o.note || '');
+  if (o.status === 'pending') return /^\s*테스트/.test(note);
+  return /테스트|검증/.test(note);
+}
 function saveTradeLog(){ store(LOG_KEY, tradeLog); updateJournalBadges(); syncSchedule(); }
 function saveAssetState(){ store(ASSET_KEY, assetState); if (!syncApplying) syncSchedule(); }
 const SEED = { id:'seed-btc-20261124-62000', sym:'BTCUSDT', code:'BTC', side:'short', lev:5, margin:730,
@@ -105,15 +122,18 @@ function badge(){ const e = __els['#syncPillTop']; return { cls: e.className, tx
 function reset(opt){
   Object.keys(localStorage).forEach(k => delete localStorage[k]);
   SRV.updatedAt = 0; SRV.journal = []; SRV.asset = { initial: 730, withdrawals: [] };
+  SRV.orders = []; SRV.ordersUpdatedAt = 0; SRV.legacyOrders = false;
   SRV.mode = 'ok'; SRV.jsonp = 'ok'; SRV.saves = []; SRV.pulls = 0;
   __timers.length = 0; __log.length = 0;
   tradeLog = [clone(SEED)]; assetState = { initial: 730, withdrawals: [] };
+  orderLog = [];
   syncBusy = false; syncApplying = false; clearTimeout(syncTimer); syncTimer = null;
   syncState = { kind:'idle', at:0, msg:'' };
   if (opt && opt.serverHasSeed){ SRV.journal = [clone(SEED)]; SRV.updatedAt = 1795500000000; }
   if (opt && opt.serverBumps && SRV.updatedAt > 0) SRV.updatedAt += 60000;
 }
 const __out = [];
+const T0J = 1795500000000;
 function ok(name, cond, extra){ __out.push({ name, pass: !!cond, extra: extra === undefined ? '' : extra }); }
 async function pump(n){ for (let i = 0; i < (n || 12); i++){ await Promise.resolve(); } }
 """
@@ -263,6 +283,81 @@ globalThis.__run = async function(){
   await pump(50);
   ok('11-1 이 기기에 되살아나지 않음', !tradeLog.some(e => e.id === ENTRY2.id), tradeLog.map(e => e.id).join(','));
   ok('11-2 시트에서도 정리됨', !SRV.journal.some(e => e.id === ENTRY2.id), SRV.journal.map(e => e.id).join(','));
+
+  /* ---------- 예약주문 ↔ 시트 동기화 ---------- */
+  const J6 = [clone(SEED),
+    { id:'j2', sym:'XRPUSDT', code:'XRP', side:'short', lev:5, margin:100, entry:0.957, stop:0.98, t1:0.93, t2:0.9, at:T0J-90000000, status:'closed', exitReason:'tp2', exitAt:T0J-80000000, exitPrice:0.93, roe:14.1 },
+    { id:'j3', sym:'XRPUSDT', code:'XRP', side:'long', lev:5, margin:100, entry:0.91, stop:0.89, t1:0.94, t2:0.96, at:T0J-140000000, status:'closed', exitReason:'tp2', exitAt:T0J-130000000, exitPrice:0.94, roe:16.4 },
+    { id:'j4', sym:'NEARUSDT', code:'NEAR', side:'long', lev:5, margin:100, entry:2.92, stop:2.85, t1:3.0, t2:3.06, at:T0J-230000000, status:'closed', exitReason:'tp1be', exitAt:T0J-220000000, exitPrice:3.0, roe:13.7 },
+    { id:'j5', sym:'DOGEUSDT', code:'DOGE', side:'short', lev:5, margin:100, entry:0.05705, stop:0.059, t1:0.055, t2:0.053, at:T0J-3600000, status:'closed', exitReason:'stop', exitAt:T0J-1800000, exitPrice:0.059, roe:-17.1 },
+    { id:'j6', sym:'DOGEUSDT', code:'DOGE', side:'short', lev:5, margin:100, entry:0.05705, stop:0.059, t1:0.055, t2:0.053, at:T0J-3000000, status:'open' }];
+  const ORD_A = { id:'od-a', sym:'ETHUSDT', code:'ETH', side:'long', kind:'entry', price:1670, margin:120, lev:5,
+    stop:1634, t1:1712, t2:1742, feeMode:'maker', at:T0J, note:'박스 하단 지정가', status:'pending', hitAt:0, st:T0J };
+
+  /* 12) 이 기기에서 예약주문 등록 → 시트로 올라가고 매매기록은 그대로 */
+  reset({});
+  store(SYNC_TS_KEY, T0J);
+  tradeLog = clone(J6);
+  SRV.journal = clone(J6); SRV.updatedAt = T0J;
+  orderLog = [clone(ORD_A)];
+  saveOrders();
+  flushTimers();
+  await pump(40);
+  ok('12-1 시트에 예약주문 1건', SRV.orders.length === 1 && SRV.orders[0].id === 'od-a', JSON.stringify(SRV.orders).slice(0, 80));
+  ok('12-2 시트 매매기록 6건 그대로', SRV.journal.length === 6, SRV.journal.length);
+  ok('12-3 예약주문 저장이 매매기록을 건드리지 않음', SRV.journal.every(e => J6.some(x => x.id === e.id)), SRV.journal.map(e => e.id).join(','));
+
+  /* 13) 다른 기기에서 열면 시트의 예약주문을 받아 온다 */
+  reset({});
+  store(SYNC_TS_KEY, T0J); store(ORD_SYNC_TS_KEY, T0J);
+  tradeLog = clone(J6); orderLog = [];
+  SRV.journal = clone(J6); SRV.updatedAt = T0J; SRV.orders = [clone(ORD_A)]; SRV.ordersUpdatedAt = T0J;
+  syncNow();
+  await pump(40);
+  ok('13-1 다른 기기에서 예약주문 받음', orderLog.filter(o => o.status === 'pending').length === 1, JSON.stringify(orderLog));
+  ok('13-2 받은 지정가·증거금 일치', orderLog[0] && orderLog[0].price === 1670 && orderLog[0].margin === 120, orderLog[0] && orderLog[0].margin);
+  ok('13-3 매매기록 6건 유지', tradeLog.length === 6, tradeLog.length);
+  ok('13-4 예약주문 카드 다시 그림', (__render.orders || 0) > 0, __render.orders);
+
+  /* 14) 한 기기에서 취소 → 시트에 전파 → 다른 기기의 대기 목록에서도 빠짐 */
+  reset({});
+  store(SYNC_TS_KEY, T0J); store(ORD_SYNC_TS_KEY, T0J);
+  tradeLog = clone(J6); orderLog = [clone(ORD_A)];
+  SRV.journal = clone(J6); SRV.updatedAt = T0J; SRV.orders = [clone(ORD_A)]; SRV.ordersUpdatedAt = T0J;
+  orderLog[0].status = 'cancelled'; orderLog[0].cancelAt = T0J + 60000; orderLog[0].st = T0J + 60000;
+  saveOrders();
+  flushTimers();
+  await pump(40);
+  ok('14-1 시트 주문이 취소 상태', SRV.orders.length === 1 && SRV.orders[0].status === 'cancelled', JSON.stringify(SRV.orders[0] || {}).slice(0, 90));
+  ok('14-2 매매기록 6건 그대로', SRV.journal.length === 6, SRV.journal.length);
+  orderLog = [clone(ORD_A)];                 /* 아직 취소를 모르는 다른 기기 */
+  syncNow();
+  await pump(40);
+  ok('14-3 다른 기기 대기 목록에서 사라짐', orderLog.filter(o => o.status === 'pending').length === 0, JSON.stringify(orderLog.map(o => o.status)));
+  ok('14-4 취소 상태로 남아 되살아나지 않음', orderLog.some(o => o.status === 'cancelled' && o.id === 'od-a'), orderLog.map(o => o.id + ':' + o.status).join(','));
+
+  /* 15) 구버전 서버(orders 필드 없음)여도 기기 예약주문은 그대로 */
+  reset({});
+  store(SYNC_TS_KEY, T0J);
+  tradeLog = clone(J6);
+  SRV.journal = clone(J6); SRV.updatedAt = T0J; SRV.legacyOrders = true;
+  orderLog = [clone(ORD_A)];
+  syncNow();
+  await pump(40);
+  ok('15-1 예전 서버에서도 예약주문 유지', orderLog.length === 1 && orderLog[0].id === 'od-a', orderLog.length);
+  ok('15-2 매매기록 6건 유지', tradeLog.length === 6 && SRV.journal.length === 6, tradeLog.length);
+
+  /* 16) 라이브 검증 흔적(메모 테스트·검증)은 시트 예약주문에 올리지 않음 */
+  reset({});
+  store(SYNC_TS_KEY, T0J);
+  tradeLog = clone(J6);
+  SRV.journal = clone(J6); SRV.updatedAt = T0J;
+  const NOISE = Object.assign(clone(ORD_A), { id:'od-noise', note:'검증용', status:'filled', filledAt:T0J + 1000, st:T0J + 1000 });
+  orderLog = [clone(ORD_A), NOISE];
+  saveOrders();
+  flushTimers();
+  await pump(40);
+  ok('16-1 검증 흔적은 올라가지 않음', SRV.orders.length === 1 && SRV.orders[0].id === 'od-a', SRV.orders.map(o => o.id).join(','));
 
   globalThis.__result = JSON.stringify({ results: __out, log: __log });
   return 1;
