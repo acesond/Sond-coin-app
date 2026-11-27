@@ -359,6 +359,25 @@ globalThis.__run = async function(){
   await pump(40);
   ok('16-1 검증 흔적은 올라가지 않음', SRV.orders.length === 1 && SRV.orders[0].id === 'od-a', SRV.orders.map(o => o.id).join(','));
 
+  /* 17) 값의 출처(source)가 시트를 건너도 유지됨 — 관점 감시가 수동 가설·자동 1 을 구분하는 값 */
+  reset({});
+  store(SYNC_TS_KEY, T0J); store(ORD_SYNC_TS_KEY, T0J);
+  tradeLog = clone(J6); orderLog = [];
+  SRV.journal = clone(J6); SRV.updatedAt = T0J;
+  const A1 = Object.assign(clone(ORD_A), { id:'od-a1', sym:'SOLUSDT', code:'SOL', side:'short', price:73.63, stop:76.2, source:'auto1' });
+  SRV.orders = [clone(ORD_A), clone(A1)]; SRV.ordersUpdatedAt = T0J;
+  syncNow();
+  await pump(40);
+  const gotA1 = orderLog.find(o => o.id === 'od-a1');
+  ok('17-1 시트에서 받은 자동 1 주문의 출처 유지', gotA1 && gotA1.source === 'auto1', gotA1 && gotA1.source);
+  const gotOld = orderLog.find(o => o.id === 'od-a');
+  ok('17-2 출처 없는 예전 주문은 빈 값', gotOld && (gotOld.source === '' || gotOld.source === undefined), gotOld && String(gotOld.source));
+  saveOrders();
+  flushTimers();
+  await pump(40);
+  const back = SRV.orders.find(o => o.id === 'od-a1') || {};
+  ok('17-3 다시 올릴 때도 출처 유지', back.source === 'auto1', String(back.source));
+
   globalThis.__result = JSON.stringify({ results: __out, log: __log });
   return 1;
  } catch (e){ globalThis.__result = JSON.stringify({ results: __out, log: __log, fatal: String(e && (e.message || e)) + ' || ' + String(e && e.stack) }); }

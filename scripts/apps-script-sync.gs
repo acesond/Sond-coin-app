@@ -37,6 +37,12 @@
  *   · doPost save 본문에 orders 배열이 있으면 그것을 예약주문 원본으로 저장합니다.
  *     orders 를 보내지 않는 예전 앱의 저장은 지금 시트에 있는 예약주문을 지우지 않습니다.
  *   · 예약주문은 매매기록(journal)과 완전히 분리돼 있어 승률·자산·매매기록 표에 영향이 없습니다.
+ *
+ * v3 (2026-11-27 추가): 예약주문 '감시 기준' 보관
+ *   · 주문마다 source 필드(manual = 가설 / auto1 = 🤖 자동 1 / custom = 직접 입력)를 같이 저장합니다.
+ *     관점 감시(ntfy_alert.py)가 수동 가설선과 자동 1 후보를 섞지 않고 각자 기준으로 판정하려면 필요합니다.
+ *   · 값이 없는 예전 주문은 빈 문자열로 두고, 감시 쪽이 지정가·손절가를 가설과 비교해 추정합니다.
+ *     (이 코드를 다시 배포하지 않아도 감시는 그대로 동작하고, 배포하면 '감시 기준' 칸이 채워집니다.)
  */
 
 const SCHEMA_VERSION = 2;
@@ -60,7 +66,7 @@ const JOURNAL_HEADERS = [
 
 const ORDER_HEADERS = [
   '번호', '상태', '등록일시(KST)', '종목', '방향', '종류', '지정가', '증거금(USDT)',
-  '레버리지', '주문금액(USDT)', '손절(SL)', 'TP1', 'TP2', '메모', '주문ID'
+  '레버리지', '주문금액(USDT)', '손절(SL)', 'TP1', 'TP2', '메모', '감시 기준', '주문ID'
 ];
 
 /* ───────────────────────── HTTP 진입점 ───────────────────────── */
@@ -350,6 +356,7 @@ function renderOrders_(ss, st) {
       numOr_(o.t1, ''),
       numOr_(o.t2, ''),
       String(o.note || ''),
+      orderSourceLabel_(o.source),
       String(o.id || '')
     ]);
   });
@@ -360,7 +367,7 @@ function renderOrders_(ss, st) {
     .setFontWeight('bold').setFontColor('#ffffff').setBackground('#0f172a')
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
   sh.setFrozenRows(1);
-  [44, 96, 132, 84, 54, 64, 104, 106, 72, 118, 104, 104, 104, 300, 200].forEach((w, i) => sh.setColumnWidth(i + 1, w));
+  [44, 96, 132, 84, 54, 64, 104, 106, 72, 118, 104, 104, 104, 300, 88, 200].forEach((w, i) => sh.setColumnWidth(i + 1, w));
   sh.getRange(2, 1, Math.max(rows.length - 1, 1), 1).setHorizontalAlignment('center');
   sh.getRange(2, 2, Math.max(rows.length - 1, 1), 1).setHorizontalAlignment('center');
   sh.getRange(2, 5, Math.max(rows.length - 1, 1), 2).setHorizontalAlignment('center');
@@ -551,6 +558,9 @@ function cleanOrder_(o) {
     feeMode: String(o.feeMode || 'maker'),
     at: numOr_(o.at, Date.now()),
     note: String(o.note || '').slice(0, 80),
+    /* 값의 출처 — 관점 감시가 수동 가설 주문과 자동 1 주문을 섞지 않게 함께 보관합니다.
+       값이 없는 예전 주문은 빈 문자열로 두고, 감시 쪽이 숫자로 추정합니다. */
+    source: (o.source === 'auto1' || o.source === 'manual' || o.source === 'custom') ? o.source : '',
     baseEntry: isFinite(numOr_(o.baseEntry, NaN)) ? numOr_(o.baseEntry, 0) : null,
     hitAt: numOr_(o.hitAt, 0),
     status: status,
@@ -574,6 +584,14 @@ function orderStatusLabel_(o) {
   if (o.status === 'filled') return '✅ 체결됨';
   if (o.status === 'cancelled') return '❌ 취소';
   return '⏳ 대기';
+}
+
+/* 예약주문이 어느 기준으로 만들어진 주문인지 — 예약주문 시트 '감시 기준' 칸 */
+function orderSourceLabel_(src) {
+  if (src === 'auto1') return '🤖 자동 1';
+  if (src === 'manual') return '가설';
+  if (src === 'custom') return '직접 입력';
+  return '';
 }
 
 function sortJournal_(list) {

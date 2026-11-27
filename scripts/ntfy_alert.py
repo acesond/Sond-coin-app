@@ -1128,8 +1128,83 @@ def _tag_price(sym, tag):
     return None
 
 
+# ---------------------------------------------------------------- 주문 출처(수동 가설 / 자동 1)
+# 성훈님 요청(#14524, 2026-11-27): 예약주문 관점 감시가 수동 가설 주문과 자동 1 주문을
+# 섞지 말고 "각자 기준"으로만 판정해야 합니다.
+#   · 수동 가설 주문 : 그 가설의 손절선·4H 구조·반대편 가설선까지 함께 봅니다(기존 그대로).
+#   · 자동 1 주문   : 주문 자체의 손절선과 지정가 도달만 봅니다. 수동 가설선은 절대 끌어오지 않습니다.
+#   · 직접 입력     : 주문 손절선만 봅니다(어느 가설·후보인지 알 수 없음).
+# 주문에 source 필드가 실려 오면 그 값을 그대로 믿고, 없으면(구버전 시트·이 기능 이전 주문)
+# 숫자를 비교해 추정합니다. 애매하면 가설선을 쓰지 않는 쪽(auto1)으로 둡니다 —
+# 엉뚱한 가설 손절선으로 오경보를 내는 것이 이 기능의 원래 문제였기 때문입니다.
+ORDER_SRC_STOP_TOL_PCT = 1.5    # 손절가가 가설 손절선과 이 % 안이면 그 가설의 주문
+ORDER_SRC_ENTRY_TOL_PCT = 2.5   # 지정가가 가설 진입가에서 이 % 안이면 그 가설의 주문
+
+
+def _hyp_slots(sym, side):
+    """같은 방향 수동 가설(h1·h2·br) 중 진입가·손절선이 숫자인 것."""
+    h = HYP_DATA["HYP"].get(sym) or {}
+    out = []
+    for slot in ("h1", "h2", "br"):
+        hy = h.get(slot)
+        if not isinstance(hy, dict):
+            continue
+        if (hy.get("kind") or hy.get("cls")) != side:
+            continue
+        e, s = hy.get("entry"), hy.get("stop")
+        if is_num(e) and is_num(s) and float(e) > 0 and float(s) > 0:
+            out.append({"slot": slot, "entry": float(e), "stop": float(s)})
+    return out
+
+
+def _near_pct(a, b, tol):
+    if not (is_num(a) and is_num(b)) or not b:
+        return False
+    return abs(float(a) - float(b)) / abs(float(b)) * 100 <= tol
+
+
+def order_source(o, sym, side, limit, stop, cand=None):
+    """예약주문이 어느 기준으로 만들어진 주문인지 — ('manual' | 'auto1' | 'custom', 이유)."""
+    raw = o.get("source") if isinstance(o, dict) else None
+    tag = raw.strip().lower() if isinstance(raw, str) else ""
+    if tag in ("auto1", "auto", "a1", "자동1"):
+        return "auto1", "웹앱 기록 · 자동 1"
+    if tag in ("manual", "hyp", "h1", "h2", "br", "가설"):
+        return "manual", "웹앱 기록 · 수동 가설"
+    if tag in ("custom", "direct", "직접"):
+        return "custom", "웹앱 기록 · 직접 입력"
+
+    hyps = _hyp_slots(sym, side)
+    if not hyps:
+        return "custom", "가설 없는 종목 — 주문 손절선만 봅니다"
+
+    # ① 손절가가 가설 손절선과 거의 같다 — 그 가설의 주문으로 봅니다(가장 확실한 신호)
+    for hy in hyps:
+        if stop and _near_pct(stop, hy["stop"], ORDER_SRC_STOP_TOL_PCT):
+            return "manual", f"SL이 {hy['slot']} 손절선과 {ORDER_SRC_STOP_TOL_PCT}% 안 — 수동 가설 주문"
+
+    # ② 지정가가 가설 진입가 근처이고, 손절선을 넘어선 자리가 아니다 — 그 가설의 주문
+    #    (숏 지정가가 숏 손절선 위, 롱 지정가가 롱 손절선 아래면 가설 주문일 수 없습니다)
+    for hy in hyps:
+        right_side = (limit <= hy["stop"]) if side == "short" else (limit >= hy["stop"])
+        if right_side and _near_pct(limit, hy["entry"], ORDER_SRC_ENTRY_TOL_PCT):
+            return "manual", f"지정가가 {hy["slot"]} 진입가 근처 — 수동 가설 주문"
+
+    # ③ 자동 1 후보와 진입가가 가까우면 자동 1
+    if isinstance(cand, dict) and cand.get("ok") and cand.get("side") == side and _near_pct(limit, cand.get("entry"), ORDER_SRC_ENTRY_TOL_PCT):
+        return "auto1", "자동 1 후보 진입가와 일치 — 자동 1 기준"
+
+    return "auto1", "가설 범위 밖(수동 가설 주문 아님) — 자동 1 기준"
+
+
 def evaluate_order(o, tk, candles):
-    """예약주문 1건의 관점 상태 — 어떤 사유로 알릴지(conds)까지 계산합니다."""
+    """예약주문 1건의 관점 상태 — 어떤 사유로 알릴지(conds)까지 계산합니다.
+
+    판정 기준은 주문 출처별로 나뉩니다.
+      · manual(수동 가설) : 가설 손절선·4H 구조 반전·반대편 가설선 이탈·지정가 도달
+      · auto1(자동 1)    : 주문 SL·지정가 도달·자동 1 후보의 방향 반전/무효
+      · custom(직접)     : 주문 SL·지정가 도달
+    """
     sym = o["sym"]
     price = float(tk["last"])
     meta = _sym_meta(sym, price)
@@ -1138,7 +1213,17 @@ def evaluate_order(o, tk, candles):
     limit = float(o["price"])
     stop = float(o["stop"]) if is_num(o.get("stop")) and float(o["stop"]) > 0 else None
 
-    cands = ([stop] if stop else []) + _hyp_stops(sym, side)
+    try:
+        cand = auto1_candidate(sym, price, candles) if (candles or {}).get("4H") else {"ok": False}
+    except Exception:  # noqa: BLE001 — 참고 판정이라 실패해도 주문 감시는 그대로
+        cand = {"ok": False}
+    src, src_note = order_source(o, sym, side, limit, stop, cand)
+
+    if src == "manual":
+        cands = ([stop] if stop else []) + _hyp_stops(sym, side)
+    else:
+        # 자동 1·직접 입력 주문에는 수동 가설의 손절선을 끌어오지 않습니다
+        cands = [stop] if stop else []
     cands = [x for x in cands if x > 0]
     inval = (min(cands) if side == "short" else max(cands)) if cands else None
 
@@ -1150,7 +1235,7 @@ def evaluate_order(o, tk, candles):
         "t1": float(o["t1"]) if is_num(o.get("t1")) else None,
         "t2": float(o["t2"]) if is_num(o.get("t2")) else None,
         "inval": inval, "note": str(o.get("note") or ""), "at": o.get("at"),
-        "conds": []
+        "source": src, "srcNote": src_note, "conds": []
     }
     ev["gapPct"] = (limit - price) / price * 100 if side == "short" else (price - limit) / price * 100
     ev["reached"] = (price >= limit) if side == "short" else (price <= limit)
@@ -1163,6 +1248,10 @@ def evaluate_order(o, tk, candles):
         closes4 = [c["c"] for c in c4]
         e50 = ema_series(closes4, 50)[-1]
         close4 = float(closes4[-1])
+
+    # 주문 출처가 수동 가설일 때만 가설 기준을 씁니다.
+    # (자동 1 주문은 아래 ②′에서 "자동 1 후보 자체"로만 판단합니다.)
+    manual = (ev["source"] == "manual")
 
     # ① 무효화선 근접·돌파
     if inval:
@@ -1191,8 +1280,8 @@ def evaluate_order(o, tk, candles):
                          + ("숏" if side == "short" else "롱") + " 관점이 무효입니다")
             })
 
-    # ② 4H 구조 반전 — 4H 종가가 EMA50 반대편에 안착
-    if e50 and close4 is not None:
+    # ② 4H 구조 반전 — 4H 종가가 EMA50 반대편에 안착 (수동 가설 주문 전용)
+    if manual and e50 and close4 is not None:
         if side == "short" and close4 > e50 and price > e50:
             ev["conds"].append({"key": "flip4h", "rank": 2, "label": "4H 구조 반전",
                 "text": f"4H 종가 {fmt_px(close4, dp)}가 EMA50 {fmt_px(e50, dp)} 위에 안착 — 하락 구조(숏 근거)가 꺾였습니다"})
@@ -1200,14 +1289,30 @@ def evaluate_order(o, tk, candles):
             ev["conds"].append({"key": "flip4h", "rank": 2, "label": "4H 구조 반전",
                 "text": f"4H 종가 {fmt_px(close4, dp)}가 EMA50 {fmt_px(e50, dp)} 아래로 안착 — 상승 구조(롱 근거)가 꺾였습니다"})
 
-    # ③ 반대편 가설 진입선을 먼저 넘어 지정가 관점이 식은 경우
-    if side == "short":
+    # ②′ 자동 1 주문 — 이 주문을 만든 4H 모노웨이브 후보가 완전히 반대 방향으로 바뀌거나 무효화됐을 때만
+    if ev["source"] == "auto1" and isinstance(cand, dict) and cand.get("ok"):
+        cside = "short" if cand.get("side") == "short" else "long"
+        side_kr = "숏" if side == "short" else "롱"
+        cside_kr = "숏" if cside == "short" else "롱"
+        m1 = cand.get("m1") or {}
+        if cside != side:
+            ev["conds"].append({"key": "auto1_flip", "rank": 2, "label": "자동 1 후보 반대 전환",
+                "text": (f"4H 직전 모노웨이브 {m1.get('id') or ''} 방향이 {cside_kr}으로 바뀌어, "
+                         f"이 {side_kr} 자리를 만든 자동 1 후보가 반대 방향이 됐습니다" +
+                         (f" · 새 후보 진입 {fmt_px(cand.get('entry'), dp)}" if is_num(cand.get("entry")) else ""))})
+        elif cand.get("voided"):
+            ev["conds"].append({"key": "auto1_flip", "rank": 2, "label": "자동 1 후보 무효",
+                "text": (f"4H 모노웨이브 {m1.get('id') or ''} 시작점 {fmt_lv(m1.get('startPrice'), dp)}을 "
+                         f"100% 되돌려 자동 1 후보가 무효화됐습니다(현재가 {fmt_px(price, dp)})")})
+
+    # ③ 반대편 가설 진입선을 먼저 넘어 지정가 관점이 식은 경우 (수동 가설 주문 전용)
+    if manual and side == "short":
         lvl = _tag_price(sym, "눌림 롱 진입")
         if lvl and price <= lvl * (1 - ORDER_STALE_PCT / 100):
             ev["conds"].append({"key": "stale", "rank": 1, "label": "지정가 관점 식음",
                 "text": (f"눌림 롱 진입 {fmt_lv(lvl, dp)} 아래({fmt_px(price, dp)})로 먼저 내려갔습니다 — "
                          f"{fmt_px(limit, dp)} 숏 지정가 자리로 되돌아오지 않고 지나갈 수 있습니다")})
-    else:
+    elif manual:
         lvl = _tag_price(sym, "숏 진입")
         if lvl and price >= lvl * (1 + ORDER_STALE_PCT / 100):
             ev["conds"].append({"key": "stale", "rank": 1, "label": "지정가 관점 식음",
@@ -1226,9 +1331,11 @@ def evaluate_order(o, tk, candles):
 
 def order_title(ev, cond):
     what = f"{ev['code']} {'숏' if ev['side'] == 'short' else '롱'} {fmt_px(ev['limit'], ev['dp'])}"
-    icon = {"breach1h": "🚨", "breach": "⚠️", "near": "⚠️", "flip4h": "🔄", "stale": "⌛", "reach": "🎯"}
+    icon = {"breach1h": "🚨", "breach": "⚠️", "near": "⚠️", "flip4h": "🔄", "auto1_flip": "🔀",
+            "stale": "⌛", "reach": "🎯"}
     head = {"breach1h": "예약주문 무효화 확정", "breach": "예약주문 무효화", "near": "예약주문 무효화 임박",
-            "flip4h": "예약주문 관점 반전", "stale": "예약주문 관점 식음", "reach": "지정가 도달"}
+            "flip4h": "예약주문 관점 반전", "auto1_flip": "자동 1 예약주문 관점 무효",
+            "stale": "예약주문 관점 식음", "reach": "지정가 도달"}
     return f"{icon.get(cond['key'], '⚠️')} {head.get(cond['key'], '예약주문 점검')} — {what}"
 
 
@@ -1237,15 +1344,21 @@ def order_body(ev, cond):
     f = lambda v: fmt_px(v, dp)  # noqa: E731
     side_kr = "숏" if ev["side"] == "short" else "롱"
     kind_kr = "물타기" if ev["kind"] == "add" else "지정가"
+    basis_kr = {"manual": "수동 가설", "auto1": "자동 1", "custom": "직접 입력"}.get(ev.get("source"), "")
     lines = [
         f"⏳ {ev['code']} {side_kr} {kind_kr} {f(ev['limit'])} · 증거금 {ev['margin']:.2f} U · {ev['lev']}배 — 앱 기준 아직 '미체결'",
         f"현재가 {f(ev['price'])} · "
         + (f"지정가 {f(ev['limit'])}을 지나쳤습니다" if ev["reached"]
            else f"지정가까지 {abs(ev['gapPct']):.2f}% {'위' if ev['side'] == 'short' else '아래'}")
-        + (f" · 무효화선 {f(ev['inval'])}" if ev.get("inval") else ""),
+        + (f" · 무효화선 {f(ev['inval'])}" + (" (주문 SL 기준)" if ev.get("source") != "manual" else "") if ev.get("inval") else ""),
         "",
         f"{cond['label']} · {cond['text']}",
     ]
+    if basis_kr:
+        note = {"manual": "가설 손절선·4H 구조·반대편 가설선까지",
+                "auto1": "주문 SL과 자동 1 후보만",
+                "custom": "주문 SL만"}.get(ev.get("source"), "")
+        lines.append("· 감시 기준 " + basis_kr + (" — " + note if note else ""))
     tail = []
     if ev.get("stop"):
         tail.append("SL " + f(ev["stop"]))
@@ -1307,6 +1420,7 @@ def scan_orders(feed, verbose=True, url=SYNC_URL, orders=None, deadline=None):
             if verbose:
                 print(f"· 예약주문 {ev['code']} {ev['side']} {fmt_px(ev['limit'], ev['dp'])}"
                       f" · 현재가 {fmt_px(ev['price'], ev['dp'])}"
+                      f" · 기준 {ev['source']}"
                       f" · {'/'.join(c['key'] for c in ev['conds']) or '관점 유지'}", flush=True)
             for cond in ev["conds"]:
                 res["alerts"].append({
@@ -1314,10 +1428,12 @@ def scan_orders(feed, verbose=True, url=SYNC_URL, orders=None, deadline=None):
                     "orderId": ev["id"], "sym": sym, "side": ev["side"],
                     "limit": ev["limit"], "price": ev["price"], "dp": ev["dp"],
                     "cond": cond["key"], "label": cond["label"], "text": cond["text"],
+                    "source": ev["source"], "srcNote": ev.get("srcNote"),
                     "title": order_title(ev, cond), "body": order_body(ev, cond),
                     "tags": "warning,bell" if cond["key"] != "reach" else "dart,bell",
                     "facts": {"orderId": ev["id"], "sym": sym, "side": ev["side"],
-                              "limit": ev["limit"], "price": ev["price"], "cond": cond["key"]}
+                              "limit": ev["limit"], "price": ev["price"], "cond": cond["key"],
+                              "source": ev["source"]}
                 })
     return res
 

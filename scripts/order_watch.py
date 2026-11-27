@@ -161,6 +161,7 @@ def main(argv=None):
             "kind": "order",
             "orderId": al.get("orderId"), "sym": al.get("sym"), "side": al.get("side"),
             "limit": al.get("limit"), "price": al.get("price"), "cond": al.get("cond"),
+            "source": al.get("source"),
             "label": al.get("label"), "text": al.get("text"),
             "observed_at": core.now_kst().isoformat(timespec="seconds"),
         }

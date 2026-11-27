@@ -1765,6 +1765,10 @@ const state = {
   prevPrice: null,
   plans: {},
   activeSlot: 'h1',
+  /* 계산기 값이 어느 기준에서 왔는지 — 예약주문에 그대로 실려 관점 감시가
+     수동 가설 주문과 자동 1 주문을 섞지 않게 합니다.
+       'manual' 가설 카드(h1·h2·br) 값 / 'auto1' 🤖 자동 1 판정 카드 값 / 'custom' 직접 입력 */
+  planSource: 'manual',
   page: 'live',
   statusMap: null,
   statusAt: 0,
@@ -4968,6 +4972,7 @@ function loadAuto1ToPlan(){
   const rd = x => +(+x).toFixed(dpn);
   state.activeSlot = 'custom';
   fillPlanForm({ side:h.side, entry:rd(h.entry), stop:rd(h.stop), t1:rd(h.t1), t2:rd(h.t2), lev:5, margin:0 });
+  state.planSource = 'auto1';   /* 예약주문에 '자동 1' 로 실려 수동 가설선과 섞이지 않게 */
   renderPlanner(true);
   const ps = $('#planSaved');
   if (ps) ps.textContent = '자동 1 «' + h.title + '» 값 불러옴 — 수정하면 내 타점으로 저장됩니다';
@@ -5020,6 +5025,7 @@ function renderAutoScenarios(){
     /* 저장된 «내 타점»을 덮어쓰지 않도록 폼에만 채웁니다 — 값을 고치면 그때부터 내 타점으로 자동 저장됩니다 */
     state.activeSlot = 'custom';
     fillPlanForm({ side:h.side, entry:rd(h.entry), stop:rd(h.stop), t1:rd(h.t1), t2:rd(h.t2), lev:5, margin:0 });
+    state.planSource = h.id === 'a1' ? 'auto1' : 'custom';   /* a1만 ntfy의 '자동 1' 과 같은 후보 */
     renderPlanner(true);
     $('#planSaved').textContent = '자동 후보 «' + h.title + '» 값 불러옴 — 수정하면 내 타점으로 저장됩니다';
     $('#planSec').scrollIntoView({ behavior:'smooth', block:'start' });
@@ -5200,6 +5206,9 @@ function calcEntryPlan(){
 }
 function fillPlanForm(p){
   state.planSide = p.side || 'short';
+  /* 값의 출처 — 저장된 타점에 기록이 있으면 그대로, 없으면 지금 슬롯(가설/내 타점)으로 판단 */
+  state.planSource = (p.src === 'auto1' || p.src === 'manual' || p.src === 'custom')
+    ? p.src : (state.activeSlot === 'custom' ? 'custom' : 'manual');
   state.feeMode = feeModeOf(p.feeMode);
   const fsw0 = $('#feeSwitch');
   if (fsw0) fsw0.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.fee === state.feeMode));
@@ -5390,7 +5399,8 @@ function renderPlanner(force){
 let saveTimer = null;
 function sanitizePlan(p){
   const out = { side: p.side === 'long' ? 'long' : 'short', lev: clamp(p.lev || 5, 1, 20), margin: isNum(p.margin) ? p.margin : 0,
-                mAuto: p.mAuto === false ? false : true, feeMode: feeModeOf(p.feeMode) };
+                mAuto: p.mAuto === false ? false : true, feeMode: feeModeOf(p.feeMode),
+                src: (state.planSource === 'auto1' || state.planSource === 'custom') ? state.planSource : 'manual' };
   ['entry','stop','t1','t2'].forEach(k => { if (isNum(p[k]) && p[k] > 0) out[k] = p[k]; });
   return out;
 }
@@ -6614,6 +6624,13 @@ function addOrder(o){
   saveOrders();
   return o;
 }
+/* 예약주문에 실을 값의 출처 — 관점 감시(ntfy_alert.py)가 "수동 가설"과 "자동 1" 을 섞지 않게 합니다.
+   가설 카드(h1·h2·br) 값이면 manual, 🤖 자동 1 판정 카드 값이면 auto1, 직접 고른 값이면 custom. */
+function planSourceTag(){
+  if (state.planSource === 'auto1') return 'auto1';
+  if (state.planSource === 'custom') return 'custom';
+  return 'manual';
+}
 /* 계산기 값(또는 물타기 단)을 예약주문으로 등록하는 시트 */
 function openOrderSheet(kindArg){
   if (kindArg === 'add'){ wdOpen(); return; }
@@ -6668,6 +6685,7 @@ function openOrderSheet(kindArg){
       side: plan.side === 'long' ? 'long' : 'short', kind: 'entry',
       price: px, margin: mg, lev: lev,
       stop: plan.stop, t1: plan.t1, t2: plan.t2, feeMode: 'maker',
+      source: planSourceTag(),
       at: Date.now(), note: note, status: 'pending', hitAt: 0
     });
     renderPosition();
@@ -6696,6 +6714,7 @@ function reserveWdOrders(){
       side: p.side === 'long' ? 'long' : 'short', kind: 'add',
       price: a.price, margin: Math.round(a.margin * 100) / 100, lev: c.lev,
       stop: p.stop, t1: p.t1, t2: p.t2, feeMode: 'maker',
+      source: planSourceTag(),
       at: Date.now(), note: '물타기 ' + a.n + '차 (1차 ' + fmtPx(c.baseEntry) + ')',
       baseEntry: c.baseEntry, status: 'pending', hitAt: 0
     });
@@ -7397,6 +7416,9 @@ function syncCleanOrder(o){
     feeMode: feeModeOf(o.feeMode), at: Number(o.at) || Date.now(),
     note: String(o.note || '').slice(0, 80),
     baseEntry: parseFloat(o.baseEntry), hitAt: Number(o.hitAt) || 0,
+    /* 값의 출처 — 시트를 건너온 주문의 '수동 가설 / 자동 1' 구분을 잃지 않게 보존합니다.
+       값이 없으면 빈 문자열로 두어 관점 감시가 숫자로 추정합니다. */
+    source: (o.source === 'auto1' || o.source === 'manual' || o.source === 'custom') ? o.source : '',
     status: o.status === 'cancelled' ? 'cancelled' : (o.status === 'filled' ? 'filled' : 'pending'),
     st: Number(o.st) || Number(o.at) || Date.now()
   };

@@ -193,6 +193,132 @@ ok("12-1 실제 시트 pull 성공", real["ok"] is True, real["why"])
 ok("12-2 실제 시트 예약주문 상태 확인", isinstance(real["orders"], list),
    f"supported={real['supported']} pending={len(real['orders'])}")
 
+# ============================================================================
+# 13~) 각자 기준 분리 — 수동 가설 주문과 자동 1 주문을 섞지 않는다 (2026-11-27 #14524)
+#     성훈님 SOL 숏 73.63 / SL 76.2 는 자동 1 로 만든 주문인데, 수동 가설 h1 의 손절선 72.55 와
+#     비교해 "무효화선 돌파"·"4H 구조 반전" 오경보가 나갔습니다.
+# ============================================================================
+
+def zigzag4h(start, segs, pad=0.004):
+    """4H 모노웨이브를 만들 수 있는 지그재그 봉. segs=[(봉 수, 그 구간 마지막 종가), ...]"""
+    vals = [start]
+    cur = start
+    for n, target in segs:
+        for i in range(1, n + 1):
+            vals.append(cur + (target - cur) * i / n)
+        cur = target
+    return [{"t": 1700000000000 + i * 14400000, "o": c, "h": c * (1 + pad), "l": c * (1 - pad),
+             "c": c, "v": 1.0, "conf": True} for i, c in enumerate(vals)]
+
+
+def one1h(price):
+    return [{"t": 0, "o": price, "h": price * 1.001, "l": price * 0.999, "c": price, "v": 1.0, "conf": True}] * 3
+
+
+# 마지막에서 두 번째 모노웨이브(m1)가 아래로 향하는 4H — 자동 1 후보도 숏
+C4_SHORT_M1 = zigzag4h(71.0, [(25, 66.0), (20, 74.0), (20, 68.0), (12, 69.2)])
+# m1 이 위로 향하는 4H — 자동 1 후보가 롱으로 바뀐 경우
+C4_LONG_M1 = zigzag4h(71.0, [(20, 66.0), (20, 74.5), (15, 68.5), (18, 74.0), (6, 73.0)])
+
+# 성훈님이 실제로 걸어둔 주문 그대로(시트에 source 없음)
+SOL_A1 = {"id": "odmwymtb25pzw", "sym": "SOLUSDT", "code": "SOL", "side": "short", "kind": "entry",
+          "price": 73.63, "margin": 837.01, "lev": 5, "stop": 76.2, "t1": 65.77, "t2": 57.91,
+          "feeMode": "maker", "at": 1795762813757, "note": "", "status": "pending", "hitAt": 0}
+
+
+def evaluate_c(order, price, c4, close1=None):
+    return core.evaluate_order(order, {"last": price}, {"4H": c4, "1H": one1h(close1 or price)})
+
+
+# 수동 가설 h1(SOL 숏 71.8 / SL 72.55)의 손절선을 넘어선 자리에 걸린 숏 지정가 → 자동 1
+src, why = core.order_source(SOL_A1, "SOLUSDT", "short", 73.63, 76.2)
+ok("13-1 source 없는 SOL 73.63 주문은 자동 1 로 판별", src == "auto1", f"{src} / {why}")
+
+# 73.63 은 수동 h1 손절선 72.55 위 → 예전 코드라면 '무효화선 돌파'가 났던 자리
+ev = evaluate_c(SOL_A1, 73.0, C4_SHORT_M1)
+ok("13-2 무효화선은 수동 72.55 가 아니라 주문 SL 76.2", ev["inval"] == 76.2, ev["inval"])
+ok("13-3 4H 반전(flip4h)을 끌어오지 않음", "flip4h" not in [c["key"] for c in ev["conds"]],
+   [c["key"] for c in ev["conds"]])
+
+# 예전 코드에서 오경보가 나던 구간: 가설 손절선 72.55 아래로 내려간 현재가
+ev = evaluate_c(SOL_A1, 72.6, C4_SHORT_M1)
+keys = [c["key"] for c in ev["conds"]]
+ok("13-4 수동 72.55 아래(72.60)에서도 오경보 없음", keys == [], keys)
+ev = evaluate_c(SOL_A1, 72.6, C4_SHORT_M1, close1=72.7)
+ok("13-5 1H 종가가 72.55 위여도 '무효화 확정' 없음", [c["key"] for c in ev["conds"]] == [],
+   [c["key"] for c in ev["conds"]])
+
+# 주문 자체의 손절선 76.2 는 그대로 감시
+ev = evaluate_c(SOL_A1, 76.05, C4_SHORT_M1)
+ok("13-6 주문 SL 76.2 근접은 알림", "near" in [c["key"] for c in ev["conds"]], [c["key"] for c in ev["conds"]])
+ev = evaluate_c(SOL_A1, 76.4, C4_SHORT_M1, close1=76.5)
+ok("13-7 주문 SL 76.2 1H 종가 돌파는 '무효화 확정'", "breach1h" in [c["key"] for c in ev["conds"]],
+   [c["key"] for c in ev["conds"]])
+ok("13-8 알림 본문에 감시 기준(자동 1) 표기", "감시 기준 자동 1" in core.order_body(ev, ev["best"]),
+   core.order_body(ev, ev["best"]).split("\n")[3:5])
+
+# 지정가 도달은 자동 1 주문에도 그대로 (수동 가설선과 무관)
+ev = evaluate_c(SOL_A1, 73.7, C4_SHORT_M1)
+ok("13-9 자동 1 주문도 지정가 도달은 알림", "reach" in [c["key"] for c in ev["conds"]],
+   [c["key"] for c in ev["conds"]])
+ok("13-10 자동 1 주문의 반대편 가설선(stale)은 쓰지 않음",
+   "stale" not in [c["key"] for c in evaluate_c(SOL_A1, 69.0, C4_SHORT_M1)["conds"]],
+   [c["key"] for c in evaluate_c(SOL_A1, 69.0, C4_SHORT_M1)["conds"]])
+
+# ---------- 14) 자동 1 후보가 반대 방향으로 바뀌면 auto1_flip
+ev = evaluate_c(SOL_A1, 72.0, C4_LONG_M1)
+keys = [c["key"] for c in ev["conds"]]
+ok("14-1 4H m1 이 롱으로 바뀌면 auto1_flip", keys == ["auto1_flip"], keys)
+ok("14-2 제목에 '자동 1' 표기", "자동 1" in core.order_title(ev, ev["best"]), core.order_title(ev, ev["best"]))
+ok("14-3 반대 전환 사유에 모노웨이브 방향 표기", "롱" in ev["best"]["text"], ev["best"]["text"])
+
+# ---------- 15) source 필드가 있으면 숫자 추정보다 그 값을 먼저 믿는다
+SOL_MANUAL = dict(SOL_A1, source="manual")
+ev = evaluate_c(SOL_MANUAL, 72.6, C4_SHORT_M1)
+ok("15-1 source=manual 이면 수동 가설 기준(72.55)", ev["inval"] == 72.55, ev["inval"])
+ok("15-2 source=manual 이면 예전처럼 무효화선 72.55 로 경보",
+   any(c["key"] in ("near", "breach", "breach1h") for c in ev["conds"]), [c["key"] for c in ev["conds"]])
+SOL_A1_TAG = dict(SOL_A1, source="auto1")
+ev = evaluate_c(SOL_A1_TAG, 72.6, C4_SHORT_M1)
+ok("15-3 source=auto1 이면 수동 가설선 무시", ev["inval"] == 76.2 and ev["conds"] == [],
+   f"{ev['inval']} {[c['key'] for c in ev['conds']]}")
+
+# ---------- 16) 수동 가설 주문은 기존 그대로 — BTC 숏 61,778 은 h1 손절 61,850 으로 경보
+src, why = core.order_source(BTC_ORDER, "BTCUSDT", "short", 61778.0, 63234.5)
+ok("16-1 source 없는 BTC 61,778 주문은 수동 가설로 판별", src == "manual", f"{src} / {why}")
+ev = evaluate(BTC_ORDER, 61830, "down")
+ok("16-2 수동 가설 주문은 가설 손절선 근접 경보 유지", "near" in [c["key"] for c in ev["conds"]],
+   [c["key"] for c in ev["conds"]])
+ev = evaluate(BTC_ORDER, 61300, "down")
+ok("16-3 수동 가설 주문 본문에 감시 기준(수동 가설) 표기",
+   "감시 기준 수동 가설" in core.order_body(ev, {"label": "x", "text": "y", "key": "near"}), "")
+
+# ---------- 17) 가설이 없는 종목(직접 입력)은 주문 SL 만 본다
+src, why = core.order_source(NEAR_X, "NEARUSDT", "long", 2.92, 2.85)
+ok("17-1 가설 없는 종목은 직접 입력(custom)", src == "custom", f"{src} / {why}")
+ok("17-2 가설 없는 종목은 flip4h 를 쓰지 않음", "flip4h" not in [c["key"] for c in evaluate(NEAR_X, 2.855, "down")["conds"]],
+   [c["key"] for c in evaluate(NEAR_X, 2.855, "down")["conds"]])
+
+# ---------- 18) order_watch.py CLI — 자동 1 주문은 조용하고, 주문 SL 에 닿을 때만 실행을 연다
+SOL_STATE = os.path.join(TMP, "state", "order_watch_sol.json")
+SOL_FILE = write_orders("sol.json", [SOL_A1])
+
+
+def run_sol(price, extra=None):
+    ow.core.Feed = lambda verbose=True: FakeFeed(price, "down")
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        code = ow.main(["--state", SOL_STATE, "--orders-file", SOL_FILE] + (extra or []))
+    return code, buf.getvalue().strip()
+
+
+code, out = run_sol(72.6)
+ok("18-1 자동 1 주문·가설 손절선 아래 → 종료 1(조용)", code == 1 and out == "", f"code={code} out={out[:80]}")
+code, out = run_sol(76.05)
+ok("18-2 주문 SL 76.2 근접 → 종료 0", code == 0 and "76.2" in out, f"code={code} out={out[:120]}")
+ok("18-3 관찰 사실에 출처(auto1)가 실림", out.startswith("{") and json.loads(out)["alerts"][0].get("source") == "auto1",
+   out[:160])
+
 fails = [x for x in OUT if not x[1]]
 for name, passed, extra in OUT:
     print(("PASS " if passed else "FAIL ") + name + (("  → " + extra) if extra else ""))
