@@ -7122,6 +7122,15 @@ function loadTradeLog(){
   if (changed){ store(LOG_KEY, tradeLog); store(POS_KEY, pos); }
   /* 가짜 테스트 기록·지운 기록은 앱을 여는 순간 이 기기에서도 정리합니다 */
   purgeTradeLog();
+  /* 숙청·삭제된 기록만 가리키는 진행 포지션(고아)은 함께 정리합니다 —
+     남겨 두면 다음 부팅 때 '진행 중' 기록이 새로 만들어져 시트로 올라갑니다. */
+  const posDel = syncDelIds();
+  let pchanged = false;
+  Object.keys(pos).forEach(k => {
+    const p = pos[k];
+    if (p && p.logId && posDel.has(String(p.logId))){ delete state.pos[k]; pchanged = true; }
+  });
+  if (pchanged) store(POS_KEY, state.pos || {});
   /* 투입 증거금이 비어 있는 기록은 초기 금액으로 한 번 채워 자산현황이 끊기지 않게 합니다 */
   let mchanged = false;
   tradeLog.forEach(e => { if (!isNum(marginOf(e))){ e.margin = assetState.initial; mchanged = true; } });
