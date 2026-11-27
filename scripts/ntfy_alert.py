@@ -1214,8 +1214,8 @@ def evaluate_order(o, tk, candles):
                 "text": (f"숏 진입 구간 {fmt_lv(lvl, dp)} 위({fmt_px(price, dp)})로 먼저 올라갔습니다 — "
                          f"{fmt_px(limit, dp)} 롱 지정가 자리로 내려오지 않고 지나갈 수 있습니다")})
 
-    # ④ 지정가 도달
-    if ev["reached"]:
+    # ④ 지정가 도달 — 무효화·반전 사유가 있으면 그쪽만 알립니다(중복 알림 방지)
+    if ev["reached"] and not [c for c in ev["conds"] if c["rank"] >= 2]:
         ev["conds"].append({"key": "reach", "rank": 1, "label": "지정가 도달",
             "text": f"현재가 {fmt_px(price, dp)} — 지정가 {fmt_px(limit, dp)}에 닿았습니다(실제 체결 여부는 거래소에서 확인)"})
 
@@ -1238,9 +1238,11 @@ def order_body(ev, cond):
     side_kr = "숏" if ev["side"] == "short" else "롱"
     kind_kr = "물타기" if ev["kind"] == "add" else "지정가"
     lines = [
-        f"⏳ {ev['code']} {side_kr} {kind_kr} {f(ev['limit'])} · 증거금 {ev['margin']:.2f} U · {ev['lev']}배 — 아직 미체결",
-        f"현재가 {f(ev['price'])} · " + ("지정가 도달" if ev["reached"] else f"지정가까지 {fmt_pct(ev['gapPct'])}") +
-        (f" · 무효화선 {f(ev['inval'])}" if ev.get("inval") else ""),
+        f"⏳ {ev['code']} {side_kr} {kind_kr} {f(ev['limit'])} · 증거금 {ev['margin']:.2f} U · {ev['lev']}배 — 앱 기준 아직 '미체결'",
+        f"현재가 {f(ev['price'])} · "
+        + (f"지정가 {f(ev['limit'])}을 지나쳤습니다" if ev["reached"]
+           else f"지정가까지 {abs(ev['gapPct']):.2f}% {'위' if ev['side'] == 'short' else '아래'}")
+        + (f" · 무효화선 {f(ev['inval'])}" if ev.get("inval") else ""),
         "",
         f"{cond['label']} · {cond['text']}",
     ]

@@ -97,11 +97,14 @@ ok("2-2 근접이 가장 높은 사유", ev["best"] and ev["best"]["key"] == "ne
 ev = evaluate(BTC_ORDER, 61300, "down")
 ok("3-1 지정가 0.8% 아래·무효선 여유 → 사유 없음", ev["conds"] == [], [c["key"] for c in ev["conds"]])
 
-# ---------- 4) 숏: 지정가 도달
-ev = evaluate(BTC_ORDER, 61790, "down")
+# ---------- 4) 지정가 도달 (다른 사유가 없을 때만 따로 알림)
+ev = evaluate(ETH_LONG, 1669, "up")
 keys = [c["key"] for c in ev["conds"]]
 ok("4-1 지정가 도달 판정", "reach" in keys, keys)
 ok("4-2 도달 표시", ev["reached"] is True, ev["reached"])
+ev = evaluate(BTC_ORDER, 61790, "down")
+keys = [c["key"] for c in ev["conds"]]
+ok("4-3 무효화 사유가 있으면 도달은 중복 알림하지 않음", "reach" not in keys and "near" in keys, keys)
 
 # ---------- 5) 숏: 반대편(눌림 롱) 먼저 이탈 → 관점 식음
 ev = evaluate(BTC_ORDER, 59700, "down")
@@ -164,7 +167,7 @@ ok("10-2 조용할 때 stdout 없음", out == "", out[:80])
 fired_file = write_orders("fired.json", [BTC_ORDER])
 code, out = run_main(fired_file, 61900)
 ok("10-3 무효화 돌파 → 종료 0", code == 0, f"code={code}")
-ok("10-4 stdout 에 관찰 사실(JSON)", out.startswith("{") and "61,778" in out and "무효" in out, out[:160])
+ok("10-4 stdout 에 관찰 사실(JSON)", out.startswith("{") and "61778" in out and "무효" in out, out[:200])
 
 code2, out2 = run_main(fired_file, 61900)
 a1 = json.loads(out)["alerts"]
